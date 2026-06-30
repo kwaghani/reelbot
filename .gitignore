@@ -1,0 +1,15 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.env
+.venv/
+node_modules/
+app/node_modules/
+app/
+ios/
+android/
+listener/auth_info/
+out/
+instagram-cookies.txt
+www.instagram.com_cookies.txt
+results.json

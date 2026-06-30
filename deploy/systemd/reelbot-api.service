@@ -1,0 +1,17 @@
+[Unit]
+Description=Shared Reel Bot FastAPI server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=reelbot
+Group=reelbot
+WorkingDirectory=/opt/reelbot
+EnvironmentFile=/opt/reelbot/.env
+ExecStart=/opt/reelbot/.venv/bin/uvicorn api.main:app --host 127.0.0.1 --port 8000 --proxy-headers
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

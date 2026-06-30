@@ -1,0 +1,10 @@
+# Replace api.example.com with the HTTPS API host used in app/.env and EAS env.
+# Caddy obtains and renews TLS certificates automatically.
+api.example.com {
+  encode zstd gzip
+
+  @api path /healthz /share /query /items
+  reverse_proxy @api 127.0.0.1:8000
+
+  respond "not found" 404
+}

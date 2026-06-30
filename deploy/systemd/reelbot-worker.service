@@ -1,0 +1,17 @@
+[Unit]
+Description=Shared Reel Bot worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=reelbot
+Group=reelbot
+WorkingDirectory=/opt/reelbot
+EnvironmentFile=/opt/reelbot/.env
+ExecStart=/opt/reelbot/.venv/bin/python worker/worker.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
