@@ -1,0 +1,12 @@
+{"q": "what should we do in la?", "intent": "discovery", "location": "Los Angeles", "category": "attraction", "expect": "LA attractions surfaced (e.g. Universal, Santa Monica Pier, Venice Beach, Griffith, The Last Bookstore)"}
+{"q": "what should i do in la", "intent": "discovery", "location": "Los Angeles", "category": "attraction", "expect": "LA attractions surfaced"}
+{"q": "where should i eat in la", "intent": "discovery", "location": "Los Angeles", "category": "dining", "expect": "LA dining surfaced (e.g. Sugo Social)"}
+{"q": "What are good food recommendations in la?", "intent": "discovery", "location": "Los Angeles", "category": "dining", "expect": "LA dining surfaced"}
+{"q": "any good italian food ?", "intent": "discovery", "location": null, "category": "dining", "cuisine": "italian", "expect": "Italian place surfaced (Sugo Social); defaults to LA as dominant city"}
+{"q": "Which restaurant can I go to", "intent": "discovery", "location": null, "category": "dining", "expect": "defaults to dominant city (LA), recommends dining, states the assumption"}
+{"q": "What else do you know", "intent": "meta", "location": null, "category": null, "expect": "summary of saved items grouped by city/list"}
+{"q": "Sugo social is in la?", "intent": "lookup", "location": "Los Angeles", "target_place": "Sugo Social", "expect": "confirms Sugo Social location from stored item"}
+{"q": "Things to do in Mumbai?", "intent": "discovery", "location": "Mumbai", "category": "attraction", "expect": "grounded-empty: no Mumbai saves"}
+{"q": "any activities to do in mumbai?", "intent": "discovery", "location": "Mumbai", "category": "attraction", "expect": "grounded-empty"}
+{"q": "Where should I eat in Mumbai", "intent": "discovery", "location": "Mumbai", "category": "dining", "expect": "grounded-empty"}
+{"q": "Any good places I saved to visit in munbai?", "intent": "discovery", "location": "Mumbai", "category": "attraction", "expect": "grounded-empty; tests typo normalization munbai->Mumbai"}

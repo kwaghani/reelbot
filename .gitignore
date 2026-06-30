@@ -9,7 +9,9 @@ app/
 ios/
 android/
 listener/auth_info/
+listener/latest-qr.png
 out/
 instagram-cookies.txt
 www.instagram.com_cookies.txt
 results.json
+reels.txt

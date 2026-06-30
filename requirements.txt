@@ -1,0 +1,13 @@
+yt-dlp==2026.6.9
+faster-whisper==1.2.1
+pytesseract==0.3.13
+Pillow==12.2.0
+anthropic==0.112.0
+googlemaps==4.10.0
+python-dotenv==1.2.2
+psycopg[binary]==3.3.4
+pgvector==0.4.2
+sentence-transformers==5.6.0
+numpy==2.3.5
+fastapi==0.138.2
+uvicorn[standard]==0.49.0
