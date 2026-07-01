@@ -197,3 +197,5 @@ Tester steps:
 
 Success: share extension shows the saved confirmation, `/share` queues a job, the worker saves an item, and Saved/Ask reflect backend state.  
 Common failure: share extension hangs. Fix: check `https://YOUR_API_DOMAIN/healthz` from the phone, Caddy logs, and `journalctl -u reelbot-api`.
+
+For the exact share-sheet verification flow and failure split, use `SHARE_TEST.md`.

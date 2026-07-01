@@ -4,12 +4,15 @@
 
 - Expo app config is now explicit for iOS/TestFlight: owner, bundle ID, App Group, version, iOS build number, icon, splash, and export-compliance flag.
 - Added preview and production EAS build profiles. Production is configured for iOS store/TestFlight distribution.
-- Added placeholder app icon and splash assets in `app/assets/`.
+- Added a coral ReelBot app icon and matching splash assets in `app/assets/`.
 - Verified `expo-share-extension` prebuild output creates both the main app and share extension App Group entitlements.
 - Added `api/smoke_test.py`, a mock-backed smoke test for `/share`, `/query`, `/items`, API-key rejection, bad share validation, ingest job shape, and query event logging.
 - Added deploy-ready systemd units for API, worker, and scheduler.
 - Added a Caddy HTTPS reverse proxy config.
 - Added `api/.env.example`, refreshed `app/.env.example`, and wrote `RUNBOOK.md`.
+- Added a minimal app design system in `app/src/theme.ts` and applied it to Saved, Ask, the tab bar, and the first-launch name prompt.
+- Hardened the share extension URL extraction and POST flow, including explicit success/failure feedback and a recent-share receipt shown as `Saving...` in the Saved tab.
+- Added `SHARE_TEST.md` with the exact physical-device share-sheet verification flow.
 
 ## Decisions
 
@@ -17,6 +20,7 @@
 - Kept `com.krishwaghani.reelbot` and `group.com.krishwaghani.reelbot` as the default identifiers because they already match the Apple/EAS setup used during development.
 - Used Caddy for HTTPS because it automatically provisions and renews TLS certificates. iOS production/TestFlight builds should use HTTPS, not the LAN HTTP URL used during local debugging.
 - Removed generated/vendor output (`node_modules/`, generated `ios/`) from the app git index. EAS should build from source/config plus `package-lock.json`.
+- Kept share feedback honest: the extension confirms only that `/share` accepted the URL, while the app shows `Saving...` until the backend worker finishes and `/items` reflects the saved place.
 
 ## Verified Locally
 
