@@ -66,7 +66,7 @@ ANTHROPIC_API_KEY   Your Anthropic API key
 GOOGLE_MAPS_API_KEY Your Google Places API key
 ```
 
-Leave `IG_COOKIES_PATH` blank at first.
+Leave `IG_COOKIES_PATH` blank. Keep `REELBOT_ENABLE_VIDEO_DOWNLOAD=false`; ReelBot stores extracted place data and the source URL, not offline reel videos.
 
 Success: Render creates `reelbot-api`, `reelbot-worker`, and `reelbot-scheduler`.
 
@@ -170,14 +170,17 @@ Run the exact iPhone checklist in `SHARE_TEST.md`.
 
 ## Instagram Cookies Later
 
-Instagram may reject some reel downloads without authenticated cookies.
+ReelBot does not need Instagram cookies for the default metadata-first ingestion path. It extracts public page metadata, thumbnail text, place data, and stores the original reel URL.
 
-If worker logs mention Instagram cookies:
+Instagram may reject full reel video downloads without authenticated cookies. Only use this path if you later decide you want the worker to inspect full video frames/audio.
+
+If you intentionally set `REELBOT_ENABLE_VIDEO_DOWNLOAD=true` and worker logs mention Instagram cookies:
 
 1. Export fresh Netscape-format Instagram cookies.
 2. In Render, open `reelbot-worker`.
 3. Add a Secret File named something like `instagram-cookies.txt`.
 4. Set `IG_COOKIES_PATH` on `reelbot-worker` to the mounted secret-file path Render shows.
-5. Redeploy `reelbot-worker`.
+5. Set `REELBOT_ENABLE_VIDEO_DOWNLOAD=true`.
+6. Redeploy `reelbot-worker`.
 
 Only the worker needs Instagram cookies. The API and scheduler do not.

@@ -186,6 +186,11 @@ def metadata_only_ingest_enabled() -> bool:
     return value not in {"0", "false", "no", "off"}
 
 
+def video_download_enabled() -> bool:
+    value = os.getenv("REELBOT_ENABLE_VIDEO_DOWNLOAD", "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
 def request_headers() -> dict[str, str]:
     return {
         "User-Agent": (
@@ -365,21 +370,24 @@ def download_video_info(video_info: dict[str, Any], url: str, workdir: Path) -> 
 
 def stage_ingest(url: str, workdir: Path) -> IngestResult:
     workdir.mkdir(parents=True, exist_ok=True)
-    metadata_only = False
-    try:
-        metadata = ytdlp_extract(url, download=False)
-    except StageError as exc:
-        if not metadata_only_ingest_enabled():
-            raise
-        LOG.warning("yt-dlp metadata failed; falling back to public page metadata: %s", exc.message)
+    metadata_only = not video_download_enabled()
+    if metadata_only and is_instagram_url(url):
         metadata = public_metadata_info(url, workdir)
-        metadata_only = True
+    else:
+        try:
+            metadata = ytdlp_extract(url, download=False)
+        except StageError as exc:
+            if not metadata_only_ingest_enabled():
+                raise
+            LOG.warning("yt-dlp metadata failed; falling back to public page metadata: %s", exc.message)
+            metadata = public_metadata_info(url, workdir)
+            metadata_only = True
 
     reel_id = str(metadata.get("id") or f"url_{url_hash(url)}")
     write_json(workdir / "info.json", metadata)
 
     selected_video_info: dict[str, Any] | None = None
-    if not metadata_only:
+    if video_download_enabled() and not metadata_only:
         try:
             selected_video_info = select_video_info(metadata)
         except StageError as exc:

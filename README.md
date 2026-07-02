@@ -53,6 +53,7 @@ TEST_GROUP_ID=00000000-0000-0000-0000-000000000000
 ANTHROPIC_API_KEY=...
 GOOGLE_MAPS_API_KEY=...
 IG_COOKIES_PATH=
+REELBOT_ENABLE_VIDEO_DOWNLOAD=false
 TARGET_GROUP_JID=
 NUDGE_INTERVAL_HOURS=3
 NUDGE_COOLDOWN_DAYS=3
@@ -62,7 +63,9 @@ NUDGE_RECENCY_DAYS=7
 NUDGE_IMPACT_WINDOW_HOURS=24
 ```
 
-`IG_COOKIES_PATH` is optional, but Instagram URLs often need authenticated cookies. It can be an exported Netscape cookies file path or a yt-dlp browser source such as `browser:chrome`.
+ReelBot stores extracted place data plus the original reel URL. It does not store reel videos offline. By default `REELBOT_ENABLE_VIDEO_DOWNLOAD=false`, so ingest uses public page metadata, captions, thumbnails, OCR, and the source link instead of downloading media.
+
+`IG_COOKIES_PATH` is optional and only matters if you later set `REELBOT_ENABLE_VIDEO_DOWNLOAD=true`. Instagram video downloads often need authenticated cookies. It can be an exported Netscape cookies file path or a yt-dlp browser source such as `browser:chrome`.
 
 `TARGET_GROUP_JID` is optional. If set, the listener ignores all WhatsApp groups except that JID.
 
@@ -129,7 +132,7 @@ See `app/README.md` for the Expo custom dev-client build and App Group setup.
 - The scheduler periodically scans each group for one worthwhile saved-item cluster, respects per-group and per-cluster cooldowns, and queues a single `outbound_messages` row when a nudge is warranted.
 - The listener does not call LLMs, extract video, embed text, or do retrieval.
 - The listener also polls unsent `outbound_messages`, sends them through Baileys, then marks `sent_at`.
-- The worker verifies places through Google Places, dedupes by `(group_id, place_id)`, records each saver in `item_saves`, stores a 384-dim embedding, and writes `save`, `query`, and `error` events.
+- The worker extracts reel page metadata, verifies places through Google Places, stores the original source URL, dedupes by `(group_id, place_id)`, records each saver in `item_saves`, stores a 384-dim embedding, and writes `save`, `query`, and `error` events.
 - The scheduler records each sent nudge in `nudges` and writes a `nudge` event with the cluster key.
 
 ## Nudge Impact
@@ -150,5 +153,5 @@ python evals/nudge_impact.py
 - With 3+ recently active saved items in a group and no cooldown conflict, `python worker/scheduler.py --once` creates exactly one grounded nudge in `outbound_messages`, records it in `nudges`, and logs a `nudge` event.
 - A group nudged within `NUDGE_COOLDOWN_DAYS`, or a cluster nudged within `NUDGE_CLUSTER_COOLDOWN_DAYS`, gets skipped.
 - `python evals/nudge_impact.py` reports nudge engagement conversion over `NUDGE_IMPACT_WINDOW_HOURS`.
-- Temp media files are deleted after every ingest job.
+- Any temporary thumbnails or optional media files are deleted after every ingest job.
 - A broken reel URL marks the job `error`, records an `error` event, and the worker keeps polling.
