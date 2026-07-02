@@ -5,13 +5,14 @@ import os
 import re
 import secrets
 import sys
+import threading
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 from uuid import UUID
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, Header, HTTPException, status
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ValidationError, field_validator
@@ -26,6 +27,7 @@ from db import connect, get_or_create_member, log_event  # noqa: E402
 load_dotenv(ROOT / ".env")
 
 LOG = logging.getLogger("reelbot.api")
+INGEST_DRAIN_LOCK = threading.Lock()
 SUPPORTED_REEL_URL = re.compile(
     r"^https?://(?:[\w-]+\.)?(?:instagram\.com|tiktok\.com)/[^\s<>\")']+$",
     re.IGNORECASE,
@@ -104,6 +106,9 @@ class ItemResponse(BaseModel):
     category: str | None
     location_text: str | None
     list_name: str | None
+    source_url: str | None = None
+    status: str = "saved"
+    message: str | None = None
     lat: float | None
     lng: float | None
     price_tier: str | None
@@ -207,25 +212,94 @@ def enqueue_ingest_job(conn: Any, *, group_id: str, url: str, user_name: str) ->
     conn.commit()
 
 
+def drain_queued_jobs(limit: int = 2) -> None:
+    if not INGEST_DRAIN_LOCK.acquire(blocking=False):
+        return
+
+    try:
+        from db import claim_next_job, mark_job_error
+        from worker import handle_job
+
+        with connect() as conn:
+            for _ in range(max(1, limit)):
+                job = claim_next_job(conn)
+                if job is None:
+                    return
+
+                try:
+                    handle_job(conn, job)
+                except Exception as exc:
+                    LOG.exception("Background job %s failed", job.get("id"))
+                    conn.rollback()
+                    try:
+                        mark_job_error(
+                            conn,
+                            job["id"],
+                            "I hit a snag processing that one, but I am still running.",
+                        )
+                        log_event(conn, job.get("group_id"), "error", f"{type(exc).__name__}: {exc}")
+                    except Exception:
+                        LOG.exception("Could not record failure for background job %s", job.get("id"))
+    finally:
+        INGEST_DRAIN_LOCK.release()
+
+
 def saved_items(conn: Any, group_id: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
-        select i.place_name,
-               i.category,
-               i.location_text,
-               i.list_name,
-               i.lat,
-               i.lng,
-               i.price_tier,
-               coalesce(i.tags, array[]::text[]) as tags,
-               count(distinct s.member_id) as save_count
-          from items i
-          left join item_saves s on s.item_id = i.id
-         where i.group_id = %s
-         group by i.id
-         order by i.created_at desc
+        with saved as (
+            select i.place_name,
+                   i.category,
+                   i.location_text,
+                   i.list_name,
+                   i.source_url,
+                   'saved'::text as status,
+                   null::text as message,
+                   i.lat,
+                   i.lng,
+                   i.price_tier,
+                   coalesce(i.tags, array[]::text[]) as tags,
+                   count(distinct s.member_id)::int as save_count,
+                   i.created_at as sort_at
+              from items i
+              left join item_saves s on s.item_id = i.id
+             where i.group_id = %s
+             group by i.id
+        ),
+        recent_jobs as (
+            select null::text as place_name,
+                   null::text as category,
+                   null::text as location_text,
+                   null::text as list_name,
+                   j.payload as source_url,
+                   case
+                     when j.status in ('queued', 'processing') then 'processing'
+                     when j.status = 'error' then 'error'
+                     else 'done'
+                   end as status,
+                   nullif(j.reply, '') as message,
+                   null::double precision as lat,
+                   null::double precision as lng,
+                   null::text as price_tier,
+                   array[]::text[] as tags,
+                   1::int as save_count,
+                   j.created_at as sort_at
+              from jobs j
+             where j.group_id = %s
+               and j.type = 'ingest'
+               and j.status in ('queued', 'processing', 'error')
+               and j.created_at >= now() - interval '2 days'
+        )
+        select place_name, category, location_text, list_name, source_url, status, message,
+               lat, lng, price_tier, tags, save_count
+          from (
+            select * from saved
+            union all
+            select * from recent_jobs
+          ) combined
+         order by sort_at desc
         """,
-        (group_id,),
+        (group_id, group_id),
     ).fetchall()
     return list(rows)
 
@@ -241,7 +315,11 @@ def healthz() -> dict[str, str]:
     response_model=ShareResponse,
     dependencies=[Depends(require_api_key)],
 )
-def share_reel(body: ShareRequest, app_settings: Settings = Depends(settings)) -> ShareResponse:
+def share_reel(
+    body: ShareRequest,
+    background_tasks: BackgroundTasks,
+    app_settings: Settings = Depends(settings),
+) -> ShareResponse:
     with connect() as conn:
         ensure_test_group(conn, app_settings.test_group_id)
         upsert_app_member(conn, app_settings.test_group_id, body.user_name)
@@ -251,6 +329,7 @@ def share_reel(body: ShareRequest, app_settings: Settings = Depends(settings)) -
             url=body.url,
             user_name=body.user_name,
         )
+    background_tasks.add_task(drain_queued_jobs)
     return ShareResponse(status="queued")
 
 
@@ -271,7 +350,12 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
 
 
 @app.get("/items", response_model=list[ItemResponse], dependencies=[Depends(require_api_key)])
-def list_items(app_settings: Settings = Depends(settings)) -> list[ItemResponse]:
+def list_items(
+    background_tasks: BackgroundTasks,
+    app_settings: Settings = Depends(settings),
+) -> list[ItemResponse]:
     with connect() as conn:
         ensure_test_group(conn, app_settings.test_group_id)
-        return [ItemResponse(**row) for row in saved_items(conn, app_settings.test_group_id)]
+        items = [ItemResponse(**row) for row in saved_items(conn, app_settings.test_group_id)]
+    background_tasks.add_task(drain_queued_jobs)
+    return items

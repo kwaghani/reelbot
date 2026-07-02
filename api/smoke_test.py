@@ -106,6 +106,7 @@ api_main.load_settings.cache_clear()
 api_main.connect = fake_connect
 api_main.get_or_create_member = fake_member
 api_main.log_event = fake_log_event
+api_main.drain_queued_jobs = lambda: None
 
 client = TestClient(api_main.app)
 headers = {"x-api-key": "smoke-test-key"}
