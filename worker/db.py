@@ -62,8 +62,8 @@ def requeue_retryable_ingest_errors(conn: psycopg.Connection, limit: int = 5) ->
              from jobs
             where type = 'ingest'
               and status = 'error'
-              and reply ilike 'Could not process this reel during ingest:%'
-              and reply not ilike '%Metadata fallback was tried%'
+              and reply ilike %s
+              and reply not ilike %s
               and created_at >= now() - interval '3 days'
               and updated_at < now() - (%s * interval '1 minute')
             order by updated_at asc
@@ -71,7 +71,12 @@ def requeue_retryable_ingest_errors(conn: psycopg.Connection, limit: int = 5) ->
          )
         returning id
         """,
-        (RETRY_ERROR_AFTER_MINUTES, max(1, limit)),
+        (
+            "Could not process this reel during ingest:%",
+            "%Metadata fallback was tried%",
+            RETRY_ERROR_AFTER_MINUTES,
+            max(1, limit),
+        ),
     ).fetchall()
     conn.commit()
     return len(rows)
