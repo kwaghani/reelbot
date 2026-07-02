@@ -22,7 +22,7 @@ from db import (
     upsert_item,
 )
 from embed import embed
-from pipeline import process_reel
+from pipeline import StageError, process_reel
 from retrieval import answer_question
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +35,15 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 LOG = logging.getLogger("reelbot.worker")
+
+
+def job_error_reply(exc: Exception) -> str:
+    if isinstance(exc, StageError):
+        message = re.sub(r"\s+", " ", exc.message).strip()
+        return f"Could not process this reel during {exc.stage}: {message[:260]}"
+    if isinstance(exc, MemoryError):
+        return "Could not process this reel because the worker ran out of memory."
+    return "I hit a snag processing that one, but I am still running."
 
 
 def response_text(response: Any) -> str:
@@ -187,7 +196,7 @@ def main() -> int:
                 LOG.exception("Job %s failed", job.get("id"))
                 conn.rollback()
                 try:
-                    mark_job_error(conn, job["id"], "I hit a snag processing that one, but I am still running.")
+                    mark_job_error(conn, job["id"], job_error_reply(exc))
                     log_event(conn, job.get("group_id"), "error", f"{type(exc).__name__}: {exc}")
                 except Exception:
                     LOG.exception("Could not record failure for job %s", job.get("id"))

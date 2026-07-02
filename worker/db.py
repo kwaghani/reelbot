@@ -9,6 +9,8 @@ from psycopg.rows import dict_row
 
 load_dotenv()
 
+STALE_PROCESSING_MINUTES = int(os.getenv("JOB_RETRY_AFTER_MINUTES", "20"))
+
 
 def connect() -> psycopg.Connection:
     database_url = os.getenv("DATABASE_URL", "").strip()
@@ -32,12 +34,18 @@ def claim_next_job(conn: psycopg.Connection) -> dict[str, Any] | None:
                select id
                  from jobs
                 where status = 'queued'
-                order by created_at
+                   or (
+                     status = 'processing'
+                     and updated_at < now() - (%s * interval '1 minute')
+                   )
+                order by case when status = 'processing' then 0 else 1 end,
+                         created_at
                 for update skip locked
                 limit 1
              )
             returning *
-            """
+            """,
+            (STALE_PROCESSING_MINUTES,),
         ).fetchone()
 
 

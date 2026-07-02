@@ -218,7 +218,7 @@ def drain_queued_jobs(limit: int = 2) -> None:
 
     try:
         from db import claim_next_job, mark_job_error
-        from worker import handle_job
+        from worker import handle_job, job_error_reply
 
         with connect() as conn:
             for _ in range(max(1, limit)):
@@ -235,7 +235,7 @@ def drain_queued_jobs(limit: int = 2) -> None:
                         mark_job_error(
                             conn,
                             job["id"],
-                            "I hit a snag processing that one, but I am still running.",
+                            job_error_reply(exc),
                         )
                         log_event(conn, job.get("group_id"), "error", f"{type(exc).__name__}: {exc}")
                     except Exception:

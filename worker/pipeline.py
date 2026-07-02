@@ -22,7 +22,6 @@ try:
     import googlemaps
     import pytesseract
     import yt_dlp
-    from faster_whisper import WhisperModel
     from PIL import Image
 except ImportError as exc:
     raise SystemExit(
@@ -58,7 +57,7 @@ confidence is 0..1 and is your confidence in place_name.
 
 LOG = logging.getLogger("reelbot.pipeline")
 
-_WHISPER_MODEL: WhisperModel | None = None
+_WHISPER_MODEL: Any | None = None
 
 
 class StageError(Exception):
@@ -339,12 +338,19 @@ def extract_audio(video_path: Path, workdir: Path) -> Path | None:
     return audio_path
 
 
-def get_whisper_model() -> WhisperModel:
+def transcription_enabled() -> bool:
+    value = os.getenv("REELBOT_ENABLE_TRANSCRIPTION", "").strip().lower()
+    return value in {"1", "true", "yes", "on"}
+
+
+def get_whisper_model() -> Any:
     global _WHISPER_MODEL
     if _WHISPER_MODEL is not None:
         return _WHISPER_MODEL
 
     try:
+        from faster_whisper import WhisperModel
+
         _WHISPER_MODEL = WhisperModel("base", device="cpu", compute_type="int8")
     except Exception as exc:
         raise StageError("audio", f"faster-whisper model load failed: {exc}") from exc
@@ -352,6 +358,11 @@ def get_whisper_model() -> WhisperModel:
 
 
 def stage_transcript(video_path: Path, workdir: Path) -> str:
+    if not transcription_enabled():
+        transcript = ""
+        (workdir / "transcript.txt").write_text(transcript, encoding="utf-8")
+        return transcript
+
     audio_path = extract_audio(video_path, workdir)
     if audio_path is None:
         transcript = ""
