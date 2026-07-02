@@ -117,6 +117,9 @@ def assert_response(condition: bool, message: str) -> None:
 
 
 def main() -> int:
+    health = client.get("/healthz")
+    assert_response(health.status_code == 200, "healthz should be public for platform health checks")
+
     unauthorized = client.get("/items")
     assert_response(unauthorized.status_code == 401, "missing API key should be rejected")
 

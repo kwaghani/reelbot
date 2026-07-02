@@ -144,7 +144,6 @@ def require_api_key(
 app = FastAPI(
     title="Shared Reel Bot API",
     version="1.0.0",
-    dependencies=[Depends(require_api_key)],
 )
 
 
@@ -236,7 +235,12 @@ def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/share", status_code=status.HTTP_202_ACCEPTED, response_model=ShareResponse)
+@app.post(
+    "/share",
+    status_code=status.HTTP_202_ACCEPTED,
+    response_model=ShareResponse,
+    dependencies=[Depends(require_api_key)],
+)
 def share_reel(body: ShareRequest, app_settings: Settings = Depends(settings)) -> ShareResponse:
     with connect() as conn:
         ensure_test_group(conn, app_settings.test_group_id)
@@ -250,7 +254,7 @@ def share_reel(body: ShareRequest, app_settings: Settings = Depends(settings)) -
     return ShareResponse(status="queued")
 
 
-@app.post("/query", response_model=QueryResponse)
+@app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_api_key)])
 def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(settings)) -> QueryResponse:
     from retrieval import answer_question
 
@@ -266,7 +270,7 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
     return QueryResponse(answer=answer)
 
 
-@app.get("/items", response_model=list[ItemResponse])
+@app.get("/items", response_model=list[ItemResponse], dependencies=[Depends(require_api_key)])
 def list_items(app_settings: Settings = Depends(settings)) -> list[ItemResponse]:
     with connect() as conn:
         ensure_test_group(conn, app_settings.test_group_id)

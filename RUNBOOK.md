@@ -2,6 +2,8 @@
 
 Follow these steps top to bottom from a clean checkout on the VPS/Mac. Commands assume the repo lives at `/opt/reelbot` on the VPS and `/Users/krishwaghani/Desktop/TEMPNAME` locally; adjust paths if you deploy elsewhere.
 
+Preferred current path: use `RENDER_DEPLOY.md` for the backend. Render replaces the VPS/systemd/Caddy steps below by creating the API web service, worker, scheduler, and HTTPS URL from `render.yaml`.
+
 ## 1. Create Production Secrets
 
 Needs: database URL, Anthropic key, Google Places key, and one generated test group UUID/API key.
@@ -70,7 +72,7 @@ curl -i https://YOUR_API_DOMAIN/healthz
 curl -i -H "x-api-key: YOUR_API_KEY" https://YOUR_API_DOMAIN/items
 ```
 
-Success: `/healthz` returns `401 Invalid API key` without a key, and `/items` returns `200 []` or saved items with the key.  
+Success: `/healthz` returns `200 {"status":"ok"}`, and `/items` returns `200 []` or saved items with the key.
 Common failure: Caddy cannot get a cert. Fix: ensure DNS points to the VPS and ports `80`/`443` are open.
 
 ## 5. Configure EAS Project

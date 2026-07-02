@@ -1,0 +1,106 @@
+services:
+  - type: web
+    name: reelbot-api
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: ./deploy/render/start-api.sh
+    healthCheckPath: /healthz
+    maxShutdownDelaySeconds: 60
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: TEST_GROUP_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: IG_COOKIES_PATH
+        value: ""
+      - key: NUDGE_INTERVAL_HOURS
+        value: "3"
+      - key: NUDGE_COOLDOWN_DAYS
+        value: "3"
+      - key: NUDGE_CLUSTER_COOLDOWN_DAYS
+        value: "14"
+      - key: NUDGE_MIN_ITEMS
+        value: "3"
+      - key: NUDGE_RECENCY_DAYS
+        value: "7"
+      - key: NUDGE_IMPACT_WINDOW_HOURS
+        value: "24"
+
+  - type: worker
+    name: reelbot-worker
+    runtime: docker
+    plan: standard
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: ./deploy/render/start-worker.sh
+    maxShutdownDelaySeconds: 300
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: TEST_GROUP_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: IG_COOKIES_PATH
+        value: ""
+      - key: NUDGE_INTERVAL_HOURS
+        value: "3"
+      - key: NUDGE_COOLDOWN_DAYS
+        value: "3"
+      - key: NUDGE_CLUSTER_COOLDOWN_DAYS
+        value: "14"
+      - key: NUDGE_MIN_ITEMS
+        value: "3"
+      - key: NUDGE_RECENCY_DAYS
+        value: "7"
+      - key: NUDGE_IMPACT_WINDOW_HOURS
+        value: "24"
+
+  - type: cron
+    name: reelbot-scheduler
+    runtime: docker
+    plan: starter
+    region: oregon
+    schedule: "0 */3 * * *"
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: ./deploy/render/run-scheduler-once.sh
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: API_KEY
+        sync: false
+      - key: TEST_GROUP_ID
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: IG_COOKIES_PATH
+        value: ""
+      - key: NUDGE_INTERVAL_HOURS
+        value: "3"
+      - key: NUDGE_COOLDOWN_DAYS
+        value: "3"
+      - key: NUDGE_CLUSTER_COOLDOWN_DAYS
+        value: "14"
+      - key: NUDGE_MIN_ITEMS
+        value: "3"
+      - key: NUDGE_RECENCY_DAYS
+        value: "7"
+      - key: NUDGE_IMPACT_WINDOW_HOURS
+        value: "24"

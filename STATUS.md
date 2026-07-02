@@ -9,6 +9,7 @@
 - Added `api/smoke_test.py`, a mock-backed smoke test for `/share`, `/query`, `/items`, API-key rejection, bad share validation, ingest job shape, and query event logging.
 - Added deploy-ready systemd units for API, worker, and scheduler.
 - Added a Caddy HTTPS reverse proxy config.
+- Added Render deployment assets: `render.yaml`, `Dockerfile`, `.dockerignore`, and Render service entrypoint scripts.
 - Added `api/.env.example`, refreshed `app/.env.example`, and wrote `RUNBOOK.md`.
 - Added a minimal app design system in `app/src/theme.ts` and applied it to Saved, Ask, the tab bar, and the first-launch name prompt.
 - Hardened the share extension URL extraction and POST flow, including explicit success/failure feedback and a recent-share receipt shown as `Saving...` in the Saved tab.
@@ -19,6 +20,8 @@
 - Kept the product model intentionally simple: one test group, display-name identity, no login, no new backend product logic.
 - Kept `com.krishwaghani.reelbot` and `group.com.krishwaghani.reelbot` as the default identifiers because they already match the Apple/EAS setup used during development.
 - Used Caddy for HTTPS because it automatically provisions and renews TLS certificates. iOS production/TestFlight builds should use HTTPS, not the LAN HTTP URL used during local debugging.
+- Render is now the recommended backend path because it gives the app a public HTTPS API and can run both the continuous worker and scheduled job.
+- `/healthz` is public so Render can perform health checks; `/share`, `/query`, and `/items` still require `x-api-key`.
 - Removed generated/vendor output (`node_modules/`, generated `ios/`) from the app git index. EAS should build from source/config plus `package-lock.json`.
 - Kept share feedback honest: the extension confirms only that `/share` accepted the URL, while the app shows `Saving...` until the backend worker finishes and `/items` reflects the saved place.
 
@@ -32,6 +35,7 @@
 - `.venv/bin/python -m compileall api` passes.
 - `.venv/bin/python api/smoke_test.py` passes.
 - `api.main` imports and loads valid settings with env vars.
+- `render.yaml` parses as valid YAML locally.
 
 ## Not Verified
 

@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 .env
-.venv/
+.venv*
 node_modules/
 app/node_modules/
 app/
