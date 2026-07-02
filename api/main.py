@@ -217,10 +217,11 @@ def drain_queued_jobs(limit: int = 2) -> None:
         return
 
     try:
-        from db import claim_next_job, mark_job_error
+        from db import claim_next_job, mark_job_error, requeue_retryable_ingest_errors
         from worker import handle_job, job_error_reply
 
         with connect() as conn:
+            requeue_retryable_ingest_errors(conn)
             for _ in range(max(1, limit)):
                 job = claim_next_job(conn)
                 if job is None:
@@ -266,6 +267,22 @@ def saved_items(conn: Any, group_id: str) -> list[dict[str, Any]]:
              where i.group_id = %s
              group by i.id
         ),
+        latest_jobs as (
+            select *
+              from (
+                select j.*,
+                       row_number() over (
+                         partition by j.payload
+                         order by j.created_at desc
+                       ) as rn
+                  from jobs j
+                 where j.group_id = %s
+                   and j.type = 'ingest'
+                   and j.status in ('queued', 'processing', 'error')
+                   and j.created_at >= now() - interval '2 days'
+              ) ranked_jobs
+             where rn = 1
+        ),
         recent_jobs as (
             select null::text as place_name,
                    null::text as category,
@@ -284,11 +301,13 @@ def saved_items(conn: Any, group_id: str) -> list[dict[str, Any]]:
                    array[]::text[] as tags,
                    1::int as save_count,
                    j.created_at as sort_at
-              from jobs j
-             where j.group_id = %s
-               and j.type = 'ingest'
-               and j.status in ('queued', 'processing', 'error')
-               and j.created_at >= now() - interval '2 days'
+              from latest_jobs j
+             where not exists (
+               select 1
+                 from items i
+                where i.group_id = j.group_id
+                  and i.source_url = j.payload
+             )
         )
         select place_name, category, location_text, list_name, source_url, status, message,
                lat, lng, price_tier, tags, save_count

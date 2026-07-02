@@ -19,6 +19,7 @@ from db import (
     log_event,
     mark_job_done,
     mark_job_error,
+    requeue_retryable_ingest_errors,
     upsert_item,
 )
 from embed import embed
@@ -40,7 +41,7 @@ LOG = logging.getLogger("reelbot.worker")
 def job_error_reply(exc: Exception) -> str:
     if isinstance(exc, StageError):
         message = re.sub(r"\s+", " ", exc.message).strip()
-        return f"Could not process this reel during {exc.stage}: {message[:260]}"
+        return f"Could not process this reel during {exc.stage}: {message[:220]} Metadata fallback was tried."
     if isinstance(exc, MemoryError):
         return "Could not process this reel because the worker ran out of memory."
     return "I hit a snag processing that one, but I am still running."
@@ -185,6 +186,7 @@ def main() -> int:
 
     with connect() as conn:
         while True:
+            requeue_retryable_ingest_errors(conn)
             job = claim_next_job(conn)
             if job is None:
                 time.sleep(POLL_SECONDS)

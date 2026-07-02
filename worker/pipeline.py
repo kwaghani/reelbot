@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import html
 import json
 import logging
 import os
@@ -13,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 if sys.version_info < (3, 11):
     raise SystemExit("Python 3.11+ is required.")
@@ -71,9 +73,11 @@ class StageError(Exception):
 class IngestResult:
     reel_id: str
     workdir: Path
-    video_path: Path
+    video_path: Path | None
+    thumbnail_path: Path | None
     info: dict[str, Any]
     caption: str
+    metadata_only: bool
 
 
 def write_json(path: Path, data: Any) -> None:
@@ -177,6 +181,122 @@ def strip_ansi(text: str) -> str:
     return re.sub(r"\x1b\[[0-9;]*m", "", text)
 
 
+def metadata_only_ingest_enabled() -> bool:
+    value = os.getenv("REELBOT_ALLOW_METADATA_ONLY_INGEST", "1").strip().lower()
+    return value not in {"0", "false", "no", "off"}
+
+
+def request_headers() -> dict[str, str]:
+    return {
+        "User-Agent": (
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) "
+            "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 "
+            "Mobile/15E148 Safari/604.1"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
+
+
+def public_page_text(url: str) -> tuple[str, str]:
+    request = Request(url, headers=request_headers())
+    with urlopen(request, timeout=20) as response:
+        body = response.read(1_500_000)
+        final_url = response.geturl()
+        content_type = response.headers.get_content_charset() or "utf-8"
+    return final_url, body.decode(content_type, errors="replace")
+
+
+def html_tag_text(document: str, tag_name: str) -> str | None:
+    match = re.search(rf"<{tag_name}[^>]*>(.*?)</{tag_name}>", document, flags=re.I | re.S)
+    if not match:
+        return None
+    return html.unescape(re.sub(r"\s+", " ", match.group(1))).strip() or None
+
+
+def html_meta_content(document: str, name: str) -> str | None:
+    name_pattern = re.escape(name)
+    patterns = [
+        rf"<meta[^>]+(?:name|property)=[\"']{name_pattern}[\"'][^>]+content=[\"']([^\"']*)",
+        rf"<meta[^>]+content=[\"']([^\"']*)[\"'][^>]+(?:name|property)=[\"']{name_pattern}[\"']",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, document, flags=re.I | re.S)
+        if match:
+            return html.unescape(match.group(1)).strip() or None
+    return None
+
+
+def public_metadata_info(url: str, workdir: Path) -> dict[str, Any]:
+    try:
+        final_url, document = public_page_text(url)
+    except Exception as exc:
+        raise StageError("ingest", f"public page metadata fetch failed: {exc}") from exc
+
+    title = (
+        html_meta_content(document, "og:title")
+        or html_meta_content(document, "twitter:title")
+        or html_tag_text(document, "title")
+        or ""
+    )
+    description = (
+        html_meta_content(document, "og:description")
+        or html_meta_content(document, "description")
+        or html_meta_content(document, "twitter:description")
+        or ""
+    )
+    thumbnail = html_meta_content(document, "og:image") or html_meta_content(document, "twitter:image")
+
+    if not title and not description and not thumbnail:
+        raise StageError("ingest", "public page metadata did not include caption or thumbnail data")
+
+    info = {
+        "id": f"url_{url_hash(final_url)}",
+        "webpage_url": final_url,
+        "title": title,
+        "description": description,
+        "thumbnail": thumbnail,
+        "extractor": "public_metadata",
+    }
+    write_json(workdir / "public_metadata.json", info)
+    return info
+
+
+def thumbnail_url(info: dict[str, Any]) -> str | None:
+    direct = info.get("thumbnail")
+    if isinstance(direct, str) and direct.startswith(("http://", "https://")):
+        return direct
+
+    thumbnails = info.get("thumbnails")
+    if isinstance(thumbnails, list):
+        for entry in reversed(thumbnails):
+            if isinstance(entry, dict):
+                url = entry.get("url")
+                if isinstance(url, str) and url.startswith(("http://", "https://")):
+                    return url
+    return None
+
+
+def download_thumbnail(info: dict[str, Any], workdir: Path) -> Path | None:
+    url = thumbnail_url(info)
+    if not url:
+        return None
+
+    image_path = workdir / "thumbnail.jpg"
+    try:
+        request = Request(url, headers=request_headers())
+        with urlopen(request, timeout=20) as response:
+            image_path.write_bytes(response.read(5_000_000))
+        if image_path.stat().st_size <= 512:
+            image_path.unlink(missing_ok=True)
+            return None
+        return image_path
+    except Exception as exc:
+        LOG.warning("Thumbnail download failed: %s", exc)
+        image_path.unlink(missing_ok=True)
+        return None
+
+
 def ingest_hint(url: str, message: str) -> str | None:
     lowered = message.lower()
     if is_instagram_url(url) and "empty media response" in lowered:
@@ -245,32 +365,67 @@ def download_video_info(video_info: dict[str, Any], url: str, workdir: Path) -> 
 
 def stage_ingest(url: str, workdir: Path) -> IngestResult:
     workdir.mkdir(parents=True, exist_ok=True)
-    metadata = ytdlp_extract(url, download=False)
+    metadata_only = False
+    try:
+        metadata = ytdlp_extract(url, download=False)
+    except StageError as exc:
+        if not metadata_only_ingest_enabled():
+            raise
+        LOG.warning("yt-dlp metadata failed; falling back to public page metadata: %s", exc.message)
+        metadata = public_metadata_info(url, workdir)
+        metadata_only = True
+
     reel_id = str(metadata.get("id") or f"url_{url_hash(url)}")
     write_json(workdir / "info.json", metadata)
 
-    selected_video_info = select_video_info(metadata)
-    if selected_video_info is not metadata:
-        write_json(workdir / "selected_video_info.json", selected_video_info)
-        LOG.info(
-            "[%s] selected child video %s",
-            reel_id,
-            selected_video_info.get("id") or "unknown",
-        )
+    selected_video_info: dict[str, Any] | None = None
+    if not metadata_only:
+        try:
+            selected_video_info = select_video_info(metadata)
+        except StageError as exc:
+            if not metadata_only_ingest_enabled():
+                raise
+            LOG.warning("No downloadable video found; continuing with metadata only: %s", exc.message)
+            metadata_only = True
+        if selected_video_info is not None and selected_video_info is not metadata:
+            write_json(workdir / "selected_video_info.json", selected_video_info)
+            LOG.info(
+                "[%s] selected child video %s",
+                reel_id,
+                selected_video_info.get("id") or "unknown",
+            )
 
     video_path = find_video_file(workdir)
     if video_path:
         LOG.info("[%s] video cache hit", reel_id)
-    else:
+    elif selected_video_info is not None:
         LOG.info("[%s] downloading source video", reel_id)
-        download_video_info(selected_video_info, url, workdir)
-        video_path = find_video_file(workdir)
-        if video_path is None:
-            raise StageError("ingest", "yt-dlp completed but no source video was found")
+        try:
+            download_video_info(selected_video_info, url, workdir)
+            video_path = find_video_file(workdir)
+            if video_path is None:
+                raise StageError("ingest", "yt-dlp completed but no source video was found")
+        except StageError as exc:
+            if not metadata_only_ingest_enabled():
+                raise
+            LOG.warning("Video download failed; continuing with metadata only: %s", exc.message)
+            metadata_only = True
 
     caption = extract_caption(metadata)
+    thumbnail_path = download_thumbnail(selected_video_info or metadata, workdir)
+    if video_path is None and not caption and thumbnail_path is None:
+        raise StageError("ingest", "metadata-only fallback had no caption or thumbnail to inspect")
+
     (workdir / "caption.txt").write_text(caption, encoding="utf-8")
-    return IngestResult(reel_id, workdir, video_path, metadata, caption)
+    return IngestResult(
+        reel_id=reel_id,
+        workdir=workdir,
+        video_path=video_path,
+        thumbnail_path=thumbnail_path,
+        info=metadata,
+        caption=caption,
+        metadata_only=metadata_only or video_path is None,
+    )
 
 
 def looks_like_no_audio(stderr: str) -> bool:
@@ -464,6 +619,26 @@ def stage_ocr(video_path: Path, workdir: Path) -> str:
     return ocr_text
 
 
+def stage_thumbnail_ocr(image_path: Path | None, workdir: Path) -> str:
+    if image_path is None:
+        ocr_text = ""
+        (workdir / "ocr.txt").write_text(ocr_text, encoding="utf-8")
+        return ocr_text
+
+    try:
+        with Image.open(image_path) as image:
+            raw_text = pytesseract.image_to_string(image)
+    except pytesseract.TesseractNotFoundError as exc:
+        raise StageError("ocr", f"tesseract executable not found: {exc}") from exc
+    except Exception as exc:
+        LOG.warning("Thumbnail OCR failed for %s: %s", image_path, exc)
+        raw_text = ""
+
+    ocr_text = clean_ocr_text([raw_text])
+    (workdir / "ocr.txt").write_text(ocr_text, encoding="utf-8")
+    return ocr_text
+
+
 def anthropic_text_from_response(response: Any) -> str:
     parts: list[str] = []
     for block in getattr(response, "content", []) or []:
@@ -630,8 +805,13 @@ def stage_verify(structured: dict[str, Any], workdir: Path) -> dict[str, Any]:
 def process_reel(url: str, workdir: str | Path) -> dict[str, Any]:
     workdir = Path(workdir)
     ingest = stage_ingest(url, workdir)
-    transcript = stage_transcript(ingest.video_path, ingest.workdir)
-    ocr_text = stage_ocr(ingest.video_path, ingest.workdir)
+    if ingest.video_path is not None:
+        transcript = stage_transcript(ingest.video_path, ingest.workdir)
+        ocr_text = stage_ocr(ingest.video_path, ingest.workdir)
+    else:
+        transcript = ""
+        (ingest.workdir / "transcript.txt").write_text(transcript, encoding="utf-8")
+        ocr_text = stage_thumbnail_ocr(ingest.thumbnail_path, ingest.workdir)
     structured = stage_structure(ingest.caption, transcript, ocr_text, ingest.workdir)
 
     base = {
@@ -650,6 +830,7 @@ def process_reel(url: str, workdir: str | Path) -> dict[str, Any]:
         "lat": None,
         "lng": None,
         "place_id": None,
+        "metadata_only": ingest.metadata_only,
     }
 
     if not structured.get("has_place"):

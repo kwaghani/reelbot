@@ -10,6 +10,7 @@ from psycopg.rows import dict_row
 load_dotenv()
 
 STALE_PROCESSING_MINUTES = int(os.getenv("JOB_RETRY_AFTER_MINUTES", "20"))
+RETRY_ERROR_AFTER_MINUTES = int(os.getenv("JOB_RETRY_ERROR_AFTER_MINUTES", "5"))
 
 
 def connect() -> psycopg.Connection:
@@ -47,6 +48,33 @@ def claim_next_job(conn: psycopg.Connection) -> dict[str, Any] | None:
             """,
             (STALE_PROCESSING_MINUTES,),
         ).fetchone()
+
+
+def requeue_retryable_ingest_errors(conn: psycopg.Connection, limit: int = 5) -> int:
+    rows = conn.execute(
+        """
+        update jobs
+           set status = 'queued',
+               reply = 'Retrying with metadata fallback...',
+               updated_at = now()
+         where id in (
+           select id
+             from jobs
+            where type = 'ingest'
+              and status = 'error'
+              and reply ilike 'Could not process this reel during ingest:%'
+              and reply not ilike '%Metadata fallback was tried%'
+              and created_at >= now() - interval '3 days'
+              and updated_at < now() - (%s * interval '1 minute')
+            order by updated_at asc
+            limit %s
+         )
+        returning id
+        """,
+        (RETRY_ERROR_AFTER_MINUTES, max(1, limit)),
+    ).fetchall()
+    conn.commit()
+    return len(rows)
 
 
 def mark_job_done(conn: psycopg.Connection, job_id: str, reply: str) -> None:
