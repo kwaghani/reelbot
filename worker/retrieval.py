@@ -428,7 +428,11 @@ def item_matches_location(item: dict[str, Any], location: str | None) -> bool:
 def dominant_city_from_stats(stats: list[dict[str, Any]]) -> str | None:
     scores: dict[str, tuple[int, int]] = {}
     for row in stats:
-        city = normalize_location(row.get("location_text"))
+        raw_location = str(row.get("location_text") or "")
+        if re.search(r"\d", raw_location):
+            # Street addresses ("727 Manhattan Ave, ...") are not cities.
+            continue
+        city = normalize_location(raw_location)
         if not city:
             continue
         save_count = int(row.get("save_count") or 0)
@@ -528,6 +532,19 @@ def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
                 category=slots.category,
                 cuisine_or_tags=slots.cuisine_or_tags or [],
             )
+            if items:
+                defaulted_location = None
+                retrieval_location = None
+        if not items and not slots.location:
+            # The parsed filters matched nothing the user didn't explicitly ask
+            # for; fall back to pure semantic similarity over everything saved.
+            items = search_items(
+                conn,
+                group_id=group_id,
+                embedding=question_vector,
+                limit=8,
+            )
+            items = sorted(items, key=lambda item: float(item.get("distance") or 1.0))[:3]
             if items:
                 defaulted_location = None
                 retrieval_location = None
