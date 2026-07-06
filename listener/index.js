@@ -79,7 +79,7 @@ function extractMessageText(msg) {
 }
 
 function reelUrlFromText(text) {
-  const match = text.match(/https?:\/\/(?:[\w.-]+\.)?(?:instagram\.com|tiktok\.com)\/[^\s<>"')]+/i);
+  const match = text.match(/https?:\/\/(?:[\w.-]+\.)?(?:instagram\.com|tiktok\.com|youtube\.com|youtu\.be)\/[^\s<>"')]+/i);
   return match ? match[0] : null;
 }
 

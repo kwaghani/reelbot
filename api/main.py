@@ -29,7 +29,7 @@ load_dotenv(ROOT / ".env")
 LOG = logging.getLogger("reelbot.api")
 INGEST_DRAIN_LOCK = threading.Lock()
 SUPPORTED_REEL_URL = re.compile(
-    r"^https?://(?:[\w-]+\.)?(?:instagram\.com|tiktok\.com)/[^\s<>\")']+$",
+    r"^https?://(?:[\w-]+\.)?(?:instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/[^\s<>\")']+$",
     re.IGNORECASE,
 )
 

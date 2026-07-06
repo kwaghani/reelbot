@@ -473,15 +473,19 @@ def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
                 location=retrieval_location,
             )
             if location_count == 0:
-                return RetrievalResult(
-                    text,
-                    slots,
-                    [],
-                    dominant_city=top_city,
-                    defaulted_location=defaulted_location,
-                    retrieval_location=retrieval_location,
-                    empty_reason="location_empty",
-                )
+                if defaulted_location is not None:
+                    retrieval_location = None
+                    defaulted_location = None
+                else:
+                    return RetrievalResult(
+                        text,
+                        slots,
+                        [],
+                        dominant_city=top_city,
+                        defaulted_location=defaulted_location,
+                        retrieval_location=retrieval_location,
+                        empty_reason="location_empty",
+                    )
 
         question_vector = embed(text)
         items = search_items(
@@ -493,6 +497,19 @@ def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
             category=slots.category,
             cuisine_or_tags=slots.cuisine_or_tags or [],
         )
+        if not items and defaulted_location is not None:
+            items = search_items(
+                conn,
+                group_id=group_id,
+                embedding=question_vector,
+                limit=8,
+                location=None,
+                category=slots.category,
+                cuisine_or_tags=slots.cuisine_or_tags or [],
+            )
+            if items:
+                defaulted_location = None
+                retrieval_location = None
         return RetrievalResult(
             text,
             slots,
