@@ -324,6 +324,26 @@ def query_understanding_prompt(text: str) -> str:
             },
         },
         {
+            "q": "any pasta recipes?",
+            "json": {
+                "intent": "discovery",
+                "location": None,
+                "category": None,
+                "cuisine_or_tags": ["pasta", "recipe"],
+                "target_place": None,
+            },
+        },
+        {
+            "q": "show me the workouts i saved",
+            "json": {
+                "intent": "discovery",
+                "location": None,
+                "category": None,
+                "cuisine_or_tags": ["workout"],
+                "target_place": None,
+            },
+        },
+        {
             "q": "Sugo social is in la?",
             "json": {
                 "intent": "lookup",
@@ -349,12 +369,13 @@ def query_understanding_prompt(text: str) -> str:
         f"Q: {example['q']}\nA: {json.dumps(example['json'])}" for example in examples
     )
     return f"""
-Parse this WhatsApp query for a saved-places bot.
+Parse this query for a bot that stores saved items from reels: places, recipes,
+workouts, products, memes, and more.
 Return only one JSON object with exactly these keys:
-intent: discovery, lookup, or meta
+intent: discovery, lookup, or meta. Asking for a kind of saved thing (recipes, workouts, spots) is discovery; meta is only for "what do you have/know" style overview questions.
 location: canonical city string or null. Normalize "la" to "Los Angeles" and "munbai"/"mumbai" to "Mumbai". Use null when no location is given.
-category: dining, attraction, or null. eat/food/restaurant/dinner means dining. things to do/activities/do/see/visit means attraction.
-cuisine_or_tags: optional finer filters like ["italian"].
+category: dining, attraction, or null. eat/food/restaurant/dinner means dining. things to do/activities/do/see/visit means attraction. Use null for non-place queries.
+cuisine_or_tags: optional finer filters like ["italian"] or ["pasta", "recipe"] or ["workout"].
 target_place: place name for lookup intent, otherwise null.
 
 Examples:
@@ -560,8 +581,8 @@ def compose_discovery_answer(result: RetrievalResult) -> str:
         descriptor = " ".join(bits) or "matching"
         location = result.retrieval_location
         if location:
-            return f"I don't see any saved {descriptor} places in {city_short_name(location)} yet."
-        return f"I don't see any saved {descriptor} places yet."
+            return f"I don't see anything saved for {descriptor} in {city_short_name(location)} yet."
+        return f"I don't see anything saved for {descriptor} yet."
 
     picks = result.items[:4]
     if not picks:
@@ -606,7 +627,7 @@ def compose_meta_answer(result: RetrievalResult) -> str:
 
     grouped: dict[str, dict[str, list[str]]] = {}
     for item in result.items:
-        city = city_short_name(item_city(item) or str(item.get("location_text") or "Unknown"))
+        city = city_short_name(item_city(item) or str(item.get("location_text") or "General"))
         list_name = str(item.get("list_name") or item.get("category") or "Saved places").strip()
         grouped.setdefault(city, {}).setdefault(list_name, [])
         if len(grouped[city][list_name]) < 3:

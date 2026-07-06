@@ -36,13 +36,17 @@ OCR_SAVE_CHARS = 500
 ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
 
 SYSTEM_PROMPT = (
-    "You are extracting a real-world place/activity from social content; "
+    "You are extracting structured info from shared social content (reels/TikToks/Shorts) "
+    "so it can be filed into the right folder; "
     "respond with ONLY a JSON object, no prose, no markdown fences."
 )
 
 SCHEMA_PROMPT = """
 Return exactly one JSON object with this schema:
 {
+  "has_content": bool,
+  "content_type": str|null,
+  "title": str|null,
   "has_place": bool,
   "place_name": str|null,
   "location_text": str|null,
@@ -52,9 +56,22 @@ Return exactly one JSON object with this schema:
   "confidence": float
 }
 
-Use has_place=false when there is no identifiable real place/activity.
+content_type is one lowercase word for what this content fundamentally is, e.g.:
+"place", "recipe", "restaurant", "workout", "product", "travel", "fashion",
+"tech", "music", "movie", "book", "diy", "meme", "advice", "other".
+title is a short natural name for the saved item (e.g. the dish for a recipe,
+the place name for a spot, the product name for a product, a short description
+for a funny clip). Always set a title when has_content=true.
+Use has_place=true ONLY when the content is about one identifiable real-world
+place/venue that could be looked up on a map; then also set place_name.
+category is a short human label used for grouping, e.g. "Recipe", "Restaurant",
+"Workout", "Travel", "Gadget", "Meme".
+Almost everything is savable: if you can tell what the content is about at all
+(a funny clip, a couple moment, a fit check, a vibe), set has_content=true and
+describe it. Use has_content=false ONLY when the inputs are empty or
+unintelligible.
 price_tier must be "$", "$$", "$$$", or null.
-confidence is 0..1 and is your confidence in place_name.
+confidence is 0..1 and is your confidence in title/place_name.
 """.strip()
 
 LOG = logging.getLogger("reelbot.pipeline")
@@ -78,6 +95,7 @@ class IngestResult:
     info: dict[str, Any]
     caption: str
     metadata_only: bool
+    audio_path: Path | None = None
 
 
 def write_json(path: Path, data: Any) -> None:
@@ -421,7 +439,12 @@ def stage_ingest(url: str, workdir: Path) -> IngestResult:
 
     caption = extract_caption(metadata)
     thumbnail_path = download_thumbnail(selected_video_info or metadata, workdir)
-    if video_path is None and not caption and thumbnail_path is None:
+
+    audio_path = None
+    if video_path is None and transcription_enabled():
+        audio_path = download_audio_only(url, workdir)
+
+    if video_path is None and audio_path is None and not caption and thumbnail_path is None:
         raise StageError("ingest", "metadata-only fallback had no caption or thumbnail to inspect")
 
     (workdir / "caption.txt").write_text(caption, encoding="utf-8")
@@ -433,6 +456,7 @@ def stage_ingest(url: str, workdir: Path) -> IngestResult:
         info=metadata,
         caption=caption,
         metadata_only=metadata_only or video_path is None,
+        audio_path=audio_path,
     )
 
 
@@ -504,6 +528,33 @@ def extract_audio(video_path: Path, workdir: Path) -> Path | None:
 def transcription_enabled() -> bool:
     value = os.getenv("REELBOT_ENABLE_TRANSCRIPTION", "").strip().lower()
     return value in {"1", "true", "yes", "on"}
+
+
+def download_audio_only(url: str, workdir: Path) -> Path | None:
+    """Fetch just the audio track for transcription; cheap compared to full video."""
+    existing = sorted(workdir.glob("audiosrc.*"))
+    if existing:
+        return existing[0]
+
+    opts = ytdlp_options(url)
+    opts.update(
+        {
+            "outtmpl": str(workdir / "audiosrc.%(ext)s"),
+            "format": "ba/bestaudio/best",
+        }
+    )
+    try:
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            ydl.extract_info(url, download=True)
+    except Exception as exc:
+        LOG.warning("Audio-only download failed; continuing without transcript: %s", strip_ansi(str(exc)))
+        return None
+
+    candidates = sorted(workdir.glob("audiosrc.*"))
+    for candidate in candidates:
+        if candidate.stat().st_size > 1024:
+            return candidate
+    return None
 
 
 def get_whisper_model() -> Any:
@@ -691,12 +742,15 @@ def nullable_string(value: Any) -> str | None:
     return text
 
 
+def normalize_bool(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"true", "yes", "1"}
+    return bool(value)
+
+
 def normalize_structured(data: dict[str, Any]) -> dict[str, Any]:
-    has_place = data.get("has_place")
-    if isinstance(has_place, str):
-        has_place = has_place.strip().lower() in {"true", "yes", "1"}
-    else:
-        has_place = bool(has_place)
+    has_place = normalize_bool(data.get("has_place"))
+    has_content = normalize_bool(data.get("has_content", True)) or has_place
 
     tags = data.get("tags")
     if not isinstance(tags, list):
@@ -714,6 +768,9 @@ def normalize_structured(data: dict[str, Any]) -> dict[str, Any]:
         price_tier = None
 
     return {
+        "has_content": has_content,
+        "content_type": nullable_string(data.get("content_type")),
+        "title": nullable_string(data.get("title")),
         "has_place": has_place,
         "place_name": nullable_string(data.get("place_name")),
         "location_text": nullable_string(data.get("location_text")),
@@ -817,8 +874,11 @@ def process_reel(url: str, workdir: str | Path) -> dict[str, Any]:
         transcript = stage_transcript(ingest.video_path, ingest.workdir)
         ocr_text = stage_ocr(ingest.video_path, ingest.workdir)
     else:
-        transcript = ""
-        (ingest.workdir / "transcript.txt").write_text(transcript, encoding="utf-8")
+        if ingest.audio_path is not None:
+            transcript = stage_transcript(ingest.audio_path, ingest.workdir)
+        else:
+            transcript = ""
+            (ingest.workdir / "transcript.txt").write_text(transcript, encoding="utf-8")
         ocr_text = stage_thumbnail_ocr(ingest.thumbnail_path, ingest.workdir)
     structured = stage_structure(ingest.caption, transcript, ocr_text, ingest.workdir)
 
@@ -828,6 +888,9 @@ def process_reel(url: str, workdir: str | Path) -> dict[str, Any]:
         "caption": ingest.caption,
         "transcript": truncate(transcript, TRANSCRIPT_SAVE_CHARS),
         "ocr_text": truncate(ocr_text, OCR_SAVE_CHARS),
+        "has_content": bool(structured.get("has_content")),
+        "content_type": structured.get("content_type"),
+        "title": structured.get("title"),
         "has_place": bool(structured.get("has_place")),
         "place_name": structured.get("place_name"),
         "location_text": structured.get("location_text"),
@@ -844,7 +907,11 @@ def process_reel(url: str, workdir: str | Path) -> dict[str, Any]:
     if not structured.get("has_place"):
         return base
 
-    verification = stage_verify(structured, ingest.workdir)
+    try:
+        verification = stage_verify(structured, ingest.workdir)
+    except StageError as exc:
+        LOG.warning("Place verification failed; saving without map data: %s", exc.message)
+        return base
     base.update(
         {
             "place_name": verification.get("canonical_name") or structured.get("place_name"),

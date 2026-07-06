@@ -61,6 +61,10 @@ services:
         value: ""
       - key: REELBOT_ENABLE_VIDEO_DOWNLOAD
         value: "false"
+      # Audio-only transcription; the worker runs on the 2GB plan so Whisper fits.
+      # Deliberately not set on the API service (512MB) to avoid OOM there.
+      - key: REELBOT_ENABLE_TRANSCRIPTION
+        value: "true"
       - key: NUDGE_INTERVAL_HOURS
         value: "3"
       - key: NUDGE_COOLDOWN_DAYS

@@ -466,7 +466,13 @@ def _filter_clauses(
 
     clean_tags = [tag.strip() for tag in cuisine_or_tags or [] if tag and tag.strip()]
     if clean_tags:
-        _add_tag_clause(clauses, params, [f"%{tag}%" for tag in clean_tags])
+        patterns = [f"%{tag}%" for tag in clean_tags]
+        tag_clauses: list[str] = []
+        tag_params: list[Any] = []
+        _add_pattern_clause(tag_clauses, tag_params, ["i.category", "i.list_name", "i.place_name"], patterns)
+        _add_tag_clause(tag_clauses, tag_params, patterns)
+        clauses.append("(" + " or ".join(tag_clauses) + ")")
+        params.extend(tag_params)
 
     if not clauses:
         return "", params

@@ -61,11 +61,13 @@ def response_text(response: Any) -> str:
 def synthesize_embedding_text(item: dict[str, Any]) -> str:
     tags = item.get("tags") or []
     parts = [
-        item.get("place_name"),
+        item.get("place_name") or item.get("title"),
+        item.get("content_type"),
         item.get("category"),
         item.get("location_text"),
         item.get("price_tier"),
         " ".join(tags),
+        (item.get("caption") or "")[:300],
         (item.get("transcript") or "")[:500],
     ]
     return "\n".join(str(part) for part in parts if part)
@@ -73,10 +75,10 @@ def synthesize_embedding_text(item: dict[str, Any]) -> str:
 
 def fallback_list_name(item: dict[str, Any]) -> str:
     location = item.get("location_text")
-    category = item.get("category")
+    category = item.get("category") or item.get("content_type")
     if location and category:
         return f"{location} {category}"[:40]
-    return str(location or category or "Saved places")[:40]
+    return str(location or category or "Saved items")[:40]
 
 
 def clean_list_name(text: str) -> str:
@@ -92,11 +94,12 @@ def assign_list_name(item: dict[str, Any]) -> str:
         return fallback_list_name(item)
 
     prompt = f"""
-Name the lightweight shared list this saved place belongs in.
-Return only a short natural list name, 1 to 4 words.
-Examples: Bali, LA food, date ideas, coffee, hikes.
+Name the folder this saved item belongs in.
+Return only a short natural folder name, 1 to 4 words.
+Examples: Bali, LA food, date ideas, recipes, workouts, coffee, hikes, fits, gadgets.
 
-Place: {item.get("place_name")}
+Title: {item.get("title") or item.get("place_name")}
+Type: {item.get("content_type")}
 Location: {item.get("location_text")}
 Category: {item.get("category")}
 Tags: {", ".join(item.get("tags") or [])}
@@ -125,13 +128,17 @@ def handle_ingest(conn, job: dict[str, Any]) -> None:
     with tempfile.TemporaryDirectory(prefix="reelbot-") as workdir:
         result = process_reel(str(job["payload"]), workdir)
 
-    if not result.get("has_place"):
-        mark_job_done(conn, job["id"], "Couldn't find a place in that one 🤔")
+    if not result.get("has_content") and not result.get("has_place"):
+        mark_job_done(conn, job["id"], "Couldn't find anything to save in that one 🤔")
         return
 
-    place_id = result.get("place_id")
-    if not place_id:
-        raise RuntimeError("Verified reel did not include a place_id")
+    display_name = result.get("place_name") or result.get("title")
+    if not display_name:
+        mark_job_done(conn, job["id"], "Couldn't find anything to save in that one 🤔")
+        return
+
+    # Non-place content has no Google place_id; dedupe those by reel/URL instead.
+    place_id = result.get("place_id") or f"content_{result.get('reel_id')}"
 
     list_name = assign_list_name(result)
     embedding = embed(synthesize_embedding_text(result))
@@ -141,8 +148,8 @@ def handle_ingest(conn, job: dict[str, Any]) -> None:
         group_id=group_id,
         source_url=str(job["payload"]),
         place_id=str(place_id),
-        place_name=result.get("place_name"),
-        category=result.get("category"),
+        place_name=display_name,
+        category=result.get("category") or result.get("content_type"),
         location_text=result.get("location_text"),
         lat=result.get("lat"),
         lng=result.get("lng"),
@@ -156,7 +163,7 @@ def handle_ingest(conn, job: dict[str, Any]) -> None:
 
     final_list = item.get("list_name") or list_name
     log_event(conn, group_id, "save", str(item["id"]))
-    mark_job_done(conn, job["id"], f"Saved → {item.get('place_name') or result.get('place_name')} ({final_list})")
+    mark_job_done(conn, job["id"], f"Saved → {item.get('place_name') or display_name} ({final_list})")
 
 
 def handle_query(conn, job: dict[str, Any]) -> None:
