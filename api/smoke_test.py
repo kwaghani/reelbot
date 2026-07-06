@@ -29,6 +29,9 @@ class FakeResult:
     def fetchall(self) -> list[dict[str, Any]]:
         return self.rows
 
+    def fetchone(self) -> dict[str, Any] | None:
+        return self.rows[0] if self.rows else None
+
 
 class FakeConnection:
     def __init__(self) -> None:
@@ -45,16 +48,20 @@ class FakeConnection:
         normalized = " ".join(sql.lower().split())
         if "insert into jobs" in normalized:
             params = list(params or [])
-            self.jobs.append(
-                {
-                    "group_id": params[0],
-                    "chat_id": "app",
-                    "sender_id": params[1],
-                    "type": "ingest",
-                    "payload": params[2],
-                    "status": "queued",
-                }
-            )
+            job_type = "query" if "'query'" in normalized else "ingest"
+            job = {
+                "id": f"job-{len(self.jobs) + 1}",
+                "group_id": params[0],
+                "chat_id": "app",
+                "sender_id": params[1],
+                "type": job_type,
+                "payload": params[2],
+                "status": "queued",
+            }
+            self.jobs.append(job)
+            return FakeResult([job])
+        if "select status, reply from jobs" in normalized:
+            return FakeResult([{"status": "done", "reply": "worker answer from job queue"}])
         if "from items i" in normalized:
             return FakeResult(
                 [
@@ -141,6 +148,18 @@ def main() -> int:
     assert_response(query.status_code == 200, f"query returned {query.status_code}")
     assert_response("grounded answer" in query.json()["answer"], "query should return retrieval answer")
     assert_response(fake_conn.events[-1][1] == "query", "query should log event")
+
+    os.environ["REELBOT_API_DRAIN_JOBS"] = "false"
+    try:
+        proxied = client.post("/query", headers=headers, json={"text": "what is saved?", "user_name": "Krish"})
+        assert_response(proxied.status_code == 200, f"proxied query returned {proxied.status_code}")
+        assert_response(
+            proxied.json()["answer"] == "worker answer from job queue",
+            "proxied query should return worker job reply",
+        )
+        assert_response(fake_conn.jobs[-1]["type"] == "query", "proxied query should enqueue query job")
+    finally:
+        os.environ["REELBOT_API_DRAIN_JOBS"] = "1"
 
     items = client.get("/items", headers=headers)
     assert_response(items.status_code == 200, f"items returned {items.status_code}")

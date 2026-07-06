@@ -24,7 +24,11 @@ def vector_literal(values: list[float]) -> str:
     return "[" + ",".join(f"{float(value):.8f}" for value in values) + "]"
 
 
-def claim_next_job(conn: psycopg.Connection) -> dict[str, Any] | None:
+def claim_next_job(
+    conn: psycopg.Connection,
+    only_type: str | None = None,
+    exclude_type: str | None = None,
+) -> dict[str, Any] | None:
     with conn.transaction():
         return conn.execute(
             """
@@ -34,11 +38,15 @@ def claim_next_job(conn: psycopg.Connection) -> dict[str, Any] | None:
              where id = (
                select id
                  from jobs
-                where status = 'queued'
-                   or (
-                     status = 'processing'
-                     and updated_at < now() - (%s * interval '1 minute')
-                   )
+                where (
+                    status = 'queued'
+                    or (
+                      status = 'processing'
+                      and updated_at < now() - (%(stale)s * interval '1 minute')
+                    )
+                  )
+                  and (%(only)s::text is null or type = %(only)s)
+                  and (%(exclude)s::text is null or type <> %(exclude)s)
                 order by case when status = 'processing' then 0 else 1 end,
                          created_at
                 for update skip locked
@@ -46,7 +54,11 @@ def claim_next_job(conn: psycopg.Connection) -> dict[str, Any] | None:
              )
             returning *
             """,
-            (STALE_PROCESSING_MINUTES,),
+            {
+                "stale": STALE_PROCESSING_MINUTES,
+                "only": only_type,
+                "exclude": exclude_type,
+            },
         ).fetchone()
 
 

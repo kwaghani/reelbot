@@ -6,6 +6,7 @@ import re
 import secrets
 import sys
 import threading
+import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,17 @@ load_dotenv(ROOT / ".env")
 
 LOG = logging.getLogger("reelbot.api")
 INGEST_DRAIN_LOCK = threading.Lock()
+QUERY_WAIT_SECONDS = 30
+QUERY_POLL_SECONDS = 0.5
+
+
+def api_drain_enabled() -> bool:
+    """When true (local/single-process mode) the API answers queries and drains
+    ingest jobs itself, which loads the ML stack into this process. In
+    production a dedicated worker owns all jobs and this must be off so the
+    web service stays small enough for its instance size."""
+    value = os.getenv("REELBOT_API_DRAIN_JOBS", "1").strip().lower()
+    return value not in {"0", "false", "no", "off"}
 SUPPORTED_REEL_URL = re.compile(
     r"^https?://(?:[\w-]+\.)?(?:instagram\.com|tiktok\.com|youtube\.com|youtu\.be)/[^\s<>\")']+$",
     re.IGNORECASE,
@@ -212,7 +224,40 @@ def enqueue_ingest_job(conn: Any, *, group_id: str, url: str, user_name: str) ->
     conn.commit()
 
 
+def enqueue_query_job(conn: Any, *, group_id: str, text: str, user_name: str) -> str:
+    row = conn.execute(
+        """
+        insert into jobs (group_id, chat_id, sender_id, type, payload, status)
+        values (%s, 'app', %s, 'query', %s, 'queued')
+        returning id
+        """,
+        (group_id, user_name, text),
+    ).fetchone()
+    conn.commit()
+    return str(row["id"])
+
+
+def wait_for_job_reply(job_id: str, timeout_seconds: float = QUERY_WAIT_SECONDS) -> str | None:
+    deadline = time.monotonic() + timeout_seconds
+    with connect() as conn:
+        while time.monotonic() < deadline:
+            row = conn.execute(
+                "select status, reply from jobs where id = %s",
+                (job_id,),
+            ).fetchone()
+            conn.commit()
+            if row and row["status"] in ("done", "error"):
+                reply = (row.get("reply") or "").strip()
+                if reply:
+                    return reply
+                return None
+            time.sleep(QUERY_POLL_SECONDS)
+    return None
+
+
 def drain_queued_jobs(limit: int = 2) -> None:
+    if not api_drain_enabled():
+        return
     if not INGEST_DRAIN_LOCK.acquire(blocking=False):
         return
 
@@ -354,17 +399,31 @@ def share_reel(
 
 @app.post("/query", response_model=QueryResponse, dependencies=[Depends(require_api_key)])
 def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(settings)) -> QueryResponse:
-    from retrieval import answer_question
-
     with connect() as conn:
         ensure_test_group(conn, app_settings.test_group_id)
         upsert_app_member(conn, app_settings.test_group_id, body.user_name)
 
-    answer = answer_question(app_settings.test_group_id, body.text)
+    if api_drain_enabled():
+        # Single-process mode: answer in this process (loads the ML stack).
+        from retrieval import answer_question
 
+        answer = answer_question(app_settings.test_group_id, body.text)
+        with connect() as conn:
+            log_event(conn, app_settings.test_group_id, "query", f"app:{body.user_name}:{body.text[:160]}")
+        return QueryResponse(answer=answer)
+
+    # Production mode: the dedicated worker owns the ML stack; hand it the
+    # question as a job and wait for the reply (the worker logs the event).
     with connect() as conn:
-        log_event(conn, app_settings.test_group_id, "query", f"app:{body.user_name}:{body.text[:160]}")
-
+        job_id = enqueue_query_job(
+            conn,
+            group_id=app_settings.test_group_id,
+            text=body.text,
+            user_name=body.user_name,
+        )
+    answer = wait_for_job_reply(job_id)
+    if answer is None:
+        answer = "Still working on that one — ask me again in a few seconds."
     return QueryResponse(answer=answer)
 
 

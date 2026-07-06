@@ -24,6 +24,10 @@ services:
         value: ""
       - key: REELBOT_ENABLE_VIDEO_DOWNLOAD
         value: "false"
+      # The dedicated worker owns all ML (embeddings, whisper, ingest); the
+      # API must never load them or it exceeds the starter instance memory.
+      - key: REELBOT_API_DRAIN_JOBS
+        value: "false"
       - key: NUDGE_INTERVAL_HOURS
         value: "3"
       - key: NUDGE_COOLDOWN_DAYS

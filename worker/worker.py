@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import Any
@@ -187,16 +188,20 @@ def handle_job(conn, job: dict[str, Any]) -> None:
         raise RuntimeError(f"Unknown job type: {job_type}")
 
 
-def main() -> int:
-    load_dotenv(ROOT / ".env")
-    LOG.info("Starting worker")
-
+def job_loop(
+    *,
+    only_type: str | None = None,
+    exclude_type: str | None = None,
+    poll_seconds: float = POLL_SECONDS,
+    requeue_errors: bool = False,
+) -> None:
     with connect() as conn:
         while True:
-            requeue_retryable_ingest_errors(conn)
-            job = claim_next_job(conn)
+            if requeue_errors:
+                requeue_retryable_ingest_errors(conn)
+            job = claim_next_job(conn, only_type=only_type, exclude_type=exclude_type)
             if job is None:
-                time.sleep(POLL_SECONDS)
+                time.sleep(poll_seconds)
                 continue
 
             try:
@@ -209,6 +214,24 @@ def main() -> int:
                     log_event(conn, job.get("group_id"), "error", f"{type(exc).__name__}: {exc}")
                 except Exception:
                     LOG.exception("Could not record failure for job %s", job.get("id"))
+
+
+def main() -> int:
+    load_dotenv(ROOT / ".env")
+    LOG.info("Starting worker")
+
+    # Queries get their own thread so a slow ingest (audio download +
+    # transcription) never blocks an interactive answer.
+    query_thread = threading.Thread(
+        target=job_loop,
+        kwargs={"only_type": "query", "poll_seconds": 0.5},
+        daemon=True,
+        name="query-jobs",
+    )
+    query_thread.start()
+
+    job_loop(exclude_type="query", requeue_errors=True)
+    return 0
 
 
 if __name__ == "__main__":
