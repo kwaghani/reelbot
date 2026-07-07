@@ -92,9 +92,23 @@ class ShareRequest(BaseModel):
         return value
 
 
+class ChatTurn(BaseModel):
+    role: str
+    text: str = Field(min_length=1, max_length=1500)
+
+    @field_validator("role")
+    @classmethod
+    def valid_role(cls, value: str) -> str:
+        value = value.strip().lower()
+        if value not in {"user", "assistant"}:
+            raise ValueError("role must be user or assistant")
+        return value
+
+
 class QueryRequest(BaseModel):
     text: str = Field(min_length=1, max_length=1000)
     user_name: str = Field(min_length=1, max_length=120)
+    history: list[ChatTurn] = Field(default_factory=list, max_length=16)
 
     @field_validator("text", "user_name")
     @classmethod
@@ -232,14 +246,24 @@ def enqueue_ingest_job(conn: Any, *, group_id: str, url: str, user_name: str) ->
     conn.commit()
 
 
-def enqueue_query_job(conn: Any, *, group_id: str, text: str, user_name: str) -> str:
+def enqueue_query_job(
+    conn: Any,
+    *,
+    group_id: str,
+    text: str,
+    user_name: str,
+    history: list[dict[str, str]] | None = None,
+) -> str:
+    import json
+
+    payload = json.dumps({"text": text, "history": history or []}, ensure_ascii=False) if history else text
     row = conn.execute(
         """
         insert into jobs (group_id, chat_id, sender_id, type, payload, status)
         values (%s, 'app', %s, 'query', %s, 'queued')
         returning id
         """,
-        (group_id, user_name, text),
+        (group_id, user_name, payload),
     ).fetchone()
     conn.commit()
     return str(row["id"])
@@ -437,11 +461,13 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
         ensure_test_group(conn, app_settings.test_group_id)
         upsert_app_member(conn, app_settings.test_group_id, body.user_name)
 
+    history = [turn.model_dump() for turn in body.history]
+
     if api_drain_enabled():
         # Single-process mode: answer in this process (loads the ML stack).
         from retrieval import answer_question_structured
 
-        structured = answer_question_structured(app_settings.test_group_id, body.text)
+        structured = answer_question_structured(app_settings.test_group_id, body.text, history=history)
         with connect() as conn:
             log_event(conn, app_settings.test_group_id, "query", f"app:{body.user_name}:{body.text[:160]}")
         return QueryResponse(**structured)
@@ -454,6 +480,7 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
             group_id=app_settings.test_group_id,
             text=body.text,
             user_name=body.user_name,
+            history=history,
         )
     reply = wait_for_job_reply(job_id)
     if reply is None:

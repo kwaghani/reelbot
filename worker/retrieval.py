@@ -232,6 +232,8 @@ def extract_location_from_text(text: str) -> str | None:
         return None
     hint = re.sub(r"\b(?:today|tomorrow|tonight|this|weekend|please)\b", "", match.group(1), flags=re.I)
     hint = re.sub(r"[?!.]+$", "", hint).strip(" ,.'-")
+    if re.search(r"\b(save|saved|reel|reels|library|folder|folders|list|group|collection)\b", hint, flags=re.I):
+        return None
     return normalize_location(hint[:40])
 
 
@@ -672,7 +674,7 @@ def compose_meta_answer(result: RetrievalResult) -> str:
 
 def compose_answer(result: RetrievalResult) -> str:
     if result.empty_reason == "no_group_items":
-        return "No saved places yet for this group."
+        return "Nothing saved yet! Share a reel and I'll start filing things away."
 
     if result.slots.intent == "meta":
         return compose_meta_answer(result)
@@ -683,6 +685,99 @@ def compose_answer(result: RetrievalResult) -> str:
 
 MAX_LLM_ANSWER_CHARS = 1200
 MAX_SOURCES = 4
+
+PERSONA = (
+    "You are ReelBot, the group's friend who remembers every reel they've saved. "
+    "You text like a real person: casual, warm, brief, contractions, no corporate "
+    "phrasing. Never mention being an AI, assistant, bot, or model. Never promise "
+    "future actions (no 'I'll keep an eye out'). Plain text, no markdown."
+)
+
+GREETING_RE = re.compile(
+    r"^\s*(hi+|hello+|hey+|yo|sup|what'?s up|good (morning|afternoon|evening)|"
+    r"thanks?( you| u)?|ty|thx|ok(ay)?|cool|nice|lol|haha+)\s*[!.?]*\s*$",
+    re.IGNORECASE,
+)
+
+
+def history_block(history: list[dict[str, Any]] | None) -> str:
+    if not history:
+        return ""
+    lines: list[str] = []
+    for turn in history[-10:]:
+        role = "Them" if str(turn.get("role")) == "user" else "You"
+        text = re.sub(r"\s+", " ", str(turn.get("text") or "")).strip()[:400]
+        if text:
+            lines.append(f"{role}: {text}")
+    return "\n".join(lines)
+
+
+def folder_overview(group_id: str) -> list[str]:
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            select coalesce(list_name, 'Other') as folder, count(*) as count
+              from items
+             where group_id = %s
+             group by 1
+             order by count(*) desc
+             limit 6
+            """,
+            (group_id,),
+        ).fetchall()
+    return [f"{row['folder']} ({row['count']})" for row in rows]
+
+
+def route_message(
+    text: str,
+    history: list[dict[str, Any]] | None,
+    folders: list[str],
+) -> dict[str, Any] | None:
+    """Decide chat vs library search; for searches, rewrite follow-ups into a
+    self-contained question. Returns None when the LLM is unavailable."""
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return None
+
+    prompt = f"""
+{PERSONA}
+
+Their saved folders: {", ".join(folders) or "nothing saved yet"}
+
+Conversation so far:
+{history_block(history) or "(new conversation)"}
+
+They just sent: {text}
+
+Return ONLY JSON: {{"mode": "chat"|"search", "reply": str|null, "question": str|null}}
+
+Use "search" whenever they want anything from their saved reels — recommendations,
+recipes, workouts, places, plans, or follow-ups like "what about Munich?", "which
+one is cheapest?", "give me the second one". Set question to a fully self-contained
+version of what they're asking, resolving pronouns and references from the
+conversation. Write it as a plain topic query ("best pizza spots in Manhattan"),
+never mentioning saves, reels, folders, or the library. Leave reply null.
+
+Use "chat" only for greetings, thanks, or chit-chat with nothing to look up. Write
+reply yourself: 1-2 short sentences, like texting a friend, optionally nudging
+toward what they could ask given their folders. Leave question null.
+""".strip()
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model=ANTHROPIC_MODEL,
+            max_tokens=250,
+            temperature=0.4,
+            system="Return JSON only. No markdown, no prose.",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        parsed = extract_json_object(response_text(response))
+        if parsed and parsed.get("mode") in {"chat", "search"}:
+            return parsed
+    except Exception:
+        pass
+    return None
 
 
 def item_context_block(index: int, item: dict[str, Any]) -> str:
@@ -708,32 +803,41 @@ def item_context_block(index: int, item: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def compose_llm_answer(result: RetrievalResult) -> str | None:
+def compose_llm_answer(
+    result: RetrievalResult,
+    history: list[dict[str, Any]] | None = None,
+    user_message: str | None = None,
+) -> str | None:
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key or not result.items:
         return None
 
     picks = result.items[:MAX_SOURCES]
     context = "\n".join(item_context_block(i + 1, item) for i, item in enumerate(picks))
+    conversation = history_block(history)
     prompt = f"""
-You are the group's saved-reels assistant. Below are the saved items most
-relevant to the question, with everything known about them.
+{PERSONA}
 
-Write the answer the way a knowledgeable friend would:
+Below are the group's saved items most relevant to what they're asking, with
+everything known about them.
+
+{"Conversation so far:" + chr(10) + conversation + chr(10) if conversation else ""}
+They just asked: {user_message or result.question}
+(what to look up: {result.question})
+
+Reply the way a knowledgeable friend texts back:
 - Lead with the substance immediately ("A good chest workout from your saves:
-  incline press, ..."), never with meta-talk like "I found a saved item
-  titled..." or "the content doesn't include...".
+  incline press, ..."), never meta-talk like "I found a saved item titled...".
 - Pull concrete details out of the content field: exercises, ingredients,
   steps, dishes, prices, neighborhoods, vibes.
 - For broad asks (a trip, a day out, a holiday), organize across items:
   food spots together, activities together, one short line each.
-- Use short lines or a compact list, not long paragraphs.
+- Short lines or a compact list, not long paragraphs.
 - Only use facts from the items; never invent details. If an item's content
   is thin, give what is known in one clause and move on — no apologizing.
-- Under 130 words, plain text, no markdown headers, no URLs, no bracketed
-  citations (tappable sources are shown separately below your answer).
-
-Question: {result.question}
+- If this is a follow-up, answer just the follow-up; don't repeat everything.
+- Under 130 words, plain text, no URLs, no bracketed citations (tappable
+  sources are shown separately below your reply).
 
 Saved items:
 {context}
@@ -744,7 +848,7 @@ Saved items:
         response = client.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=400,
-            temperature=0,
+            temperature=0.3,
             messages=[{"role": "user", "content": prompt}],
         )
         answer = response_text(response).strip()
@@ -768,8 +872,25 @@ def answer_sources(result: RetrievalResult) -> list[dict[str, str]]:
     return sources
 
 
-def answer_question_structured(group_id: str, text: str) -> dict[str, Any]:
-    result = retrieve_for_query(group_id, text)
+def answer_question_structured(
+    group_id: str,
+    text: str,
+    history: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    folders = folder_overview(group_id)
+    routed = route_message(text, history, folders)
+
+    if routed and routed.get("mode") == "chat" and str(routed.get("reply") or "").strip():
+        return {"answer": compact_answer(str(routed["reply"]).strip()), "sources": []}
+
+    if routed is None and GREETING_RE.match(text):
+        return {
+            "answer": "Hey! Ask me about anything you've saved — food spots, recipes, workouts, you name it.",
+            "sources": [],
+        }
+
+    question = str((routed or {}).get("question") or "").strip() or text
+    result = retrieve_for_query(group_id, question)
 
     if result.empty_reason or not result.items:
         return {"answer": compose_answer(result), "sources": []}
@@ -777,7 +898,9 @@ def answer_question_structured(group_id: str, text: str) -> dict[str, Any]:
     if result.slots.intent == "meta":
         return {"answer": compose_meta_answer(result), "sources": []}
 
-    answer = compose_llm_answer(result) or compact_answer(compose_answer(result))
+    answer = compose_llm_answer(result, history=history, user_message=text) or compact_answer(
+        compose_answer(result)
+    )
     return {"answer": answer, "sources": answer_sources(result)}
 
 

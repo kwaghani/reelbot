@@ -244,7 +244,22 @@ def handle_query(conn, job: dict[str, Any]) -> None:
     if not group_id:
         raise RuntimeError("Query job is missing group_id")
 
-    structured = answer_question_structured(group_id, str(job["payload"]))
+    # App queries carry a JSON payload {text, history}; WhatsApp sends plain text.
+    payload = str(job["payload"])
+    text = payload
+    history = None
+    if payload.startswith("{"):
+        try:
+            parsed = json.loads(payload)
+            if isinstance(parsed, dict) and parsed.get("text"):
+                text = str(parsed["text"])
+                raw_history = parsed.get("history")
+                if isinstance(raw_history, list):
+                    history = [turn for turn in raw_history if isinstance(turn, dict)]
+        except Exception:
+            pass
+
+    structured = answer_question_structured(group_id, text, history=history)
     if str(job.get("chat_id") or "") == "app":
         # The API decodes this envelope into {answer, sources} for the app.
         reply = json.dumps(structured, ensure_ascii=False)

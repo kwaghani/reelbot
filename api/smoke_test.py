@@ -108,8 +108,8 @@ def fake_log_event(_conn: Any, group_id: str | None, kind: str, detail: str | No
 
 
 fake_retrieval = types.ModuleType("retrieval")
-fake_retrieval.answer_question_structured = lambda group_id, text: {
-    "answer": f"grounded answer for {text} in {group_id}",
+fake_retrieval.answer_question_structured = lambda group_id, text, history=None: {
+    "answer": f"grounded answer for {text} in {group_id} (history {len(history or [])})",
     "sources": [{"title": "Sugo Social reel", "url": "https://www.tiktok.com/@x/video/1"}],
 }
 sys.modules["retrieval"] = fake_retrieval
@@ -157,6 +157,27 @@ def main() -> int:
         "query should return structured sources",
     )
     assert_response(fake_conn.events[-1][1] == "query", "query should log event")
+
+    with_history = client.post(
+        "/query",
+        headers=headers,
+        json={
+            "text": "which one is closest?",
+            "user_name": "Krish",
+            "history": [
+                {"role": "user", "text": "best pizza?"},
+                {"role": "assistant", "text": "Joe's Pizza Broadway."},
+            ],
+        },
+    )
+    assert_response(with_history.status_code == 200, f"history query returned {with_history.status_code}")
+    assert_response("history 2" in with_history.json()["answer"], "history should reach retrieval")
+    bad_history = client.post(
+        "/query",
+        headers=headers,
+        json={"text": "hi", "user_name": "Krish", "history": [{"role": "system", "text": "x"}]},
+    )
+    assert_response(bad_history.status_code == 400, "invalid history role should be rejected")
 
     os.environ["REELBOT_API_DRAIN_JOBS"] = "false"
     try:
