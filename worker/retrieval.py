@@ -671,5 +671,107 @@ def compose_answer(result: RetrievalResult) -> str:
     return compose_discovery_answer(result)
 
 
+MAX_LLM_ANSWER_CHARS = 1200
+MAX_SOURCES = 4
+
+
+def item_context_block(index: int, item: dict[str, Any]) -> str:
+    lines = [f"[{index}] {place_label(item)}"]
+    for label, key in [
+        ("folder", "list_name"),
+        ("category", "category"),
+        ("location", "location_text"),
+        ("price", "price_tier"),
+    ]:
+        value = str(item.get(key) or "").strip()
+        if value:
+            lines.append(f"  {label}: {value}")
+    tags = item.get("tags") or []
+    if tags:
+        lines.append(f"  tags: {', '.join(str(tag) for tag in tags[:8])}")
+    content = re.sub(r"\s+", " ", str(item.get("transcript") or "")).strip()
+    if content:
+        lines.append(f"  content: {content[:400]}")
+    save_count = int(item.get("save_count") or 0)
+    if save_count > 1:
+        lines.append(f"  saved by {save_count} people")
+    return "\n".join(lines)
+
+
+def compose_llm_answer(result: RetrievalResult) -> str | None:
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key or not result.items:
+        return None
+
+    picks = result.items[:MAX_SOURCES]
+    context = "\n".join(item_context_block(i + 1, item) for i, item in enumerate(picks))
+    prompt = f"""
+You answer questions for a group's saved-reels library. Below are the saved
+items most relevant to the question, with everything known about them.
+
+Answer the question directly and usefully with the concrete information from
+these items (dishes, steps, spots, prices, vibes) — don't just tell the user
+which reel to watch. Only use facts from the items; never invent details. If
+the items only partially answer, say what is known. Keep it under 120 words,
+plain text, no markdown, no URLs. Do not add bracketed citations; sources are
+shown separately.
+
+Question: {result.question}
+
+Saved items:
+{context}
+""".strip()
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model=ANTHROPIC_MODEL,
+            max_tokens=400,
+            temperature=0,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        answer = response_text(response).strip()
+    except Exception:
+        return None
+
+    if not answer:
+        return None
+    return answer[:MAX_LLM_ANSWER_CHARS]
+
+
+def answer_sources(result: RetrievalResult) -> list[dict[str, str]]:
+    sources: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for item in result.items[:MAX_SOURCES]:
+        url = str(item.get("source_url") or "").strip()
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        sources.append({"title": place_label(item), "url": url})
+    return sources
+
+
+def answer_question_structured(group_id: str, text: str) -> dict[str, Any]:
+    result = retrieve_for_query(group_id, text)
+
+    if result.empty_reason or not result.items:
+        return {"answer": compose_answer(result), "sources": []}
+
+    if result.slots.intent == "meta":
+        return {"answer": compose_meta_answer(result), "sources": []}
+
+    answer = compose_llm_answer(result) or compact_answer(compose_answer(result))
+    return {"answer": answer, "sources": answer_sources(result)}
+
+
+def plain_answer_with_sources(structured: dict[str, Any]) -> str:
+    answer = str(structured.get("answer") or "").strip()
+    sources = structured.get("sources") or []
+    if not sources:
+        return answer
+    lines = [f"• {source['title']}: {source['url']}" for source in sources]
+    return answer + "\n\nSources:\n" + "\n".join(lines)
+
+
 def answer_question(group_id: str, text: str) -> str:
-    return compact_answer(compose_answer(retrieve_for_query(group_id, text)))
+    return plain_answer_with_sources(answer_question_structured(group_id, text))

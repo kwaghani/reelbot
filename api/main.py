@@ -109,8 +109,14 @@ class ShareResponse(BaseModel):
     status: str
 
 
+class QuerySource(BaseModel):
+    title: str
+    url: str
+
+
 class QueryResponse(BaseModel):
     answer: str
+    sources: list[QuerySource] = []
 
 
 class ItemResponse(BaseModel):
@@ -253,6 +259,28 @@ def wait_for_job_reply(job_id: str, timeout_seconds: float = QUERY_WAIT_SECONDS)
                 return None
             time.sleep(QUERY_POLL_SECONDS)
     return None
+
+
+def decode_query_reply(reply: str) -> QueryResponse:
+    """Query jobs from the app carry a JSON envelope {answer, sources}; older
+    replies and error messages are plain text."""
+    if reply.startswith("{"):
+        try:
+            import json
+
+            parsed = json.loads(reply)
+            if isinstance(parsed, dict) and parsed.get("answer"):
+                return QueryResponse(
+                    answer=str(parsed["answer"]),
+                    sources=[
+                        QuerySource(title=str(s.get("title") or "Source"), url=str(s["url"]))
+                        for s in parsed.get("sources") or []
+                        if isinstance(s, dict) and s.get("url")
+                    ],
+                )
+        except Exception:
+            LOG.warning("Could not decode query reply envelope; returning raw text")
+    return QueryResponse(answer=reply)
 
 
 def drain_queued_jobs(limit: int = 2) -> None:
@@ -405,12 +433,12 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
 
     if api_drain_enabled():
         # Single-process mode: answer in this process (loads the ML stack).
-        from retrieval import answer_question
+        from retrieval import answer_question_structured
 
-        answer = answer_question(app_settings.test_group_id, body.text)
+        structured = answer_question_structured(app_settings.test_group_id, body.text)
         with connect() as conn:
             log_event(conn, app_settings.test_group_id, "query", f"app:{body.user_name}:{body.text[:160]}")
-        return QueryResponse(answer=answer)
+        return QueryResponse(**structured)
 
     # Production mode: the dedicated worker owns the ML stack; hand it the
     # question as a job and wait for the reply (the worker logs the event).
@@ -421,10 +449,10 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
             text=body.text,
             user_name=body.user_name,
         )
-    answer = wait_for_job_reply(job_id)
-    if answer is None:
-        answer = "Still working on that one — ask me again in a few seconds."
-    return QueryResponse(answer=answer)
+    reply = wait_for_job_reply(job_id)
+    if reply is None:
+        return QueryResponse(answer="Still working on that one — ask me again in a few seconds.")
+    return decode_query_reply(reply)
 
 
 @app.get("/items", response_model=list[ItemResponse], dependencies=[Depends(require_api_key)])

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -25,7 +26,7 @@ from db import (
 )
 from embed import embed
 from pipeline import StageError, process_reel
-from retrieval import answer_question
+from retrieval import answer_question_structured, plain_answer_with_sources
 
 ROOT = Path(__file__).resolve().parents[1]
 ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
@@ -141,6 +142,14 @@ def handle_ingest(conn, job: dict[str, Any]) -> None:
     # Non-place content has no Google place_id; dedupe those by reel/URL instead.
     place_id = result.get("place_id") or f"content_{result.get('reel_id')}"
 
+    # Keep the caption with the transcript: for metadata-only ingests the
+    # caption is usually where the actual information lives.
+    content_text = "\n".join(
+        part.strip()
+        for part in [result.get("caption"), result.get("transcript")]
+        if part and str(part).strip()
+    )[:900]
+
     list_name = assign_list_name(result)
     embedding = embed(synthesize_embedding_text(result))
     member = get_or_create_member(conn, group_id, str(job["sender_id"]))
@@ -157,7 +166,7 @@ def handle_ingest(conn, job: dict[str, Any]) -> None:
         price_tier=result.get("price_tier"),
         tags=result.get("tags") or [],
         list_name=list_name,
-        transcript=result.get("transcript"),
+        transcript=content_text or None,
         embedding=embedding,
     )
     add_item_save(conn, item["id"], member["id"])
@@ -172,9 +181,14 @@ def handle_query(conn, job: dict[str, Any]) -> None:
     if not group_id:
         raise RuntimeError("Query job is missing group_id")
 
-    answer = answer_question(group_id, str(job["payload"]))
+    structured = answer_question_structured(group_id, str(job["payload"]))
+    if str(job.get("chat_id") or "") == "app":
+        # The API decodes this envelope into {answer, sources} for the app.
+        reply = json.dumps(structured, ensure_ascii=False)
+    else:
+        reply = plain_answer_with_sources(structured)
     log_event(conn, group_id, "query", str(job["id"]))
-    mark_job_done(conn, job["id"], answer)
+    mark_job_done(conn, job["id"], reply)
 
 
 def handle_job(conn, job: dict[str, Any]) -> None:

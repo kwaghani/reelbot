@@ -106,7 +106,10 @@ def fake_log_event(_conn: Any, group_id: str | None, kind: str, detail: str | No
 
 
 fake_retrieval = types.ModuleType("retrieval")
-fake_retrieval.answer_question = lambda group_id, text: f"grounded answer for {text} in {group_id}"
+fake_retrieval.answer_question_structured = lambda group_id, text: {
+    "answer": f"grounded answer for {text} in {group_id}",
+    "sources": [{"title": "Sugo Social reel", "url": "https://www.tiktok.com/@x/video/1"}],
+}
 sys.modules["retrieval"] = fake_retrieval
 
 api_main.load_settings.cache_clear()
@@ -147,6 +150,10 @@ def main() -> int:
     query = client.post("/query", headers=headers, json={"text": "what is saved?", "user_name": "Krish"})
     assert_response(query.status_code == 200, f"query returned {query.status_code}")
     assert_response("grounded answer" in query.json()["answer"], "query should return retrieval answer")
+    assert_response(
+        query.json()["sources"][0]["url"] == "https://www.tiktok.com/@x/video/1",
+        "query should return structured sources",
+    )
     assert_response(fake_conn.events[-1][1] == "query", "query should log event")
 
     os.environ["REELBOT_API_DRAIN_JOBS"] = "false"
