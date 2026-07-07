@@ -156,6 +156,19 @@ def extract_caption(info: dict[str, Any]) -> str:
     return description or title
 
 
+def impersonate_target() -> Any | None:
+    """TikTok's CDN 403s plain requests; impersonating a browser TLS
+    fingerprint (needs curl_cffi) makes video downloads work."""
+    try:
+        import curl_cffi  # noqa: F401
+
+        from yt_dlp.networking.impersonate import ImpersonateTarget
+
+        return ImpersonateTarget.from_str("chrome")
+    except Exception:
+        return None
+
+
 def ytdlp_options(url: str, workdir: Path | None = None) -> dict[str, Any]:
     opts: dict[str, Any] = {
         "quiet": True,
@@ -166,6 +179,9 @@ def ytdlp_options(url: str, workdir: Path | None = None) -> dict[str, Any]:
         "retries": 3,
         "fragment_retries": 3,
     }
+    target = impersonate_target()
+    if target is not None:
+        opts["impersonate"] = target
     if workdir is not None:
         opts.update(
             {
@@ -427,7 +443,10 @@ def stage_ingest(url: str, workdir: Path) -> IngestResult:
     elif selected_video_info is not None:
         LOG.info("[%s] downloading source video", reel_id)
         try:
-            download_video_info(selected_video_info, url, workdir)
+            # Extract and download in one yt-dlp session: TikTok media URLs
+            # are bound to cookies set during extraction, so a fresh session
+            # replaying previously-extracted format URLs gets 403s.
+            ytdlp_extract(url, download=True, workdir=workdir)
             video_path = find_video_file(workdir)
             if video_path is None:
                 raise StageError("ingest", "yt-dlp completed but no source video was found")

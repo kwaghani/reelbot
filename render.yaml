@@ -63,10 +63,11 @@ services:
         sync: false
       - key: IG_COOKIES_PATH
         value: ""
+      # Full video download for frame OCR (on-screen text like workout lists);
+      # media lives only in a temp dir per job and is deleted after extraction.
+      # Worker runs on the 2GB plan; keep this false on the 512MB API service.
       - key: REELBOT_ENABLE_VIDEO_DOWNLOAD
-        value: "false"
-      # Audio-only transcription; the worker runs on the 2GB plan so Whisper fits.
-      # Deliberately not set on the API service (512MB) to avoid OOM there.
+        value: "true"
       - key: REELBOT_ENABLE_TRANSCRIPTION
         value: "true"
       - key: NUDGE_INTERVAL_HOURS
