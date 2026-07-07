@@ -477,15 +477,18 @@ def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
             )
             preferred = next((item for item in lookup_items if item_matches_location(item, slots.location)), None)
             target_item = preferred or (lookup_items[0] if lookup_items else None)
-            return RetrievalResult(
-                text,
-                slots,
-                [target_item] if target_item else [],
-                dominant_city=top_city,
-                retrieval_location=slots.location,
-                empty_reason=None if target_item else "lookup_empty",
-                target_item=target_item,
-            )
+            if target_item:
+                return RetrievalResult(
+                    text,
+                    slots,
+                    [target_item],
+                    dominant_city=top_city,
+                    retrieval_location=slots.location,
+                    target_item=target_item,
+                )
+            # Name lookup missed (paraphrased titles etc.); fall through to
+            # semantic discovery over the full question instead of giving up.
+            slots.intent = "discovery"
 
         retrieval_location = slots.location
         defaulted_location = None
@@ -712,7 +715,9 @@ def history_block(history: list[dict[str, Any]] | None) -> str:
     return "\n".join(lines)
 
 
-def folder_overview(group_id: str) -> list[str]:
+def folder_overview(group_id: str) -> tuple[list[str], list[str]]:
+    """Top folders plus saved item names, so the router can recognize
+    questions about specific saves ("Ornella is in Munich?")."""
     with connect() as conn:
         rows = conn.execute(
             """
@@ -725,13 +730,25 @@ def folder_overview(group_id: str) -> list[str]:
             """,
             (group_id,),
         ).fetchall()
-    return [f"{row['folder']} ({row['count']})" for row in rows]
+        names = conn.execute(
+            """
+            select place_name
+              from items
+             where group_id = %s and nullif(btrim(place_name), '') is not null
+             order by created_at desc
+             limit 30
+            """,
+            (group_id,),
+        ).fetchall()
+    folders = [f"{row['folder']} ({row['count']})" for row in rows]
+    return folders, [str(row["place_name"]) for row in names]
 
 
 def route_message(
     text: str,
     history: list[dict[str, Any]] | None,
     folders: list[str],
+    item_names: list[str] | None = None,
 ) -> dict[str, Any] | None:
     """Decide chat vs library search; for searches, rewrite follow-ups into a
     self-contained question. Returns None when the LLM is unavailable."""
@@ -743,6 +760,9 @@ def route_message(
 {PERSONA}
 
 Their saved folders: {", ".join(folders) or "nothing saved yet"}
+Their saved items include: {", ".join(item_names or []) or "none"}
+If the message mentions any of those items (even loosely), it's a question
+about their saves — use search.
 
 Conversation so far:
 {history_block(history) or "(new conversation)"}
@@ -751,16 +771,19 @@ They just sent: {text}
 
 Return ONLY JSON: {{"mode": "chat"|"search", "reply": str|null, "question": str|null}}
 
-Use "search" whenever they want anything from their saved reels — recommendations,
+Use "search" whenever they ask anything about saved content — recommendations,
 recipes, workouts, places, plans, or follow-ups like "what about Munich?", "which
-one is cheapest?", "give me the second one". Set question to a fully self-contained
-version of what they're asking, resolving pronouns and references from the
-conversation. Write it as a plain topic query ("best pizza spots in Manhattan"),
-never mentioning saves, reels, folders, or the library. Leave reply null.
+one is cheapest?", "does it need equipment?". Even if the conversation seems to
+already contain the answer, still use search so the reply stays grounded and
+linked to its reels. Set question to a fully self-contained version of what
+they're asking, resolving pronouns and references from the conversation. Write it
+as a plain topic query ("best pizza spots in Manhattan"), never mentioning saves,
+reels, folders, or the library. Leave reply null.
 
-Use "chat" only for greetings, thanks, or chit-chat with nothing to look up. Write
-reply yourself: 1-2 short sentences, like texting a friend, optionally nudging
-toward what they could ask given their folders. Leave question null.
+Use "chat" ONLY for pure greetings, thanks, or chit-chat with no content question
+at all. Write reply yourself: 1-2 short sentences, like texting a friend,
+optionally nudging toward what they could ask given their folders. Leave
+question null.
 """.strip()
 
     try:
@@ -807,7 +830,7 @@ def compose_llm_answer(
     result: RetrievalResult,
     history: list[dict[str, Any]] | None = None,
     user_message: str | None = None,
-) -> str | None:
+) -> dict[str, Any] | None:
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key or not result.items:
         return None
@@ -838,6 +861,9 @@ Reply the way a knowledgeable friend texts back:
 - If this is a follow-up, answer just the follow-up; don't repeat everything.
 - Under 130 words, plain text, no URLs, no bracketed citations (tappable
   sources are shown separately below your reply).
+- After your reply, add one final line exactly like: SOURCES: 1,3
+  listing the numbers of the items your reply actually used. This line is
+  stripped before the user sees anything.
 
 Saved items:
 {context}
@@ -847,7 +873,7 @@ Saved items:
         client = anthropic.Anthropic(api_key=api_key)
         response = client.messages.create(
             model=ANTHROPIC_MODEL,
-            max_tokens=400,
+            max_tokens=450,
             temperature=0.3,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -857,13 +883,26 @@ Saved items:
 
     if not answer:
         return None
-    return answer[:MAX_LLM_ANSWER_CHARS]
+
+    used: list[int] | None = None
+    match = re.search(r"\n?\s*SOURCES:\s*([0-9,\s]*)\s*$", answer)
+    if match:
+        answer = answer[: match.start()].strip()
+        used = [int(part) for part in re.findall(r"\d+", match.group(1))]
+    if not answer:
+        return None
+    return {"answer": answer[:MAX_LLM_ANSWER_CHARS], "used": used}
 
 
-def answer_sources(result: RetrievalResult) -> list[dict[str, str]]:
+def answer_sources(result: RetrievalResult, used: list[int] | None = None) -> list[dict[str, str]]:
+    picks = result.items[:MAX_SOURCES]
+    if used:
+        chosen = [picks[index - 1] for index in used if 1 <= index <= len(picks)]
+        if chosen:
+            picks = chosen
     sources: list[dict[str, str]] = []
     seen: set[str] = set()
-    for item in result.items[:MAX_SOURCES]:
+    for item in picks:
         url = str(item.get("source_url") or "").strip()
         if not url or url in seen:
             continue
@@ -877,8 +916,8 @@ def answer_question_structured(
     text: str,
     history: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    folders = folder_overview(group_id)
-    routed = route_message(text, history, folders)
+    folders, item_names = folder_overview(group_id)
+    routed = route_message(text, history, folders, item_names)
 
     if routed and routed.get("mode") == "chat" and str(routed.get("reply") or "").strip():
         return {"answer": compact_answer(str(routed["reply"]).strip()), "sources": []}
@@ -898,10 +937,10 @@ def answer_question_structured(
     if result.slots.intent == "meta":
         return {"answer": compose_meta_answer(result), "sources": []}
 
-    answer = compose_llm_answer(result, history=history, user_message=text) or compact_answer(
-        compose_answer(result)
-    )
-    return {"answer": answer, "sources": answer_sources(result)}
+    composed = compose_llm_answer(result, history=history, user_message=text)
+    if composed:
+        return {"answer": composed["answer"], "sources": answer_sources(result, composed.get("used"))}
+    return {"answer": compact_answer(compose_answer(result)), "sources": answer_sources(result)}
 
 
 def plain_answer_with_sources(structured: dict[str, Any]) -> str:
