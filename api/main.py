@@ -124,6 +124,7 @@ class ItemResponse(BaseModel):
     category: str | None
     location_text: str | None
     list_name: str | None
+    subfolder: str | None = None
     source_url: str | None = None
     status: str = "saved"
     message: str | None = None
@@ -326,6 +327,7 @@ def saved_items(conn: Any, group_id: str) -> list[dict[str, Any]]:
                    i.category,
                    i.location_text,
                    i.list_name,
+                   i.subfolder,
                    i.source_url,
                    'saved'::text as status,
                    null::text as message,
@@ -361,6 +363,7 @@ def saved_items(conn: Any, group_id: str) -> list[dict[str, Any]]:
                    null::text as category,
                    null::text as location_text,
                    null::text as list_name,
+                   null::text as subfolder,
                    j.payload as source_url,
                    case
                      when j.status in ('queued', 'processing') then 'processing'
@@ -382,7 +385,7 @@ def saved_items(conn: Any, group_id: str) -> list[dict[str, Any]]:
                   and i.source_url = j.payload
              )
         )
-        select place_name, category, location_text, list_name, source_url, status, message,
+        select place_name, category, location_text, list_name, subfolder, source_url, status, message,
                lat, lng, price_tier, tags, save_count
           from (
             select * from saved

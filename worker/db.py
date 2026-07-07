@@ -271,6 +271,7 @@ def upsert_item(
     price_tier: str | None,
     tags: list[str],
     list_name: str | None,
+    subfolder: str | None,
     transcript: str | None,
     embedding: list[float],
 ) -> dict[str, Any]:
@@ -279,11 +280,11 @@ def upsert_item(
         """
         insert into items (
           group_id, source_url, place_id, place_name, category, location_text,
-          lat, lng, price_tier, tags, list_name, transcript, embedding
+          lat, lng, price_tier, tags, list_name, subfolder, transcript, embedding
         )
         values (
           %s, %s, %s, %s, %s, %s,
-          %s, %s, %s, %s, %s, %s, %s::vector
+          %s, %s, %s, %s, %s, %s, %s, %s::vector
         )
         on conflict (group_id, place_id) do update
             set source_url = excluded.source_url,
@@ -294,7 +295,8 @@ def upsert_item(
                 lng = excluded.lng,
                 price_tier = excluded.price_tier,
                 tags = excluded.tags,
-                list_name = coalesce(items.list_name, excluded.list_name),
+                list_name = excluded.list_name,
+                subfolder = excluded.subfolder,
                 transcript = excluded.transcript,
                 embedding = excluded.embedding
         returning *
@@ -311,6 +313,7 @@ def upsert_item(
             price_tier,
             tags,
             list_name,
+            subfolder,
             transcript,
             embedding_value,
         ),

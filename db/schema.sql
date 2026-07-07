@@ -29,6 +29,7 @@ create table if not exists items (
   price_tier text,
   tags text[],
   list_name text,
+  subfolder text,
   transcript text,
   embedding vector(384),
   created_at timestamptz default now(),
