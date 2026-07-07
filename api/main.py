@@ -120,6 +120,7 @@ class QueryResponse(BaseModel):
 
 
 class ItemResponse(BaseModel):
+    id: str | None = None
     place_name: str | None
     category: str | None
     location_text: str | None
@@ -323,7 +324,8 @@ def saved_items(conn: Any, group_id: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
         with saved as (
-            select i.place_name,
+            select i.id::text as id,
+                   i.place_name,
                    i.category,
                    i.location_text,
                    i.list_name,
@@ -359,7 +361,8 @@ def saved_items(conn: Any, group_id: str) -> list[dict[str, Any]]:
              where rn = 1
         ),
         recent_jobs as (
-            select null::text as place_name,
+            select null::text as id,
+                   null::text as place_name,
                    null::text as category,
                    null::text as location_text,
                    null::text as list_name,
@@ -385,7 +388,7 @@ def saved_items(conn: Any, group_id: str) -> list[dict[str, Any]]:
                   and i.source_url = j.payload
              )
         )
-        select place_name, category, location_text, list_name, subfolder, source_url, status, message,
+        select id, place_name, category, location_text, list_name, subfolder, source_url, status, message,
                lat, lng, price_tier, tags, save_count
           from (
             select * from saved
@@ -456,6 +459,35 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
     if reply is None:
         return QueryResponse(answer="Still working on that one — ask me again in a few seconds.")
     return decode_query_reply(reply)
+
+
+@app.delete("/items/{item_id}", dependencies=[Depends(require_api_key)])
+def delete_item(item_id: str, app_settings: Settings = Depends(settings)) -> dict[str, str]:
+    try:
+        UUID(item_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid item id") from exc
+
+    with connect() as conn:
+        conn.execute(
+            """
+            delete from item_saves
+             where item_id in (select id from items where id = %s and group_id = %s)
+            """,
+            (item_id, app_settings.test_group_id),
+        )
+        deleted = conn.execute(
+            "delete from items where id = %s and group_id = %s returning id",
+            (item_id, app_settings.test_group_id),
+        ).fetchone()
+        conn.commit()
+
+    if deleted is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
+
+    with connect() as conn:
+        log_event(conn, app_settings.test_group_id, "delete", item_id)
+    return {"status": "deleted"}
 
 
 @app.get("/items", response_model=list[ItemResponse], dependencies=[Depends(require_api_key)])

@@ -62,6 +62,8 @@ class FakeConnection:
             return FakeResult([job])
         if "select status, reply from jobs" in normalized:
             return FakeResult([{"status": "done", "reply": "worker answer from job queue"}])
+        if "delete from items" in normalized:
+            return FakeResult([{"id": "11111111-1111-1111-1111-111111111111"}])
         if "from items i" in normalized:
             return FakeResult(
                 [
@@ -173,6 +175,14 @@ def main() -> int:
     body = items.json()
     assert_response(body[0]["place_name"] == "Sugo Social", "items should include saved place")
     assert_response(body[0]["save_count"] == 2, "items should include save_count")
+
+    delete_no_key = client.delete("/items/11111111-1111-1111-1111-111111111111")
+    assert_response(delete_no_key.status_code == 401, "delete without key should be rejected")
+    bad_delete = client.delete("/items/not-a-uuid", headers=headers)
+    assert_response(bad_delete.status_code == 400, "delete with bad id should be rejected")
+    delete = client.delete("/items/11111111-1111-1111-1111-111111111111", headers=headers)
+    assert_response(delete.status_code == 200, f"delete returned {delete.status_code}")
+    assert_response(delete.json() == {"status": "deleted"}, "delete should confirm")
 
     print("API smoke test passed")
     return 0

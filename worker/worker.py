@@ -202,13 +202,13 @@ def handle_ingest(conn, job: dict[str, Any]) -> None:
     # Non-place content has no Google place_id; dedupe those by reel/URL instead.
     place_id = result.get("place_id") or f"content_{result.get('reel_id')}"
 
-    # Keep the caption with the transcript: for metadata-only ingests the
-    # caption is usually where the actual information lives.
+    # Keep the caption, transcript, and on-screen text together: answers are
+    # only as good as what gets stored here.
     content_text = "\n".join(
         part.strip()
-        for part in [result.get("caption"), result.get("transcript")]
+        for part in [result.get("caption"), result.get("transcript"), result.get("ocr_text")]
         if part and str(part).strip()
-    )[:900]
+    )[:2000]
 
     folder, subfolder = assign_folders(result)
     embedding = embed(synthesize_embedding_text(result))

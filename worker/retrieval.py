@@ -535,6 +535,16 @@ def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
             if items:
                 defaulted_location = None
                 retrieval_location = None
+        if not items and retrieval_location and (slots.category or slots.cuisine_or_tags):
+            # The category/tag guess matched nothing, but the location has
+            # saves — answer from everything saved there, ranked semantically.
+            items = search_items(
+                conn,
+                group_id=group_id,
+                embedding=question_vector,
+                limit=8,
+                location=retrieval_location,
+            )
         if not items and not slots.location:
             # The parsed filters matched nothing the user didn't explicitly ask
             # for; fall back to pure semantic similarity over everything saved.
@@ -691,7 +701,7 @@ def item_context_block(index: int, item: dict[str, Any]) -> str:
         lines.append(f"  tags: {', '.join(str(tag) for tag in tags[:8])}")
     content = re.sub(r"\s+", " ", str(item.get("transcript") or "")).strip()
     if content:
-        lines.append(f"  content: {content[:400]}")
+        lines.append(f"  content: {content[:800]}")
     save_count = int(item.get("save_count") or 0)
     if save_count > 1:
         lines.append(f"  saved by {save_count} people")
@@ -706,15 +716,22 @@ def compose_llm_answer(result: RetrievalResult) -> str | None:
     picks = result.items[:MAX_SOURCES]
     context = "\n".join(item_context_block(i + 1, item) for i, item in enumerate(picks))
     prompt = f"""
-You answer questions for a group's saved-reels library. Below are the saved
-items most relevant to the question, with everything known about them.
+You are the group's saved-reels assistant. Below are the saved items most
+relevant to the question, with everything known about them.
 
-Answer the question directly and usefully with the concrete information from
-these items (dishes, steps, spots, prices, vibes) — don't just tell the user
-which reel to watch. Only use facts from the items; never invent details. If
-the items only partially answer, say what is known. Keep it under 120 words,
-plain text, no markdown, no URLs. Do not add bracketed citations; sources are
-shown separately.
+Write the answer the way a knowledgeable friend would:
+- Lead with the substance immediately ("A good chest workout from your saves:
+  incline press, ..."), never with meta-talk like "I found a saved item
+  titled..." or "the content doesn't include...".
+- Pull concrete details out of the content field: exercises, ingredients,
+  steps, dishes, prices, neighborhoods, vibes.
+- For broad asks (a trip, a day out, a holiday), organize across items:
+  food spots together, activities together, one short line each.
+- Use short lines or a compact list, not long paragraphs.
+- Only use facts from the items; never invent details. If an item's content
+  is thin, give what is known in one clause and move on — no apologizing.
+- Under 130 words, plain text, no markdown headers, no URLs, no bracketed
+  citations (tappable sources are shown separately below your answer).
 
 Question: {result.question}
 
