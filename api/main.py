@@ -10,7 +10,7 @@ import time
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from dotenv import load_dotenv
 from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException, status
@@ -71,9 +71,23 @@ class Settings(BaseModel):
         return value
 
 
+JOIN_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+
+def clean_device_id(value: str | None) -> str | None:
+    value = (value or "").strip()
+    if not value:
+        return None
+    if not re.fullmatch(r"[A-Za-z0-9-]{8,64}", value):
+        raise ValueError("device_id is invalid")
+    return value
+
+
 class ShareRequest(BaseModel):
     url: str = Field(min_length=8, max_length=2048)
     user_name: str = Field(min_length=1, max_length=120)
+    device_id: str | None = Field(default=None, max_length=64)
+    group_id: str | None = Field(default=None, max_length=40)
 
     @field_validator("url")
     @classmethod
@@ -109,6 +123,8 @@ class QueryRequest(BaseModel):
     text: str = Field(min_length=1, max_length=1000)
     user_name: str = Field(min_length=1, max_length=120)
     history: list[ChatTurn] = Field(default_factory=list, max_length=16)
+    device_id: str | None = Field(default=None, max_length=64)
+    group_id: str | None = Field(default=None, max_length=40)
 
     @field_validator("text", "user_name")
     @classmethod
@@ -117,6 +133,42 @@ class QueryRequest(BaseModel):
         if not value:
             raise ValueError("field is required")
         return value
+
+
+class GroupCreateRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    user_name: str = Field(min_length=1, max_length=120)
+    device_id: str = Field(min_length=8, max_length=64)
+
+    @field_validator("name", "user_name")
+    @classmethod
+    def clean_group_field(cls, value: str) -> str:
+        value = re.sub(r"\s+", " ", value).strip()
+        if not value:
+            raise ValueError("field is required")
+        return value
+
+
+class GroupJoinRequest(BaseModel):
+    code: str = Field(min_length=4, max_length=12)
+    user_name: str = Field(min_length=1, max_length=120)
+    device_id: str = Field(min_length=8, max_length=64)
+
+    @field_validator("code")
+    @classmethod
+    def clean_code(cls, value: str) -> str:
+        value = re.sub(r"[\s-]+", "", value).upper()
+        if not value:
+            raise ValueError("code is required")
+        return value
+
+
+class GroupResponse(BaseModel):
+    id: str
+    name: str
+    join_code: str | None
+    member_count: int = 0
+    item_count: int = 0
 
 
 class ShareResponse(BaseModel):
@@ -211,6 +263,69 @@ async def unexpected_exception_handler(_request: Any, exc: Exception) -> JSONRes
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Server error"},
     )
+
+
+def generate_join_code(conn: Any) -> str:
+    for _ in range(20):
+        code = "".join(secrets.choice(JOIN_CODE_ALPHABET) for _ in range(6))
+        exists = conn.execute("select 1 from groups where join_code = %s", (code,)).fetchone()
+        if not exists:
+            return code
+    raise RuntimeError("Could not generate a unique join code")
+
+
+def resolve_group_id(
+    conn: Any,
+    app_settings: Settings,
+    *,
+    group_id: str | None,
+    device_id: str | None,
+    user_name: str,
+) -> str:
+    """Default to the shared test group (auto-membership, as before). Any
+    other group requires the device to be a member."""
+    if not group_id or group_id == app_settings.test_group_id:
+        ensure_test_group(conn, app_settings.test_group_id)
+        get_or_create_member(
+            conn,
+            app_settings.test_group_id,
+            wa_user_id=device_id or user_name,
+            display_name=user_name,
+        )
+        return app_settings.test_group_id
+
+    try:
+        UUID(group_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid group id") from exc
+    if not device_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this group")
+    member = conn.execute(
+        "select 1 from members where group_id = %s and wa_user_id = %s",
+        (group_id, device_id),
+    ).fetchone()
+    if member is None:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not a member of this group")
+    return group_id
+
+
+def group_response_rows(conn: Any, group_ids: list[str]) -> list[dict[str, Any]]:
+    if not group_ids:
+        return []
+    rows = conn.execute(
+        """
+        select g.id::text as id,
+               coalesce(g.name, 'Group') as name,
+               g.join_code,
+               (select count(*) from members m where m.group_id = g.id)::int as member_count,
+               (select count(*) from items i where i.group_id = g.id)::int as item_count
+          from groups g
+         where g.id = any(%s::uuid[])
+         order by g.created_at
+        """,
+        (group_ids,),
+    ).fetchall()
+    return list(rows)
 
 
 def ensure_test_group(conn: Any, group_id: str) -> None:
@@ -431,6 +546,66 @@ def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.post("/groups", response_model=GroupResponse, dependencies=[Depends(require_api_key)])
+def create_group(body: GroupCreateRequest) -> GroupResponse:
+    device_id = clean_device_id(body.device_id)
+    with connect() as conn:
+        code = generate_join_code(conn)
+        row = conn.execute(
+            """
+            insert into groups (wa_chat_id, name, join_code)
+            values (%s, %s, %s)
+            returning id::text as id
+            """,
+            (f"appgroup:{uuid4()}", body.name, code),
+        ).fetchone()
+        conn.commit()
+        get_or_create_member(conn, row["id"], wa_user_id=device_id, display_name=body.user_name)
+        log_event(conn, row["id"], "group_create", body.name)
+        groups = group_response_rows(conn, [row["id"]])
+    return GroupResponse(**groups[0])
+
+
+@app.post("/groups/join", response_model=GroupResponse, dependencies=[Depends(require_api_key)])
+def join_group(body: GroupJoinRequest) -> GroupResponse:
+    device_id = clean_device_id(body.device_id)
+    with connect() as conn:
+        row = conn.execute(
+            "select id::text as id from groups where join_code = %s",
+            (body.code,),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No group with that code")
+        get_or_create_member(conn, row["id"], wa_user_id=device_id, display_name=body.user_name)
+        log_event(conn, row["id"], "group_join", body.user_name)
+        groups = group_response_rows(conn, [row["id"]])
+    return GroupResponse(**groups[0])
+
+
+@app.get("/groups", response_model=list[GroupResponse], dependencies=[Depends(require_api_key)])
+def list_my_groups(
+    device_id: str,
+    user_name: str = "Friend",
+    app_settings: Settings = Depends(settings),
+) -> list[GroupResponse]:
+    device = clean_device_id(device_id)
+    if device is None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="device_id is required")
+    with connect() as conn:
+        # Everyone belongs to the shared default group so existing saves stay visible.
+        ensure_test_group(conn, app_settings.test_group_id)
+        get_or_create_member(conn, app_settings.test_group_id, wa_user_id=device, display_name=user_name)
+        rows = conn.execute(
+            "select group_id::text as group_id from members where wa_user_id = %s",
+            (device,),
+        ).fetchall()
+        groups = group_response_rows(conn, [row["group_id"] for row in rows])
+    for group in groups:
+        if group["id"].lower() == app_settings.test_group_id.lower() and group["name"] == "iOS test group":
+            group["name"] = "Shared Saves"
+    return [GroupResponse(**group) for group in groups]
+
+
 @app.post(
     "/share",
     status_code=status.HTTP_202_ACCEPTED,
@@ -442,12 +617,18 @@ def share_reel(
     background_tasks: BackgroundTasks,
     app_settings: Settings = Depends(settings),
 ) -> ShareResponse:
+    device_id = clean_device_id(body.device_id)
     with connect() as conn:
-        ensure_test_group(conn, app_settings.test_group_id)
-        upsert_app_member(conn, app_settings.test_group_id, body.user_name)
+        group_id = resolve_group_id(
+            conn,
+            app_settings,
+            group_id=body.group_id,
+            device_id=device_id,
+            user_name=body.user_name,
+        )
         enqueue_ingest_job(
             conn,
-            group_id=app_settings.test_group_id,
+            group_id=group_id,
             url=body.url,
             user_name=body.user_name,
         )
@@ -462,14 +643,23 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
         upsert_app_member(conn, app_settings.test_group_id, body.user_name)
 
     history = [turn.model_dump() for turn in body.history]
+    device_id = clean_device_id(body.device_id)
+    with connect() as conn:
+        group_id = resolve_group_id(
+            conn,
+            app_settings,
+            group_id=body.group_id,
+            device_id=device_id,
+            user_name=body.user_name,
+        )
 
     if api_drain_enabled():
         # Single-process mode: answer in this process (loads the ML stack).
         from retrieval import answer_question_structured
 
-        structured = answer_question_structured(app_settings.test_group_id, body.text, history=history)
+        structured = answer_question_structured(group_id, body.text, history=history)
         with connect() as conn:
-            log_event(conn, app_settings.test_group_id, "query", f"app:{body.user_name}:{body.text[:160]}")
+            log_event(conn, group_id, "query", f"app:{body.user_name}:{body.text[:160]}")
         return QueryResponse(**structured)
 
     # Production mode: the dedicated worker owns the ML stack; hand it the
@@ -477,7 +667,7 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
     with connect() as conn:
         job_id = enqueue_query_job(
             conn,
-            group_id=app_settings.test_group_id,
+            group_id=group_id,
             text=body.text,
             user_name=body.user_name,
             history=history,
@@ -489,23 +679,36 @@ def query_saved_places(body: QueryRequest, app_settings: Settings = Depends(sett
 
 
 @app.delete("/items/{item_id}", dependencies=[Depends(require_api_key)])
-def delete_item(item_id: str, app_settings: Settings = Depends(settings)) -> dict[str, str]:
+def delete_item(
+    item_id: str,
+    group_id: str | None = None,
+    device_id: str | None = None,
+    user_name: str = "Friend",
+    app_settings: Settings = Depends(settings),
+) -> dict[str, str]:
     try:
         UUID(item_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid item id") from exc
 
     with connect() as conn:
+        scope = resolve_group_id(
+            conn,
+            app_settings,
+            group_id=group_id,
+            device_id=clean_device_id(device_id),
+            user_name=user_name,
+        )
         conn.execute(
             """
             delete from item_saves
              where item_id in (select id from items where id = %s and group_id = %s)
             """,
-            (item_id, app_settings.test_group_id),
+            (item_id, scope),
         )
         deleted = conn.execute(
             "delete from items where id = %s and group_id = %s returning id",
-            (item_id, app_settings.test_group_id),
+            (item_id, scope),
         ).fetchone()
         conn.commit()
 
@@ -513,17 +716,26 @@ def delete_item(item_id: str, app_settings: Settings = Depends(settings)) -> dic
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Item not found")
 
     with connect() as conn:
-        log_event(conn, app_settings.test_group_id, "delete", item_id)
+        log_event(conn, scope, "delete", item_id)
     return {"status": "deleted"}
 
 
 @app.get("/items", response_model=list[ItemResponse], dependencies=[Depends(require_api_key)])
 def list_items(
     background_tasks: BackgroundTasks,
+    group_id: str | None = None,
+    device_id: str | None = None,
+    user_name: str = "Friend",
     app_settings: Settings = Depends(settings),
 ) -> list[ItemResponse]:
     with connect() as conn:
-        ensure_test_group(conn, app_settings.test_group_id)
-        items = [ItemResponse(**row) for row in saved_items(conn, app_settings.test_group_id)]
+        scope = resolve_group_id(
+            conn,
+            app_settings,
+            group_id=group_id,
+            device_id=clean_device_id(device_id),
+            user_name=user_name,
+        )
+        items = [ItemResponse(**row) for row in saved_items(conn, scope)]
     background_tasks.add_task(drain_queued_jobs)
     return items

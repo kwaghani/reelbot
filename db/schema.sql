@@ -5,6 +5,7 @@ create table if not exists groups (
   id uuid primary key default gen_random_uuid(),
   wa_chat_id text unique not null,
   name text,
+  join_code text unique,
   created_at timestamptz default now()
 );
 
