@@ -57,8 +57,12 @@ Return exactly one JSON object with this schema:
 }
 
 content_type is one lowercase word for what this content fundamentally is, e.g.:
-"place", "recipe", "restaurant", "workout", "product", "travel", "fashion",
-"tech", "music", "movie", "book", "diy", "meme", "advice", "other".
+"place", "recipe", "restaurant", "workout", "sports", "product", "travel",
+"fashion", "beauty", "tech", "car", "music", "movie", "gaming", "pet", "home",
+"book", "diy", "meme", "advice", "finance", "other".
+Pick the type from the SUBJECT of the content, not its tone — a funny sports
+clip is "sports", not "meme". Reserve "meme" for content whose main point is
+just to be funny.
 title is a short natural name for the saved item (e.g. the dish for a recipe,
 the place name for a spot, the product name for a product, a short description
 for a funny clip). Always set a title when has_content=true.

@@ -324,6 +324,24 @@ def upsert_item(
     return row
 
 
+def group_folders(conn: psycopg.Connection, group_id: str) -> list[dict[str, Any]]:
+    """Existing top-level folders in a group with their subfolders, so new
+    saves can reuse them instead of spawning near-duplicate folders."""
+    rows = conn.execute(
+        """
+        select coalesce(nullif(btrim(list_name), ''), 'Other') as folder,
+               count(*) as item_count,
+               array_remove(array_agg(distinct nullif(btrim(subfolder), '')), null) as subfolders
+          from items
+         where group_id = %s
+         group by 1
+         order by count(*) desc, folder
+        """,
+        (group_id,),
+    ).fetchall()
+    return list(rows)
+
+
 def add_item_save(conn: psycopg.Connection, item_id: str, member_id: str) -> None:
     conn.execute(
         """

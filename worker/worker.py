@@ -18,6 +18,7 @@ from db import (
     claim_next_job,
     connect,
     get_or_create_member,
+    group_folders,
     log_event,
     mark_job_done,
     mark_job_error,
@@ -75,17 +76,31 @@ def synthesize_embedding_text(item: dict[str, Any]) -> str:
     return "\n".join(str(part) for part in parts if part)
 
 
+# Broad, durable buckets. These are examples of the right altitude, not a
+# closed list — the model is free to create an equally-broad new folder
+# (e.g. "Gardening") when a save genuinely fits none of these.
 TOP_FOLDERS = [
     "Restaurants",
     "Cafes & Desserts",
     "Bars & Nightlife",
     "Recipes",
     "Workouts",
+    "Sports",
     "Travel",
     "Things To Do",
+    "Outdoors",
     "Shopping",
     "Fashion",
+    "Beauty",
+    "Home & Decor",
     "Tech",
+    "Cars",
+    "Entertainment",
+    "Music",
+    "Gaming",
+    "Pets & Animals",
+    "Learning",
+    "Finance",
     "Humor",
     "Ideas",
     "Other",
@@ -119,10 +134,22 @@ def fallback_folders(item: dict[str, Any]) -> tuple[str, str | None]:
         "restaurant": "Restaurants",
         "recipe": "Recipes",
         "workout": "Workouts",
+        "sport": "Sports",
+        "sports": "Sports",
         "travel": "Travel",
         "fashion": "Fashion",
+        "beauty": "Beauty",
         "product": "Shopping",
         "tech": "Tech",
+        "car": "Cars",
+        "music": "Music",
+        "movie": "Entertainment",
+        "gaming": "Gaming",
+        "game": "Gaming",
+        "pet": "Pets & Animals",
+        "animal": "Pets & Animals",
+        "advice": "Learning",
+        "finance": "Finance",
         "meme": "Humor",
     }
     folder = mapping.get(content_type, str(item.get("category") or "Other").title()[:32])
@@ -131,34 +158,72 @@ def fallback_folders(item: dict[str, Any]) -> tuple[str, str | None]:
     return folder or "Other", subfolder or None
 
 
-def assign_folders(item: dict[str, Any]) -> tuple[str, str | None]:
-    """Pick a broad top-level folder and an optional narrower subfolder."""
+def match_existing_folder(name: str, existing: list[str]) -> str:
+    """Snap to an existing folder that only differs by case/spacing/punctuation
+    so we don't spawn 'Sports' next to 'sports'."""
+    normalized = re.sub(r"[^a-z0-9]", "", name.lower())
+    for candidate in existing:
+        if re.sub(r"[^a-z0-9]", "", candidate.lower()) == normalized:
+            return candidate
+    return name
+
+
+def assign_folders(
+    item: dict[str, Any],
+    existing_folders: list[dict[str, Any]] | None = None,
+) -> tuple[str, str | None]:
+    """Pick a broad top-level folder and an optional narrower subfolder,
+    reusing the group's existing folders when the save fits one."""
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
         return fallback_folders(item)
+
+    existing_folders = existing_folders or []
+    existing_names = [str(row.get("folder")) for row in existing_folders if row.get("folder")]
+    if existing_names:
+        existing_lines = "\n".join(
+            f"- {row['folder']}"
+            + (f" (has: {', '.join(str(s) for s in row.get('subfolders') or [])})" if row.get("subfolders") else "")
+            for row in existing_folders
+        )
+        existing_block = (
+            "This group already uses these folders. Reuse the one that fits so "
+            "related saves stay together:\n" + existing_lines + "\n\n"
+        )
+    else:
+        existing_block = ""
 
     prompt = f"""
 File this saved item into a two-level folder structure.
 Return ONLY a JSON object: {{"folder": str, "subfolder": str|null}}
 
-folder is the BROAD top-level bucket. Prefer one of:
-{", ".join(TOP_FOLDERS)}
-Only invent a new folder when none fit, and keep it just as broad
-(1-2 plural words). Never put a city, dish, or other specifics in folder.
+{existing_block}folder is the BROAD topic bucket — what KIND of thing this is
+(e.g. a football highlight is Sports; a cooking video is Recipes; a funny
+skit is Humor). Common buckets: {", ".join(TOP_FOLDERS)}.
+Rules for folder:
+- If one of the group's existing folders fits, reuse its exact name.
+- Otherwise pick the best matching common bucket above.
+- If NOTHING above genuinely fits, CREATE a new broad folder named for the
+  topic (1-2 words, plural, e.g. "Sports", "Gardening", "Concerts"). A weak
+  fit like dumping everything into Humor or Other is wrong — prefer a real
+  new folder. Only use Humor for actually funny/meme content, and Other
+  only as a true last resort.
+- folder never contains a city, dish, team, or other specifics.
 
 subfolder is the narrower group inside the folder:
-- for places: the city or well-known area, e.g. "Brooklyn", "Munich", "Los Angeles"
-- for recipes: the kind of dish, e.g. "Pasta", "Desserts"
-- for workouts: the focus, e.g. "Full Body", "Chest"
+- places: the city or area, e.g. "Brooklyn", "Munich"
+- recipes: the dish type, e.g. "Pasta", "Desserts"
+- workouts: the focus, e.g. "Full Body", "Chest"
+- sports: the sport or league, e.g. "Football", "NBA"
 - null when nothing natural fits.
-Bad example: folder "Brooklyn Restaurants". Good: folder "Restaurants", subfolder "Brooklyn".
+Bad: folder "Brooklyn Restaurants". Good: folder "Restaurants", subfolder "Brooklyn".
 
 Title: {item.get("title") or item.get("place_name")}
 Type: {item.get("content_type")}
 Location: {item.get("location_text")}
 Category: {item.get("category")}
 Tags: {", ".join(item.get("tags") or [])}
-Content: {(item.get("transcript") or "")[:220]}
+Content: {(item.get("transcript") or "")[:400]}
 """.strip()
 
     try:
@@ -176,7 +241,7 @@ Content: {(item.get("transcript") or "")[:220]}
         folder = clean_folder_name(parsed.get("folder"))
         subfolder = clean_folder_name(parsed.get("subfolder")) or None
         if folder:
-            return folder, subfolder
+            return match_existing_folder(folder, existing_names), subfolder
     except Exception as exc:
         LOG.warning("Folder assignment failed: %s", exc)
     return fallback_folders(item)
@@ -210,7 +275,7 @@ def handle_ingest(conn, job: dict[str, Any]) -> None:
         if part and str(part).strip()
     )[:2000]
 
-    folder, subfolder = assign_folders(result)
+    folder, subfolder = assign_folders(result, group_folders(conn, group_id))
     embedding = embed(synthesize_embedding_text(result))
     member = get_or_create_member(conn, group_id, str(job["sender_id"]))
     item = upsert_item(
