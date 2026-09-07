@@ -9,7 +9,7 @@ User=reelbot
 Group=reelbot
 WorkingDirectory=/opt/reelbot
 EnvironmentFile=/opt/reelbot/.env
-ExecStart=/opt/reelbot/.venv/bin/python worker/worker.py
+ExecStart=/opt/reelbot/.venv/bin/python -m worker.worker
 Restart=always
 RestartSec=5
 

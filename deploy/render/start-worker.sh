@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-exec python worker/worker.py
+exec python -m worker.worker
