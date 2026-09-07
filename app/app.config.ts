@@ -3,7 +3,7 @@ import type { ExpoConfig } from "expo/config";
 const bundleIdentifier =
   process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER || "com.krishwaghani.reelbot";
 const appGroupIdentifier =
-  process.env.EXPO_PUBLIC_APP_GROUP_IDENTIFIER || `group.${bundleIdentifier}`;
+  `group.${bundleIdentifier}`;
 const appleTeamId =
   process.env.EXPO_PUBLIC_APPLE_TEAM_ID || process.env.APPLE_TEAM_ID || undefined;
 
@@ -20,8 +20,9 @@ const config: ExpoConfig = {
   newArchEnabled: false,
   ios: {
     supportsTablet: false,
+    usesAppleSignIn: true,
     bundleIdentifier,
-    buildNumber: "18",
+    buildNumber: "19",
     ...(appleTeamId ? { appleTeamId } : {}),
     infoPlist: {
       AppGroupIdentifier: appGroupIdentifier,
@@ -42,6 +43,10 @@ const config: ExpoConfig = {
       }
     ],
     "expo-font",
+    "expo-apple-authentication",
+    "expo-secure-store",
+    "expo-background-task",
+    "expo-sqlite",
     "./plugins/withXcode26FmtFix",
     [
       "expo-share-extension",
@@ -63,12 +68,11 @@ const config: ExpoConfig = {
           alpha: 1
         }
       }
-    ]
+    ],
+    "./plugins/withPersonalQueue"
   ],
   extra: {
     apiUrl: process.env.EXPO_PUBLIC_API_URL || "",
-    apiKey: process.env.EXPO_PUBLIC_API_KEY || "",
-    testGroupId: process.env.EXPO_PUBLIC_TEST_GROUP_ID || "",
     appGroupIdentifier,
     appleTeamId,
     eas: {

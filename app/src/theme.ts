@@ -23,16 +23,6 @@ export const colors = {
   warningText: "#71501D",
   danger: "#A94435",
   dangerSoft: "#F2E2DE",
-  chatInk: "#151719",
-  chatInkPressed: "#080A0C",
-  chatSurface: "#EAE7DF",
-  chatSurfaceStrong: "#DCD8CF",
-  chatLavender: "#E5E7F0",
-  chatLavenderInk: "#3F496D",
-  chatAqua: "#E1E9E5",
-  chatAquaInk: "#315F4D",
-  chatGold: "#EEE5D5",
-  chatGoldInk: "#735B2E"
 } as const;
 
 // Category colors stay muted and print-like so content, rather than color,
