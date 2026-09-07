@@ -1,49 +1,43 @@
 {
-  "release": {
-    "result": "PASS",
-    "configuration": "Release",
-    "sdk": "iphonesimulator",
-    "architecture": "arm64",
-    "signing": "Apple Development",
-    "placeholder_directory_present": false,
-    "log_path": "/tmp/reelbot-containment-release-build.log",
-    "log_sha256": "116b8e0bcd53572ca35feb9c36f534fc45032b5e5b72d8b126e060816d6f1d3a"
-  },
   "debug": {
     "result": "PASS",
-    "configuration": "Debug",
-    "sdk": "iphonesimulator",
-    "architecture": "arm64",
-    "signing": "Apple Development",
-    "placeholder_directory_present": false,
-    "log_path": "/tmp/reelbot-final-debug-build.log",
-    "log_sha256": "e970402573d6532cbc85cd52f4a41e794fe2dafd6ed4fb8fbde4cd3c44f355e9"
+    "log": "/tmp/reelbot-content-debug-build.log",
+    "sha256": "b3c8323714ef4b9aee66007e51d884fd7459113dc86b2f7422af63b393e6715b"
   },
-  "runtime_observations": {
-    "release_no_experimental_entry": true,
-    "debug_cost_screen_observed": true,
-    "safari_background_completion_dispatch_ms": 236.315,
-    "safari_force_quit_completion_dispatch_ms": 193.571,
-    "required_native_hosts_tested": false,
-    "testflight_tested": false,
-    "physical_device_available": false
-  },
-  "release_with_placeholder_initial": {
+  "release_simulator": {
     "result": "PASS",
-    "configuration": "Release",
-    "sdk": "iphonesimulator",
-    "signing": "Apple Development",
-    "placeholder_directory_present": true,
-    "log_path": "/tmp/reelbot-release-development-signed.log",
-    "log_sha256": "05be672dcb8603117ac3579ae8f145366840d1f91492c42f03803bf3f51a22f5"
+    "log": "/tmp/reelbot-content-release-sim-build.log",
+    "sha256": "c666c9dba60053e3adcd3cfdba9b4c9e77efa171975c57d24da6074957889743"
   },
-  "release_restored": {
+  "debug_without_placeholder": {
     "result": "PASS",
-    "configuration": "Release",
-    "sdk": "iphonesimulator",
-    "signing": "Apple Development",
-    "placeholder_directory_present": true,
-    "log_path": "/tmp/reelbot-restored-release-build.log",
-    "log_sha256": "30be80877fdd3cdf5c557ee0edd4e5cf707c23ee0882937661145faeb2d00041"
-  }
+    "log": "/tmp/reelbot-content-debug-without-placeholder.log",
+    "sha256": "05855fa56c416ab62fd035a85627e0cbb2690f9544663cbf7cb9bac9484bc8d1"
+  },
+  "release_without_placeholder": {
+    "result": "PASS",
+    "log": "/tmp/reelbot-content-release-without-placeholder.log",
+    "sha256": "54eea5013d5d3b697ba4429c22614922a357a068139535044ee6c55fe970c93c"
+  },
+  "final_phone": {
+    "result": "PASS",
+    "log": "/tmp/reelbot-content-compact-phone-build.log",
+    "sha256": "abbb1eaf5f92dd7ca19536cb0bba89dbf43405f26cdb161f8e63e117bda223f7"
+  },
+  "iphone_build": "20",
+  "iphone_install": "FAIL: device unavailable; last confirmed installation was build 19",
+  "signature": "PASS: codesign --verify --deep --strict",
+  "archive": "/Users/krishwaghani/Desktop/ReelBot-build-20.zip",
+  "release_tabs": [
+    "Recent",
+    "Map",
+    "Settings"
+  ],
+  "debug_tabs": [
+    "Recent",
+    "Map",
+    "Groups",
+    "Settings"
+  ],
+  "testflight_runtime": "FAIL: not run"
 }

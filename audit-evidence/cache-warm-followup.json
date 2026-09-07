@@ -1,0 +1,54 @@
+[
+  {
+    "type": "place",
+    "metrics": {
+      "transcription_cost": 0.0,
+      "ocr_cost": 0.0,
+      "transcription_seconds": 0.0,
+      "ocr_seconds": 0.0,
+      "llm_tokens_in": 53,
+      "llm_tokens_out": 137,
+      "places_calls": 0,
+      "cache_hits": 0,
+      "estimated_usd": 0.0016027,
+      "llm_cache_read_tokens": 8647,
+      "llm_cache_write_tokens": 0,
+      "llm_requests": 1,
+      "llm_cache_hits": 1,
+      "llm_usage_unavailable_requests": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "llm_usd": 0.0016027,
+      "llm_uncached_equivalent_usd": 0.009385,
+      "cost_complete": true
+    },
+    "produced_types": [
+      "place"
+    ]
+  },
+  {
+    "type": "workout",
+    "metrics": {
+      "transcription_cost": 0.0,
+      "ocr_cost": 0.0,
+      "transcription_seconds": 0.0,
+      "ocr_seconds": 0.0,
+      "llm_tokens_in": 48,
+      "llm_tokens_out": 155,
+      "places_calls": 0,
+      "cache_hits": 0,
+      "estimated_usd": 0.0016877,
+      "llm_cache_read_tokens": 8647,
+      "llm_cache_write_tokens": 0,
+      "llm_requests": 1,
+      "llm_cache_hits": 1,
+      "llm_usage_unavailable_requests": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "llm_usd": 0.0016877,
+      "llm_uncached_equivalent_usd": 0.00947,
+      "cost_complete": true
+    },
+    "produced_types": [
+      "workout"
+    ]
+  }
+]

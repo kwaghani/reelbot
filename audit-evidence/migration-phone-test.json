@@ -1,0 +1,17 @@
+{
+  "total_items": 0,
+  "single_identifiable_saver": 0,
+  "multiple_savers": 0,
+  "no_resolvable_saver": 0,
+  "expected_personal_rows": 0,
+  "personal_rows": 0,
+  "orphan_rows": 0,
+  "accounted_items": 0,
+  "existing_personal_schema": true,
+  "previous_personal_rows": 8,
+  "entries_after": 8,
+  "all_existing_rows_typed_place": true,
+  "owners_preserved": true,
+  "registry_types": 10,
+  "already_migrated": false
+}

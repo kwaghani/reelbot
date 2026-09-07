@@ -1,0 +1,130 @@
+{
+  "scope": "Five distinct controlled save fixtures with the same named venue; real Google lookup on the cold cache, no public-video extraction in this probe.",
+  "rows": [
+    {
+      "save_id": "e7ce65b4-148f-4c76-ba13-797e6b44aa18",
+      "place_id": "13acf3be-5c79-4e14-8bfa-8525ce8fd2d4",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 1,
+        "cache_hits": 0,
+        "estimated_usd": 0.032,
+        "llm_cache_read_tokens": 0,
+        "llm_cache_write_tokens": 0,
+        "llm_requests": 0,
+        "llm_cache_hits": 0,
+        "llm_usage_unavailable_requests": 0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+        "places_field_masks": [
+          "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+        ],
+        "llm_usd": 0.0,
+        "llm_uncached_equivalent_usd": 0.0,
+        "cost_complete": true
+      }
+    },
+    {
+      "save_id": "36ce17c0-21c3-4aee-8449-e9d98438232e",
+      "place_id": "13acf3be-5c79-4e14-8bfa-8525ce8fd2d4",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 0,
+        "cache_hits": 1,
+        "estimated_usd": 0.0,
+        "llm_cache_read_tokens": 0,
+        "llm_cache_write_tokens": 0,
+        "llm_requests": 0,
+        "llm_cache_hits": 0,
+        "llm_usage_unavailable_requests": 0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+        "llm_usd": 0.0,
+        "llm_uncached_equivalent_usd": 0.0,
+        "cost_complete": true
+      }
+    },
+    {
+      "save_id": "69cff865-9cd3-4228-a928-1cef8e1a90c6",
+      "place_id": "13acf3be-5c79-4e14-8bfa-8525ce8fd2d4",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 0,
+        "cache_hits": 1,
+        "estimated_usd": 0.0,
+        "llm_cache_read_tokens": 0,
+        "llm_cache_write_tokens": 0,
+        "llm_requests": 0,
+        "llm_cache_hits": 0,
+        "llm_usage_unavailable_requests": 0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+        "llm_usd": 0.0,
+        "llm_uncached_equivalent_usd": 0.0,
+        "cost_complete": true
+      }
+    },
+    {
+      "save_id": "8cf62da4-94c6-4054-a12b-2498b3797a86",
+      "place_id": "13acf3be-5c79-4e14-8bfa-8525ce8fd2d4",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 0,
+        "cache_hits": 1,
+        "estimated_usd": 0.0,
+        "llm_cache_read_tokens": 0,
+        "llm_cache_write_tokens": 0,
+        "llm_requests": 0,
+        "llm_cache_hits": 0,
+        "llm_usage_unavailable_requests": 0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+        "llm_usd": 0.0,
+        "llm_uncached_equivalent_usd": 0.0,
+        "cost_complete": true
+      }
+    },
+    {
+      "save_id": "b6522604-41d3-4e51-8b45-fd6b0e46dc92",
+      "place_id": "13acf3be-5c79-4e14-8bfa-8525ce8fd2d4",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 0,
+        "cache_hits": 1,
+        "estimated_usd": 0.0,
+        "llm_cache_read_tokens": 0,
+        "llm_cache_write_tokens": 0,
+        "llm_requests": 0,
+        "llm_cache_hits": 0,
+        "llm_usage_unavailable_requests": 0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+        "llm_usd": 0.0,
+        "llm_uncached_equivalent_usd": 0.0,
+        "cost_complete": true
+      }
+    }
+  ],
+  "places_calls": 1,
+  "cache_hits": 4
+}

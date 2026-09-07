@@ -1,7 +1,201 @@
-PLACEHOLDER DIRECTORY REMOVED
 /Users/krishwaghani/Desktop/TEMPNAME/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
   from starlette.testclient import TestClient as TestClient  # noqa
+test_delete_account_and_export_are_private (test_content.ContentTests.test_delete_account_and_export_are_private) ... ok
+test_dismissal_persists_and_retry_cannot_restore_review (test_content.ContentTests.test_dismissal_persists_and_retry_cannot_restore_review) ... ok
+test_eleventh_category_runtime_without_any_code_changes (test_content.ContentTests.test_eleventh_category_runtime_without_any_code_changes) ... ok
+test_extractor_drops_unknown_and_missing_required_is_reviewable (test_content.ContentTests.test_extractor_drops_unknown_and_missing_required_is_reviewable) ... ok
+test_link_geo_never_to_existing_owned_place_without_geocoding (test_content.ContentTests.test_link_geo_never_to_existing_owned_place_without_geocoding) ... ok
+test_long_summary_does_not_drop_a_valid_listicle (test_content.ContentTests.test_long_summary_does_not_drop_a_valid_listicle) ... ok
+test_mixed_ingestion_and_geo_never_makes_no_place_calls (test_content.ContentTests.test_mixed_ingestion_and_geo_never_makes_no_place_calls) ... ok
+test_multi_facet_folders_review_entries_and_no_empty_auto_folders (test_content.ContentTests.test_multi_facet_folders_review_entries_and_no_empty_auto_folders) ... ok
+test_optional_without_venue_is_complete_required_without_place_reviews (test_content.ContentTests.test_optional_without_venue_is_complete_required_without_place_reviews) ... ok
+test_registry_shared_attribute_name_can_have_a_new_shape (test_content.ContentTests.test_registry_shared_attribute_name_can_have_a_new_shape) ... ok
+test_registry_ten_complete_types_and_shapes (test_content.ContentTests.test_registry_ten_complete_types_and_shapes) ... ok
+test_retry_reuses_durable_extraction_without_another_llm_call (test_content.ContentTests.test_retry_reuses_durable_extraction_without_another_llm_call) ... ok
+test_search_attributes_summary_place_name_folder_and_personal_scope (test_content.ContentTests.test_search_attributes_summary_place_name_folder_and_personal_scope) ... Semantic search unavailable; lexical results remain available
+Traceback (most recent call last):
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+RuntimeError: local test disables model
+Semantic search unavailable; lexical results remain available
+Traceback (most recent call last):
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+RuntimeError: local test disables model
+Semantic search unavailable; lexical results remain available
+Traceback (most recent call last):
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+RuntimeError: local test disables model
+Semantic search unavailable; lexical results remain available
+Traceback (most recent call last):
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+RuntimeError: local test disables model
+Semantic search unavailable; lexical results remain available
+Traceback (most recent call last):
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+  File "/Users/krishwaghani/Desktop/TEMPNAME/worker/search.py", line 25, in search
+    vector = vector_literal(embed_query(query))
+                            ^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1139, in __call__
+    return self._mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1143, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/unittest/mock.py", line 1198, in _execute_mock_call
+    raise effect
+RuntimeError: local test disables model
+ok
+test_unknown_attribute_rejected_by_api_and_database (test_content.ContentTests.test_unknown_attribute_rejected_by_api_and_database) ... ok
 test_all_buckets_dry_run_and_replay (test_migration.MigrationTests.test_all_buckets_dry_run_and_replay) ... ok
+test_existing_personal_library_retains_ids_notes_custom_folders_and_owners (test_migration.MigrationTests.test_existing_personal_library_retains_ids_notes_custom_folders_and_owners) ... ok
 test_ambiguous_candidate_retained_in_review (test_personal.PersonalTests.test_ambiguous_candidate_retained_in_review) ... ok
 test_custom_delete_preserves_places_and_bulk_owner_checks (test_personal.PersonalTests.test_custom_delete_preserves_places_and_bulk_owner_checks) ... ok
 test_folder_edits_invalidate_semantic_index (test_personal.PersonalTests.test_folder_edits_invalidate_semantic_index) ... ok
@@ -17,74 +211,33 @@ test_slow_media_retains_caption_for_extraction (test_personal.PersonalTests.test
 test_url_idempotency_and_personal_isolation (test_personal.PersonalTests.test_url_idempotency_and_personal_isolation) ... ok
 
 ----------------------------------------------------------------------
-Ran 14 tests in 1.765s
+Ran 29 tests in 5.765s
 
 OK
 
 > reelbot-ios@1.0.0 test
 > node --test tests/*.test.cjs
 
-✔ offline first launch persists a reel without identity or network and survives runtime restart (30.001125ms)
-✔ 50 concurrent local shares and URL variants are lossless and idempotent (9.702833ms)
-✔ interruption after durable write and before queue acknowledgement neither loses nor duplicates a share (11.574292ms)
-✔ offline folders survive sync failure, and local search matches name, city, note, folder (9.407583ms)
-✔ invalid URLs cannot enter the durable queue (16.972208ms)
-✔ API preserves authorization errors and rejects malformed success responses (8.346125ms)
-✔ Release cannot expose optional Debug views even if native flag is wrong (3.380042ms)
-ℹ tests 7
+✔ offline first launch persists a reel without identity or network and survives runtime restart (39.136583ms)
+✔ 50 concurrent local shares and URL variants are lossless and idempotent (15.381791ms)
+✔ interruption after durable write and before queue acknowledgement neither loses nor duplicates a share (27.14025ms)
+✔ offline folders survive sync failure, and local search matches name, city, note, folder (17.231417ms)
+✔ invalid URLs cannot enter the durable queue (29.769041ms)
+✔ API preserves authorization errors and rejects malformed success responses (9.05725ms)
+✔ Release cannot expose optional Debug views even if native flag is wrong (4.442167ms)
+✔ reels saved after an offline reset reach the new account after deletion (8.257875ms)
+✔ reset interrupted after server deletion resumes identity rotation without deleting a new account (11.999416ms)
+✔ offline review dismissal, edits and notes preserve their different review semantics (0.364ms)
+✔ map excludes unanchored/invalid entries and sorts distances across the date line (7.538708ms)
+✔ registry additions support local search and multi-facet values without category switches (0.242625ms)
+ℹ tests 12
 ℹ suites 0
-ℹ pass 7
+ℹ pass 12
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 299.623667
-
-> reelbot-ios@1.0.0 typecheck
-> tsc --noEmit
-
-
-PLACEHOLDER DIRECTORY RESTORED
-/Users/krishwaghani/Desktop/TEMPNAME/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
-  from starlette.testclient import TestClient as TestClient  # noqa
-test_all_buckets_dry_run_and_replay (test_migration.MigrationTests.test_all_buckets_dry_run_and_replay) ... ok
-test_ambiguous_candidate_retained_in_review (test_personal.PersonalTests.test_ambiguous_candidate_retained_in_review) ... ok
-test_custom_delete_preserves_places_and_bulk_owner_checks (test_personal.PersonalTests.test_custom_delete_preserves_places_and_bulk_owner_checks) ... ok
-test_folder_edits_invalidate_semantic_index (test_personal.PersonalTests.test_folder_edits_invalidate_semantic_index) ... ok
-test_global_cache_five_sources_one_call_and_autofiling (test_personal.PersonalTests.test_global_cache_five_sources_one_call_and_autofiling) ... ok
-test_interrupted_lease_fails_and_retries_once (test_personal.PersonalTests.test_interrupted_lease_fails_and_retries_once) ... ok
-test_invalid_apple_token_cannot_link (test_personal.PersonalTests.test_invalid_apple_token_cannot_link) ... ok
-test_json_contract_listicle_and_empty (test_personal.PersonalTests.test_json_contract_listicle_and_empty) ... ok
-test_linked_apple_library_cannot_merge_into_a_different_account (test_personal.PersonalTests.test_linked_apple_library_cannot_merge_into_a_different_account) ... ok
-test_manual_retry_gets_fresh_deadline_and_keeps_prior_cost (test_personal.PersonalTests.test_manual_retry_gets_fresh_deadline_and_keeps_prior_cost) ... ok
-test_search_name_city_note_folder_and_vector (test_personal.PersonalTests.test_search_name_city_note_folder_and_vector) ... ok
-test_server_queue_wait_expires_and_backoff_is_bounded (test_personal.PersonalTests.test_server_queue_wait_expires_and_backoff_is_bounded) ... ok
-test_slow_media_retains_caption_for_extraction (test_personal.PersonalTests.test_slow_media_retains_caption_for_extraction) ... ok
-test_url_idempotency_and_personal_isolation (test_personal.PersonalTests.test_url_idempotency_and_personal_isolation) ... ok
-
-----------------------------------------------------------------------
-Ran 14 tests in 1.818s
-
-OK
-
-> reelbot-ios@1.0.0 test
-> node --test tests/*.test.cjs
-
-✔ offline first launch persists a reel without identity or network and survives runtime restart (25.052583ms)
-✔ 50 concurrent local shares and URL variants are lossless and idempotent (10.230917ms)
-✔ interruption after durable write and before queue acknowledgement neither loses nor duplicates a share (12.719958ms)
-✔ offline folders survive sync failure, and local search matches name, city, note, folder (12.400417ms)
-✔ invalid URLs cannot enter the durable queue (19.063708ms)
-✔ API preserves authorization errors and rejects malformed success responses (8.15975ms)
-✔ Release cannot expose optional Debug views even if native flag is wrong (3.563542ms)
-ℹ tests 7
-ℹ suites 0
-ℹ pass 7
-ℹ fail 0
-ℹ cancelled 0
-ℹ skipped 0
-ℹ todo 0
-ℹ duration_ms 330.715875
+ℹ duration_ms 519.05975
 
 > reelbot-ios@1.0.0 typecheck
 > tsc --noEmit

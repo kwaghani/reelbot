@@ -1,0 +1,36 @@
+{
+  "backup": "/Users/krishwaghani/Desktop/reelbot-public-db-before-content-20260907.dump",
+  "backup_bytes": 78943,
+  "backup_scope": "public schema, all affected project data",
+  "dry_run": {
+    "orphan_rows": 21,
+    "total_items": 21,
+    "personal_rows": 0,
+    "accounted_items": 21,
+    "multiple_savers": 0,
+    "no_resolvable_saver": 21,
+    "expected_personal_rows": 0,
+    "single_identifiable_saver": 0,
+    "unresolved_saver_associations": 0,
+    "ownership_previously_migrated": true,
+    "existing_personal_entries": 0,
+    "content_migration_applied": false
+  },
+  "rehearsal": {
+    "orphan_rows": 21,
+    "total_items": 21,
+    "personal_rows": 0,
+    "accounted_items": 21,
+    "multiple_savers": 0,
+    "no_resolvable_saver": 21,
+    "expected_personal_rows": 0,
+    "single_identifiable_saver": 0,
+    "unresolved_saver_associations": 0,
+    "already_migrated": false,
+    "previous_personal_rows": 0,
+    "entries_after": 0,
+    "all_existing_rows_typed_place": true,
+    "owners_preserved": true,
+    "registry_types": 10
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "entries": 0,
+  "orphans": 21,
+  "registry_types": 10,
+  "tables_without_rls": 0,
+  "direct_client_grants": 0,
+  "registry_sha256": "c55a2c540a0a698f9ad21312c25d9ff206e1b9abcee0ea379b58a7b2608c4f59",
+  "retired_tables_remaining": [],
+  "validator_search_path": [
+    [
+      "search_path=pg_catalog, public"
+    ]
+  ],
+  "migration_ids": [
+    "001_single_user",
+    "002_content_entries",
+    "003_registry_function_path"
+  ]
+}

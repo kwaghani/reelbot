@@ -1,4 +1,0 @@
-Timestamp               Ty Process[PID:TID]
-2026-09-06 20:52:20.151 I  ReelBotShareExtension[91267:f8c8cb] [com.krishwaghani.reelbot.share:timing] queue_write_ms=15.711 completion_ms=236.315
-Timestamp               Ty Process[PID:TID]
-2026-09-06 20:59:14.897 I  ReelBotShareExtension[94979:f9205d] [com.krishwaghani.reelbot.share:timing] queue_write_ms=32.098 completion_ms=193.571

@@ -1,0 +1,435 @@
+{
+  "never_types": [
+    "home",
+    "learning",
+    "media",
+    "recipe",
+    "style",
+    "workout"
+  ],
+  "by_save": [
+    {
+      "id": "golden-01",
+      "content_types": {
+        "place": 1
+      },
+      "skipped": {},
+      "places_calls_by_type": {
+        "place": 1
+      },
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ]
+    },
+    {
+      "id": "golden-02",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-03",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-04",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-05",
+      "content_types": {
+        "place": 3
+      },
+      "skipped": {},
+      "places_calls_by_type": {
+        "place": 3
+      },
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ]
+    },
+    {
+      "id": "golden-06",
+      "content_types": {
+        "place": 5
+      },
+      "skipped": {},
+      "places_calls_by_type": {
+        "place": 5
+      },
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ]
+    },
+    {
+      "id": "golden-07",
+      "content_types": {
+        "place": 1
+      },
+      "skipped": {},
+      "places_calls_by_type": {
+        "place": 1
+      },
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ]
+    },
+    {
+      "id": "golden-08",
+      "content_types": {
+        "place": 1
+      },
+      "skipped": {},
+      "places_calls_by_type": {
+        "place": 1
+      },
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ]
+    },
+    {
+      "id": "golden-09",
+      "content_types": {
+        "place": 5
+      },
+      "skipped": {},
+      "places_calls_by_type": {
+        "place": 5
+      },
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ]
+    },
+    {
+      "id": "golden-10",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-11",
+      "content_types": {
+        "workout": 1
+      },
+      "skipped": {
+        "workout": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-12",
+      "content_types": {
+        "workout": 1
+      },
+      "skipped": {
+        "workout": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-13",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-14",
+      "content_types": {
+        "workout": 1
+      },
+      "skipped": {
+        "workout": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-15",
+      "content_types": {
+        "workout": 1
+      },
+      "skipped": {
+        "workout": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-16",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-17",
+      "content_types": {
+        "recipe": 1
+      },
+      "skipped": {
+        "recipe": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-18",
+      "content_types": {
+        "recipe": 1
+      },
+      "skipped": {
+        "recipe": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-19",
+      "content_types": {
+        "recipe": 1
+      },
+      "skipped": {
+        "recipe": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-20",
+      "content_types": {
+        "recipe": 1
+      },
+      "skipped": {
+        "recipe": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-21",
+      "content_types": {
+        "recipe": 5
+      },
+      "skipped": {
+        "recipe": 5
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-22",
+      "content_types": {
+        "recipe": 1
+      },
+      "skipped": {
+        "recipe": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-23",
+      "content_types": {
+        "product": 1
+      },
+      "skipped": {
+        "product": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-24",
+      "content_types": {
+        "media": 2,
+        "product": 3
+      },
+      "skipped": {
+        "media": 2,
+        "product": 3
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-25",
+      "content_types": {
+        "product": 2
+      },
+      "skipped": {
+        "product": 2
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-26",
+      "content_types": {
+        "product": 1
+      },
+      "skipped": {
+        "product": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-27",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-28",
+      "content_types": {
+        "style": 1
+      },
+      "skipped": {
+        "style": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-29",
+      "content_types": {
+        "home": 1
+      },
+      "skipped": {
+        "home": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-30",
+      "content_types": {
+        "home": 1
+      },
+      "skipped": {
+        "home": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-31",
+      "content_types": {
+        "learning": 1
+      },
+      "skipped": {
+        "learning": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-32",
+      "content_types": {
+        "learning": 1
+      },
+      "skipped": {
+        "learning": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-33",
+      "content_types": {
+        "learning": 1
+      },
+      "skipped": {
+        "learning": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-34",
+      "content_types": {
+        "learning": 1
+      },
+      "skipped": {
+        "learning": 1
+      },
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-35",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-36",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-37",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-38",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-39",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    },
+    {
+      "id": "golden-40",
+      "content_types": {},
+      "skipped": {},
+      "places_calls_by_type": {},
+      "places_field_masks": []
+    }
+  ],
+  "never_calls": 0,
+  "unexpected_masks": [],
+  "database_checks": {
+    "missing_type_folder": 0,
+    "missing_facet_folder": 0,
+    "empty_auto_folders": 0,
+    "invalid_places": 0,
+    "nonterminal_saves": 0
+  },
+  "zero_never_calls": "PASS",
+  "ingestion_masks_exact": "PASS"
+}

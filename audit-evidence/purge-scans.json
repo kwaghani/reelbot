@@ -1,0 +1,12 @@
+{
+  "first_requested_scan": {
+    "exit_code": 1,
+    "result": "PASS",
+    "output": "\n0 matches\n0 matched lines\n0 files contained matches\n105 files searched\n0 bytes printed\n583321 bytes searched\n0.024828 seconds spent searching\n0.013592 seconds total\n"
+  },
+  "second_requested_scan": {
+    "exit_code": 1,
+    "result": "PASS",
+    "output": "\n0 matches\n0 matched lines\n0 files contained matches\n105 files searched\n0 bytes printed\n583110 bytes searched\n0.012470 seconds spent searching\n0.007459 seconds total\n"
+  }
+}

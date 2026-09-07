@@ -1,160 +1,851 @@
 [
   {
-    "url": "https://www.instagram.com/reel/DaDPI6muPFN/?igsh=NTc4MTIwNjQ2YQ==",
+    "id": "golden-01",
+    "category": "place",
+    "url": "https://www.instagram.com/reel/DaDPI6muPFN/",
+    "source_title": "The Bay Shack Pizzeria",
     "expected": [
-      "The Bay Shack Pizzeria"
+      {
+        "content_type": "place",
+        "title": "The Bay Shack Pizzeria",
+        "attributes": {
+          "venue_kind": "restaurant"
+        }
+      }
     ],
-    "category": "spoken",
     "labels_verified": false,
-    "label_notes": "Hand-read archived spoken transcript; absence from caption not independently verified."
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Archived spoken transcript; city unverified.",
+    "tags": []
   },
   {
+    "id": "golden-02",
+    "category": "place",
     "url": "https://vt.tiktok.com/ZSCDMwK3f/",
+    "source_title": "Ornella Munich",
     "expected": [
-      "Ornella"
+      {
+        "content_type": "place",
+        "title": "Ornella",
+        "attributes": {
+          "venue_kind": "restaurant"
+        },
+        "city": "Munich"
+      }
     ],
-    "category": "caption",
     "labels_verified": false,
-    "label_notes": "Hand-read archived caption names Ornella in Munich."
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Archived caption.",
+    "tags": []
   },
   {
-    "url": "https://www.instagram.com/reel/DZQEbgvRroH/",
-    "expected": [],
-    "category": "no_place",
-    "labels_verified": false,
-    "label_notes": "Hand-read archived sports caption and OCR; complete video not independently viewed."
-  },
-  {
-    "url": "https://www.instagram.com/reel/DaclEJUqSdh/",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://www.instagram.com/p/DJEzB4SM_o4/",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://www.youtube.com/shorts/i84Sc5uvQa8",
-    "expected": [],
-    "category": "no_place",
-    "labels_verified": false,
-    "label_notes": "Hand-read archived cooking transcript; complete video not independently viewed."
-  },
-  {
-    "url": "https://www.youtube.com/shorts/CCMuiP18GoE",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://www.instagram.com/p/Cgk0_MxDBeF/",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://www.instagram.com/reel/DWt-RZQOgtC/?igsh=YzAyMDM1MGJkZA==",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://vt.tiktok.com/ZSCHKqQpV/",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
+    "id": "golden-03",
+    "category": "place",
     "url": "https://vt.tiktok.com/ZSC9GQCVS/",
+    "source_title": "Peter Pan Donut & Pastry Shop",
     "expected": [
-      "Peter Pan Donut & Pastry Shop"
+      {
+        "content_type": "place",
+        "title": "Peter Pan Donut",
+        "attributes": {
+          "venue_kind": "cafe"
+        },
+        "city": "Brooklyn"
+      }
     ],
-    "category": "caption",
     "labels_verified": false,
-    "label_notes": "Hand-read archived caption includes full Brooklyn street address."
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Archived caption gives Brooklyn address; cafe versus shop needs full review.",
+    "tags": []
   },
   {
+    "id": "golden-04",
+    "category": "place",
+    "url": "https://www.instagram.com/reel/Dbzg5DJIMzU/",
+    "source_title": "Shivaji Park",
+    "expected": [
+      {
+        "content_type": "place",
+        "title": "Shivaji Park",
+        "attributes": {
+          "venue_kind": "activity"
+        },
+        "city": "Mumbai"
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Archived caption.",
+    "tags": []
+  },
+  {
+    "id": "golden-05",
+    "category": "place",
     "url": "https://www.instagram.com/p/DNQqeSYxhGq/",
+    "source_title": "Three Los Angeles restaurants",
     "expected": [
-      "Yunomi Handroll",
-      "Fitoor",
-      "Ka’teen"
+      {
+        "content_type": "place",
+        "title": "Yunomi Handroll",
+        "attributes": {
+          "venue_kind": "restaurant"
+        },
+        "city": "Los Angeles"
+      },
+      {
+        "content_type": "place",
+        "title": "Fitoor",
+        "attributes": {
+          "venue_kind": "restaurant"
+        },
+        "city": "Los Angeles"
+      },
+      {
+        "content_type": "place",
+        "title": "Ka’teen",
+        "attributes": {
+          "venue_kind": "restaurant"
+        },
+        "city": "Los Angeles"
+      }
     ],
-    "category": "listicle",
     "labels_verified": false,
-    "label_notes": "Hand-read archived caption hashtags and OCR; full video not independently viewed."
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Archived caption and OCR.",
+    "tags": [
+      "listicle"
+    ]
   },
   {
-    "url": "https://vt.tiktok.com/ZSC7tbwb4/",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://www.instagram.com/reel/DW90cOkEUTu/",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://www.youtube.com/shorts/aMZGAhmDHys",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
+    "id": "golden-06",
+    "category": "place",
     "url": "https://www.instagram.com/p/DUpDIg1k87g/",
+    "source_title": "Five Los Angeles area destinations",
     "expected": [
-      "Point Dume",
-      "Hollywood Sign",
-      "Los Leones Trail",
-      "El Matador State Beach",
-      "Point Mugu State Beach"
+      {
+        "content_type": "place",
+        "title": "Point Dume",
+        "attributes": {
+          "venue_kind": "activity"
+        }
+      },
+      {
+        "content_type": "place",
+        "title": "Hollywood Sign",
+        "attributes": {
+          "venue_kind": "activity"
+        }
+      },
+      {
+        "content_type": "place",
+        "title": "Los Leones Trail",
+        "attributes": {
+          "venue_kind": "activity"
+        },
+        "aliases": [
+          "Los Liones",
+          "Los Leones"
+        ]
+      },
+      {
+        "content_type": "place",
+        "title": "El Matador State Beach",
+        "attributes": {
+          "venue_kind": "activity"
+        }
+      },
+      {
+        "content_type": "place",
+        "title": "Point Mugu State Beach",
+        "attributes": {
+          "venue_kind": "activity"
+        }
+      }
     ],
-    "category": "listicle",
     "labels_verified": false,
-    "label_notes": "Hand-read archived caption listing five destinations."
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Archived caption lists five names; individual cities/addresses unverified.",
+    "tags": [
+      "listicle",
+      "five_plus"
+    ]
   },
   {
-    "url": "https://www.youtube.com/shorts/LvV7K_i7aDQ",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://www.instagram.com/p/Da1ZOQmGtN_/",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://www.instagram.com/reel/DZtN_qaIt0a/",
-    "expected": [],
-    "category": "unverified",
-    "labels_verified": false,
-    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
-  },
-  {
-    "url": "https://www.instagram.com/reel/Dbzg5DJIMzU/?igsh=NjZiM2M3MzIxNA==",
+    "id": "golden-07",
+    "category": "place",
+    "url": "https://www.youtube.com/watch?v=9gkX6m5lsUM",
+    "source_title": "Quick Tour of Starbucks Reserve Roastery TOKYO #shorts",
     "expected": [
-      "Shivaji Park"
+      {
+        "content_type": "place",
+        "title": "Starbucks Reserve Roastery",
+        "attributes": {
+          "venue_kind": "cafe"
+        },
+        "city": "Tokyo"
+      }
     ],
-    "category": "caption",
     "labels_verified": false,
-    "label_notes": "Hand-read archived caption hashtags name the park and Mumbai."
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary description names 2 Chome 19-23 Aobadai, Meguro City.",
+    "tags": [
+      "chain"
+    ]
+  },
+  {
+    "id": "golden-08",
+    "category": "place",
+    "url": "https://www.youtube.com/shorts/KaROj7X-gvc",
+    "source_title": "Mini tray at Starbucks Reserve Tokyo",
+    "expected": [
+      {
+        "content_type": "place",
+        "title": "Starbucks Reserve",
+        "attributes": {
+          "venue_kind": "cafe"
+        },
+        "city": "Tokyo"
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary indexed title; same chain/location as preceding fixture.",
+    "tags": [
+      "chain"
+    ]
+  },
+  {
+    "id": "golden-09",
+    "category": "place",
+    "url": "https://www.youtube.com/watch?v=A-0lG94aElQ",
+    "source_title": "5 MUST TRY TACOS Los Angeles with Chef Dafne",
+    "expected": [],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Five venues not independently labeled. Runtime/Shorts format unverified. This row fails composition acceptance.",
+    "tags": [
+      "listicle",
+      "labels_incomplete"
+    ]
+  },
+  {
+    "id": "golden-10",
+    "category": "place",
+    "url": "https://www.instagram.com/reel/DaclEJUqSdh/",
+    "source_title": "Existing real saved reel",
+    "expected": [],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Full source and expected venues unavailable; do not treat empty expected as no-content.",
+    "tags": [
+      "labels_incomplete"
+    ]
+  },
+  {
+    "id": "golden-11",
+    "category": "workout",
+    "url": "https://www.youtube.com/watch?v=fMl1pwvXobk",
+    "source_title": "CHEST WORKOUT WITH DUMBBELL #shorts",
+    "expected": [
+      {
+        "content_type": "workout",
+        "title": "",
+        "attributes": {
+          "muscle_group": [
+            "chest"
+          ]
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary source title/description establishes muscle group.",
+    "tags": []
+  },
+  {
+    "id": "golden-12",
+    "category": "workout",
+    "url": "https://www.youtube.com/watch?v=gB4nd6tVel4",
+    "source_title": "Leg Workout #shorts",
+    "expected": [
+      {
+        "content_type": "workout",
+        "title": "",
+        "attributes": {
+          "muscle_group": [
+            "legs"
+          ]
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary source title/description establishes muscle group.",
+    "tags": []
+  },
+  {
+    "id": "golden-13",
+    "category": "workout",
+    "url": "https://www.youtube.com/watch?v=KyUNiRgraR8",
+    "source_title": "Complete arm workout #shorts",
+    "expected": [
+      {
+        "content_type": "workout",
+        "title": "",
+        "attributes": {
+          "muscle_group": [
+            "arms"
+          ]
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary source title/description establishes muscle group.",
+    "tags": []
+  },
+  {
+    "id": "golden-14",
+    "category": "workout",
+    "url": "https://www.youtube.com/watch?v=bRWcwVZQXKU",
+    "source_title": "Save this ARM workout",
+    "expected": [
+      {
+        "content_type": "workout",
+        "title": "",
+        "attributes": {
+          "muscle_group": [
+            "arms"
+          ]
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary source title/description establishes muscle group.",
+    "tags": []
+  },
+  {
+    "id": "golden-15",
+    "category": "workout",
+    "url": "https://www.youtube.com/watch?v=Qw2VL8HUUMo",
+    "source_title": "5 Exercises for Core Workout #shorts",
+    "expected": [
+      {
+        "content_type": "workout",
+        "title": "",
+        "attributes": {
+          "muscle_group": [
+            "core"
+          ]
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary source title/description establishes muscle group.",
+    "tags": []
+  },
+  {
+    "id": "golden-16",
+    "category": "workout",
+    "url": "https://www.youtube.com/watch?v=3s74Bh9UI4A",
+    "source_title": "Core Workout for Stronger Abs #shorts",
+    "expected": [
+      {
+        "content_type": "workout",
+        "title": "",
+        "attributes": {
+          "muscle_group": [
+            "core"
+          ]
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary source title/description establishes muscle group.",
+    "tags": []
+  },
+  {
+    "id": "golden-17",
+    "category": "recipe",
+    "url": "https://www.youtube.com/watch?v=k_xf8RwP9Wo",
+    "source_title": "Pad Thai Recipe (Part 1) #shorts",
+    "expected": [
+      {
+        "content_type": "recipe",
+        "title": "Pad Thai",
+        "attributes": {
+          "cuisine": "Thai"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description establishes recipe names and cuisine.",
+    "tags": []
+  },
+  {
+    "id": "golden-18",
+    "category": "recipe",
+    "url": "https://www.youtube.com/watch?v=c1QfsmBYakU",
+    "source_title": "How to Marinade Thai Pork Satay #Shorts",
+    "expected": [
+      {
+        "content_type": "recipe",
+        "title": "Pork Satay",
+        "attributes": {
+          "cuisine": "Thai"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description establishes recipe names and cuisine.",
+    "tags": []
+  },
+  {
+    "id": "golden-19",
+    "category": "recipe",
+    "url": "https://www.youtube.com/watch?v=dSFU6YFT9J0",
+    "source_title": "BRUSCHETTA Like an Italian #Shorts",
+    "expected": [
+      {
+        "content_type": "recipe",
+        "title": "Bruschetta",
+        "attributes": {
+          "cuisine": "Italian"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description establishes recipe names and cuisine.",
+    "tags": []
+  },
+  {
+    "id": "golden-20",
+    "category": "recipe",
+    "url": "https://www.youtube.com/watch?v=VTuYlMW3DYQ",
+    "source_title": "Japanese curry #shorts",
+    "expected": [
+      {
+        "content_type": "recipe",
+        "title": "Curry",
+        "attributes": {
+          "cuisine": "Japanese"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description establishes recipe names and cuisine.",
+    "tags": []
+  },
+  {
+    "id": "golden-21",
+    "category": "recipe",
+    "url": "https://www.youtube.com/watch?v=DnCdJ65rHhc",
+    "source_title": "5 Must Try Indian Recipes in One Video #Shorts",
+    "expected": [
+      {
+        "content_type": "recipe",
+        "title": "Aloo Paratha",
+        "attributes": {
+          "cuisine": "Indian"
+        }
+      },
+      {
+        "content_type": "recipe",
+        "title": "Chole Masala",
+        "attributes": {
+          "cuisine": "Indian"
+        }
+      },
+      {
+        "content_type": "recipe",
+        "title": "Sabudana Vada",
+        "attributes": {
+          "cuisine": "Indian"
+        }
+      },
+      {
+        "content_type": "recipe",
+        "title": "Egg Roll",
+        "attributes": {
+          "cuisine": "Indian"
+        }
+      },
+      {
+        "content_type": "recipe",
+        "title": "Seviyan Kheer",
+        "attributes": {
+          "cuisine": "Indian"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description establishes recipe names and cuisine.",
+    "tags": []
+  },
+  {
+    "id": "golden-22",
+    "category": "recipe",
+    "url": "https://www.youtube.com/watch?v=HIEmxwF8kcA",
+    "source_title": "Authentic Mexican Guacamole #shorts",
+    "expected": [
+      {
+        "content_type": "recipe",
+        "title": "Guacamole",
+        "attributes": {
+          "cuisine": "Mexican"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description establishes recipe names and cuisine.",
+    "tags": []
+  },
+  {
+    "id": "golden-23",
+    "category": "product",
+    "url": "https://www.youtube.com/watch?v=6EhiPZj1W-g",
+    "source_title": "iPhone 15 vale la pena #shorts",
+    "expected": [
+      {
+        "content_type": "product",
+        "title": "iPhone 15",
+        "attributes": {
+          "product_category": "electronics"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description; exact submodels may need full-video review.",
+    "tags": []
+  },
+  {
+    "id": "golden-24",
+    "category": "product",
+    "url": "https://www.youtube.com/watch?v=MR7YETLF03A",
+    "source_title": "Apple Watch + iPhone 15 review #shorts",
+    "expected": [
+      {
+        "content_type": "product",
+        "title": "Apple Watch",
+        "attributes": {
+          "product_category": "electronics"
+        }
+      },
+      {
+        "content_type": "product",
+        "title": "iPhone 15",
+        "attributes": {
+          "product_category": "electronics"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description; exact submodels may need full-video review.",
+    "tags": []
+  },
+  {
+    "id": "golden-25",
+    "category": "product",
+    "url": "https://www.youtube.com/watch?v=RVREnwMFDWs",
+    "source_title": "iPhone 16 & iPhone 16 Plus FIRST LOOK #shorts",
+    "expected": [
+      {
+        "content_type": "product",
+        "title": "iPhone 16",
+        "attributes": {
+          "product_category": "electronics"
+        }
+      },
+      {
+        "content_type": "product",
+        "title": "iPhone 16 Plus",
+        "attributes": {
+          "product_category": "electronics"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description; exact submodels may need full-video review.",
+    "tags": []
+  },
+  {
+    "id": "golden-26",
+    "category": "product",
+    "url": "https://www.youtube.com/watch?v=357RayzSodU",
+    "source_title": "Unboxing NEW iPhone 16 pink #shorts",
+    "expected": [
+      {
+        "content_type": "product",
+        "title": "iPhone 16",
+        "attributes": {
+          "product_category": "electronics"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title/description; exact submodels may need full-video review.",
+    "tags": []
+  },
+  {
+    "id": "golden-27",
+    "category": "style_home",
+    "url": "https://www.youtube.com/watch?v=Yn7DyCQWU9E",
+    "source_title": "Perfect Street Style White Crop Top & Black Shorts #outfit #shorts",
+    "expected": [
+      {
+        "content_type": "style",
+        "title": "",
+        "attributes": {
+          "garment_type": [
+            "tops",
+            "trousers"
+          ]
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Shorts mapped to the registry trousers enum; review styling versus product distinction.",
+    "tags": []
+  },
+  {
+    "id": "golden-28",
+    "category": "style_home",
+    "url": "https://www.youtube.com/watch?v=3eY6PVkC5nw",
+    "source_title": "A Simple Guide to Styling Shorts",
+    "expected": [
+      {
+        "content_type": "style",
+        "title": "",
+        "attributes": {
+          "garment_type": [
+            "trousers"
+          ]
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary description includes Shorts tag.",
+    "tags": []
+  },
+  {
+    "id": "golden-29",
+    "category": "style_home",
+    "url": "https://www.youtube.com/watch?v=ZnW0PGWAzkU",
+    "source_title": "Kitchen organization #shorts",
+    "expected": [
+      {
+        "content_type": "home",
+        "title": "",
+        "attributes": {
+          "room": "kitchen"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title.",
+    "tags": []
+  },
+  {
+    "id": "golden-30",
+    "category": "style_home",
+    "url": "https://www.youtube.com/watch?v=3wogFor0lP0",
+    "source_title": "Kitchen Organization #shorts",
+    "expected": [
+      {
+        "content_type": "home",
+        "title": "",
+        "attributes": {
+          "room": "kitchen"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary title.",
+    "tags": []
+  },
+  {
+    "id": "golden-31",
+    "category": "media_learning",
+    "url": "https://www.youtube.com/watch?v=x7X9w_GIm1s",
+    "source_title": "Python in 100 Seconds",
+    "expected": [
+      {
+        "content_type": "learning",
+        "title": "",
+        "attributes": {
+          "subject": "Python"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Short video, not verified as a vertical Shorts post.",
+    "tags": []
+  },
+  {
+    "id": "golden-32",
+    "category": "media_learning",
+    "url": "https://www.youtube.com/watch?v=DHjqpvDnNGE",
+    "source_title": "JavaScript in 100 Seconds",
+    "expected": [
+      {
+        "content_type": "learning",
+        "title": "",
+        "attributes": {
+          "subject": "JavaScript"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Short video, not verified as a vertical Shorts post.",
+    "tags": []
+  },
+  {
+    "id": "golden-33",
+    "category": "media_learning",
+    "url": "https://www.youtube.com/watch?v=YOlr79NaAtQ",
+    "source_title": "What is THIS in JavaScript in 100 Seconds",
+    "expected": [
+      {
+        "content_type": "learning",
+        "title": "",
+        "attributes": {
+          "subject": "JavaScript"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Short video, not verified as a vertical Shorts post.",
+    "tags": []
+  },
+  {
+    "id": "golden-34",
+    "category": "media_learning",
+    "url": "https://www.youtube.com/watch?v=Dyliijbw_aQ",
+    "source_title": "5 Lessons from Atomic Habits in Under 60 Seconds #SHORTS",
+    "expected": [
+      {
+        "content_type": "media",
+        "title": "Atomic Habits",
+        "attributes": {
+          "media_kind": "book"
+        }
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Could also yield learning entries; exhaustive labels unverified.",
+    "tags": []
+  },
+  {
+    "id": "golden-35",
+    "category": "empty",
+    "url": "https://www.youtube.com/watch?v=kN9pjVCeKY4",
+    "source_title": "TOP 5 CAT SLEEPING MOMENTS #shorts",
+    "expected": [],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Entertainment-only judgment from title/description; full video not independently viewed.",
+    "tags": []
+  },
+  {
+    "id": "golden-36",
+    "category": "empty",
+    "url": "https://www.youtube.com/watch?v=ruW-b7mUgnk",
+    "source_title": "Cat sleeping positions #shorts",
+    "expected": [],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Entertainment-only judgment from title/description; full video not independently viewed.",
+    "tags": []
+  },
+  {
+    "id": "golden-37",
+    "category": "empty",
+    "url": "https://www.youtube.com/watch?v=N88hXQ4KOOs",
+    "source_title": "Ranking Funny Dog Videos #shorts",
+    "expected": [],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Entertainment-only judgment from title/description; full video not independently viewed.",
+    "tags": []
+  },
+  {
+    "id": "golden-38",
+    "category": "empty",
+    "url": "https://www.instagram.com/reel/DZQEbgvRroH/",
+    "source_title": "Sports entertainment reel",
+    "expected": [],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Archived sports caption/OCR; no actionable content found in available signals.",
+    "tags": []
+  },
+  {
+    "id": "golden-39",
+    "category": "mixed",
+    "url": "https://www.youtube.com/watch?v=QRlbP0_WtM0",
+    "source_title": "My Productive & REALISTIC 6am Morning Routine | Protein Pancakes, Workout, & Bǐng Recipe",
+    "expected": [
+      {
+        "content_type": "recipe",
+        "title": "Pancakes",
+        "attributes": {}
+      },
+      {
+        "content_type": "workout",
+        "title": "",
+        "attributes": {}
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Source description indicates two types but required attributes/exhaustive entries and short-video format unverified.",
+    "tags": [
+      "labels_incomplete"
+    ]
+  },
+  {
+    "id": "golden-40",
+    "category": "mixed",
+    "url": "https://www.youtube.com/watch?v=IteBR-wmHGo",
+    "source_title": "Morning Routine #shorts",
+    "expected": [
+      {
+        "content_type": "recipe",
+        "title": "",
+        "attributes": {}
+      },
+      {
+        "content_type": "workout",
+        "title": "",
+        "attributes": {}
+      }
+    ],
+    "labels_verified": false,
+    "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+    "label_notes": "Primary search result exists; source fetching throttled. Two-type expectation needs independent verification.",
+    "tags": [
+      "labels_incomplete"
+    ]
   }
 ]

@@ -1,11 +1,9 @@
-# Share verification
+# Native share verification
 
-The extension accepts URL and plain-text items, finds a supported video link, writes one atomic queue file, and completes the extension request. It loads Foundation/UIKit, not a React Native runtime. Its source contains no networking, session check, or library selection. Container failures display a visible error with a Close button.
+The extension accepts supported URL/plain-text items, writes one atomic queue file and completes its request. It loads Foundation/UIKit, not React Native. Its source contains no networking or authentication. Container failures display an error and Close button.
 
-Both app and extension require the same App Group entitlement. An unsigned simulator build cannot access the container. Queue files are acknowledged only after the main app commits them to SQLite. Repeated imports normalize the URL and remain idempotent.
+Both targets need the same App Group entitlement. Main-app acknowledgement occurs only after the SQLite commit; importing an unacknowledged file again remains idempotent. The native writer logs `queue_write_ms` and `completion_ms` through the system log.
 
-Physical acceptance requires Instagram, TikTok, and YouTube installed on a connected iPhone. For each host, measure from extension presentation to completion, including provider loading, and verify less than 400 ms. Repeat while the main app is backgrounded and stopped. Disable networking, share, reconnect, and observe processing without touching the queue. Repeat 50 times while checking process memory and crash reports. Capture network activity by extension PID; a static source scan alone does not prove a measured zero-call result.
+Physical acceptance requires Instagram, TikTok and YouTube on a connected iPhone. For each host, measure presentation-to-completion including provider loading, verify under 400 ms, and repeat with the main app backgrounded and stopped. Test offline sharing/reconnect, 50 consecutive presentations, duplicate URLs and extension-process network attribution. A filesystem benchmark or static scan alone cannot pass these physical checks.
 
-The native writer logs `queue_write_ms` and `completion_ms` through the system log. Main-app background refresh is scheduled by iOS, and force-quitting the main app can prevent background processing until it is opened again. Queue persistence and immediate background processing are separate checks.
-
-Actual measurements and unavailable cases are recorded in `VERIFICATION.md`. The paired physical devices were unavailable during this run, and the simulator has no installed copies of the three host apps; their device-level checks must therefore be reported as failures until executed.
+Current results are in `VERIFICATION.md`. The iPhone 15 Pro was unavailable for the addendum's host matrix and build-20 installation. The signed update is prepared. Build 19 was installed in the prior device test. The local API/worker and the test build require this Mac and the phone to be reachable on the same network. iOS may defer processing after force-quit until the main app is opened.

@@ -1,0 +1,600 @@
+[
+  {
+    "requested_type": "place",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 53,
+          "llm_tokens_out": 138,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.01155175,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 8647,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.01155175,
+          "llm_uncached_equivalent_usd": 0.00939,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "place"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8700,
+          "llm_tokens_out": 121,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.009305,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.009305,
+          "llm_uncached_equivalent_usd": 0.009305,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "place"
+        ],
+        "error": null
+      }
+    ]
+  },
+  {
+    "requested_type": "workout",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 48,
+          "llm_tokens_out": 156,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.01163675,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 8647,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.01163675,
+          "llm_uncached_equivalent_usd": 0.009475,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "workout"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8695,
+          "llm_tokens_out": 156,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.009475,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.009475,
+          "llm_uncached_equivalent_usd": 0.009475,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "workout"
+        ],
+        "error": null
+      }
+    ]
+  },
+  {
+    "requested_type": "recipe",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 54,
+          "llm_tokens_out": 178,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.0018087,
+          "llm_cache_read_tokens": 8647,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 1,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.0018087,
+          "llm_uncached_equivalent_usd": 0.009591,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "recipe"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8701,
+          "llm_tokens_out": 176,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.009581,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.009581,
+          "llm_uncached_equivalent_usd": 0.009581,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "recipe"
+        ],
+        "error": null
+      }
+    ]
+  },
+  {
+    "requested_type": "product",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 50,
+          "llm_tokens_out": 160,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.0017147,
+          "llm_cache_read_tokens": 8647,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 1,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.0017147,
+          "llm_uncached_equivalent_usd": 0.009497,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "product"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8697,
+          "llm_tokens_out": 154,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.009467,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.009467,
+          "llm_uncached_equivalent_usd": 0.009467,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "product"
+        ],
+        "error": null
+      }
+    ]
+  },
+  {
+    "requested_type": "travel",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 56,
+          "llm_tokens_out": 150,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.0016707,
+          "llm_cache_read_tokens": 8647,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 1,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.0016707,
+          "llm_uncached_equivalent_usd": 0.009453,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "travel"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8703,
+          "llm_tokens_out": 153,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.009468,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.009468,
+          "llm_uncached_equivalent_usd": 0.009468,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "travel"
+        ],
+        "error": null
+      }
+    ]
+  },
+  {
+    "requested_type": "home",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 48,
+          "llm_tokens_out": 142,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.0016227,
+          "llm_cache_read_tokens": 8647,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 1,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.0016227,
+          "llm_uncached_equivalent_usd": 0.009405,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "home"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8695,
+          "llm_tokens_out": 142,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.009405,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.009405,
+          "llm_uncached_equivalent_usd": 0.009405,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "home"
+        ],
+        "error": null
+      }
+    ]
+  },
+  {
+    "requested_type": "style",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 50,
+          "llm_tokens_out": 163,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.0017297,
+          "llm_cache_read_tokens": 8647,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 1,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.0017297,
+          "llm_uncached_equivalent_usd": 0.009512,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "style"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8697,
+          "llm_tokens_out": 167,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.009532,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.009532,
+          "llm_uncached_equivalent_usd": 0.009532,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "style"
+        ],
+        "error": null
+      }
+    ]
+  },
+  {
+    "requested_type": "media",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 49,
+          "llm_tokens_out": 136,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.0015937,
+          "llm_cache_read_tokens": 8647,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 1,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.0015937,
+          "llm_uncached_equivalent_usd": 0.009376,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "media"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8696,
+          "llm_tokens_out": 141,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.009401,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.009401,
+          "llm_uncached_equivalent_usd": 0.009401,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "media"
+        ],
+        "error": null
+      }
+    ]
+  },
+  {
+    "requested_type": "learning",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 49,
+          "llm_tokens_out": 163,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.0017287,
+          "llm_cache_read_tokens": 8647,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 1,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.0017287,
+          "llm_uncached_equivalent_usd": 0.009511,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "learning"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8696,
+          "llm_tokens_out": 166,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.009526,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.009526,
+          "llm_uncached_equivalent_usd": 0.009526,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "learning"
+        ],
+        "error": null
+      }
+    ]
+  },
+  {
+    "requested_type": "other",
+    "scope": "Controlled caption, two measured provider calls; not a public-video quality evaluation.",
+    "runs": [
+      {
+        "cache_enabled": true,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 53,
+          "llm_tokens_out": 102,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.0014277,
+          "llm_cache_read_tokens": 8647,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 1,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.0014277,
+          "llm_uncached_equivalent_usd": 0.00921,
+          "cost_complete": true
+        },
+        "produced_types": [
+          "other"
+        ],
+        "error": null
+      },
+      {
+        "cache_enabled": false,
+        "metrics": {
+          "transcription_cost": 0.0,
+          "ocr_cost": 0.0,
+          "transcription_seconds": 0.0,
+          "ocr_seconds": 0.0,
+          "llm_tokens_in": 8700,
+          "llm_tokens_out": 4,
+          "places_calls": 0,
+          "cache_hits": 0,
+          "estimated_usd": 0.00872,
+          "llm_cache_read_tokens": 0,
+          "llm_cache_write_tokens": 0,
+          "llm_requests": 1,
+          "llm_cache_hits": 0,
+          "llm_usage_unavailable_requests": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "llm_usd": 0.00872,
+          "llm_uncached_equivalent_usd": 0.00872,
+          "cost_complete": true
+        },
+        "produced_types": [],
+        "error": null
+      }
+    ]
+  }
+]

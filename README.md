@@ -1,25 +1,27 @@
 # ReelBot
 
-ReelBot turns Instagram, TikTok, and YouTube links into a personal collection of places. The iOS app opens directly into a local library. Links, folders, and notes persist offline; processing resumes when the main app can reach the service. Apple sign-in is optional and enables cross-device sync.
+ReelBot saves useful things from Instagram, TikTok, and YouTube: places, workouts, recipes, products, travel ideas, home projects, style, media, and learning. Recent opens first. Entries with a linked place also appear on the map. Your library works without an account; Apple sign-in is optional for cross-device sync.
 
-The Expo / React Native app uses a small native share extension. The extension writes one atomic `{url, timestamp}` file in the App Group container and immediately completes. It performs no networking or authentication. The app imports those files into SQLite before acknowledging them, then uploads pending links with an anonymous device credential stored in Keychain. App Group preference read/write remains available in `app/src/sharedGroup.ts`.
+The Expo / React Native app stores its library and outbox in SQLite. The native iOS share extension writes an atomic URL/timestamp file to the App Group container and completes immediately. It does not authenticate or make network requests. The main app acknowledges a shared file only after committing it locally, then uploads queued saves when connectivity and iOS execution time are available.
 
-FastAPI exposes owner-scoped saves, places, folders, notes, search, sync, and optional Apple verification. A Python worker independently combines captions, five OCR frames, and local audio transcription. One schema-constrained Claude request extracts an array of candidates. Every candidate is persisted before address lookup. Google Places Text Search uses exactly the five required fields; global cached venue matches are reused across libraries. Low-confidence or ambiguous results remain visible for review.
+FastAPI enforces personal ownership. One Python pipeline gathers captions, OCR and audio, makes one cached, structured extraction request, persists every candidate, optionally resolves named venues, then files entries. `config/content_types.yaml` is the runtime taxonomy for extraction, validation, folders, filters and detail fields. The app receives registry updates through sync and bundles a copy for its first offline launch. A category can be added without an app rebuild or category-specific code.
 
-## Run locally
+## Local development
 
 1. Install Python 3.12, Node, PostgreSQL with pgvector, ffmpeg, and tesseract. Install `requirements.txt` into a virtual environment.
-2. Copy `.env.example` to `.env` and configure the database and provider credentials. Never put provider credentials into the app.
-3. For a new database, apply `db/schema.sql`. For an existing database, take a restorable backup, run `python db/migrate.py --dry-run`, then `python db/migrate.py`. The migration is atomic and forward-only; restoring the backup is the rollback path.
-4. Run `uvicorn api.main:app --host 0.0.0.0 --port 8000` and `python -m worker.worker` in separate processes.
-5. In `app/`, install dependencies, copy `.env.example` to `.env`, and set the API URL. Run `npm run prebuild:ios`, then `npm run ios`. Native queue templates and their config plugin are tracked; generated `ios/` files are not.
+2. Copy `.env.example` to `.env` and configure the database and provider credentials. Provider secrets never belong in Expo public settings.
+3. For a fresh database apply `db/schema.sql`. For an existing database take a restorable backup, run `python db/migrate.py --dry-run`, then `python db/migrate.py`. Migration 001 preserves historical ownership, 002 upgrades personal places to typed entries, and 003 fixes the validation function search path. Each migration is transactional and forward-only; restore the backup to roll back.
+4. Run `uvicorn api.main:app --host 127.0.0.1 --port 8000` and `python -m worker.worker` in separate processes. For a phone, bind the API to the Mac's reachable local address and configure the app with that address.
+5. In `app/`, install dependencies, configure `.env`, and run `npm run prebuild:ios`. This uses a clean prebuild to avoid duplicate extension targets. Open the generated `ReelBot.xcworkspace` with the shared-container signing entitlements.
 
-The worker gives each attempt a maximum 55-second process deadline, with server queue wait included in the first attempt’s 58-second expiry. Media collection has a 30-second budget and preserves partial captions, OCR and transcripts for extraction. An interrupted lease becomes a visible failure and receives one automatic retry after 15 seconds. Manual Retry starts a fresh attempt budget. Local saves can remain queued offline until connectivity and iOS execution time are available.
+Each processing attempt has a 55-second supervisor deadline. Signal collection gets 30 seconds and keeps usable partial evidence; extraction has a bounded timeout. All candidates are stored before external lookups. A successful extraction is reused on retry while the registry version matches, preserving user edits and avoiding another model call. Expired leases become visible failures and receive one automatic retry. Offline saves remain local until the app can run and connect.
 
-Automatic city/category folders appear only when a place needs them. Custom folders support rename, deletion, ordering, and bulk copy/move. Deleting a folder preserves places. Search combines lexical matches for name/city/folder/note with retained 384-dimensional cosine similarity. A separate indexing process maintains embeddings without extending ingestion deadlines.
+Type folders and facet subfolders appear only when needed. Multi-valued facets file an entry into every matching subfolder. Reviews stay in their folders; only uncertain cards show a specific question. Dismissal persists across restarts. Custom folders support rename, ordering, bulk copy/move and deletion without deleting entries. Search includes titles, summaries, attributes, notes, folder names and linked place names, with optional 384-dimensional semantic ranking.
 
-## Verify
+The map uses native Apple Maps, filters out entries without coordinates, clusters at low zoom, and offers distance filters and an ascending Near me list. Location is requested only on the first Map visit after a rationale. Denying it leaves saved places available. Shipping builds have Recent, Map and Settings; Debug also exposes the isolated interest view.
 
-Use a disposable loopback database with `test` in its name. The migration test also uses `reelbot_migration_test` in that same local database server. Run `TEST_DATABASE_URL=… scripts/run_checks.sh`. These tests reset their test data. Run `DATABASE_URL=… python -m evals.run_golden` for real provider evaluation; fixtures with incomplete human labeling fail acceptance.
+## Verification
 
-See `VERIFICATION.md` for executed results and limits, `SHARE_TEST.md` for device verification, and `RUNBOOK.md` for operations. Debug cost figures multiply measured provider usage by configurable rates and exclude local compute; they are estimates, not invoices.
+Use a disposable loopback database whose name contains `test`. The migration test also resets `reelbot_migration_test` on that local server and reads archived schemas from the retained Git history. Run `TEST_DATABASE_URL=… scripts/run_checks.sh`. Never point this command at a live database.
+
+Run `DATABASE_URL=… python -m evals.run_golden` for the 40-source provider benchmark. Incomplete independent labels fail acceptance even when a provisional prediction matches. `VERIFICATION.md` and `audit-evidence/` record executed results and limitations. Provider costs are measured tokens/requests multiplied by configured rates; local compute and unavailable provider usage are not silently treated as measured fees.

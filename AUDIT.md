@@ -1,11 +1,11 @@
 # Personal-product audit
 
-The refactor replaces transport-driven ingestion and shared libraries with a personal place saver. The app now owns a durable local SQLite library, optional Apple sync, a native URL queue, personal folders, notes, and search. The API derives ownership from a device credential and never accepts an owner from a request body.
+The app and backend now organize private typed entries from reels. A shared global place cache supports optional map links. Personal ownership, the durable native queue, offline storage, bounded processing and optional Apple sync remain intact.
 
-Semantic embeddings and cosine ranking were retained in `worker/search.py`; interactive conversational code was removed. The source media helpers now live in `worker/media.py`, and one strict array extraction call lives in `worker/pipeline.py`. Address resolution uses the global cache in `worker/places.py`.
+`config/content_types.yaml` drives extraction, API/database validation, type/facet folders, filtering and detail fields. The extractor makes one structured call with a cached registry prefix. Every candidate is stored before optional external place resolution. Search retains lexical matches and 384-dimensional cosine ranking.
 
-The original nested app history and both environment files are preserved in the external full backup. The app is now tracked by the outer repository. The original audit table, with corrected classifications and original line references, is delivered separately outside this clean source tree.
+The original app repository was absorbed into the outer repository; its original history/tag and both environment files remain in external backups. The original reclassified audit and historical line references are preserved in the external execution report.
 
-The forward migration was exercised with single-owner, multiple-owner, and no-owner fixtures and with a restored copy of the live public schema. In the actual live database, all 21 originals lacked a resolvable device identity. All 21 were preserved intact as orphan records; none received an arbitrary owner.
+The historical ownership migration accounted for all 21 live originals as orphan records because no device owner could be established. The typed-entry migration preserves existing personal IDs, owners, saves, notes and custom folders, as verified on fixtures and the eight-entry device-test database. Live migration was rehearsed against a restored public-schema backup before applying it.
 
-Executed checks and unresolved acceptance failures are documented in `VERIFICATION.md` and the regenerated `audit-evidence/`. No source audit can substitute for a physical-device share-sheet test or a fully labeled real-video accuracy evaluation.
+See `VERIFICATION.md` for individual checks. Passing source or database checks does not establish physical share-sheet behavior or fully labeled real-video accuracy. The benchmark remains a release blocker until its labels and quality thresholds are satisfied.

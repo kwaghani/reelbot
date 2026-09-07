@@ -1,8 +1,8 @@
 {
   "lost" : 0,
-  "max_write_ms" : 0.70420827250927687,
-  "mean_write_ms" : 0.23246499244123697,
-  "resident_bytes" : 8994816,
+  "max_write_ms" : 0.89337502140551805,
+  "mean_write_ms" : 0.330081672873348,
+  "resident_bytes" : 9240576,
   "scope" : "Native QueueStore on macOS; excludes host share sheets, extension presentation and iOS process memory.",
   "writes" : 50
 }

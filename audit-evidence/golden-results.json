@@ -1,67 +1,203 @@
 {
+  "configuration": {
+    "registry_sha256": "c55a2c540a0a698f9ad21312c25d9ff206e1b9abcee0ea379b58a7b2608c4f59",
+    "response_schema_sha256": "b895f9a83afbaa59d0a4ae212104b07b52da2009d74d3cecb2b4a94f48ecbc10",
+    "pipeline_sha256": "4f4fb6dcbe331f622fcaf55de611a0c5e1e252229cef38c78de68fbe10909ce9",
+    "fixtures_sha256": "2daf23d95102cf9b6371b2ee287ca6550af50027511795007184b35581741c04"
+  },
   "metrics": {
-    "precision": null,
-    "recall": null,
-    "true_positive_resolved": 0,
-    "false_positive_resolved": 0,
-    "found_labeled_venues": 0,
-    "labeled_venues": 0,
+    "classification_accuracy": 0.8043478260869565,
+    "required_attribute_precision": 0.918918918918919,
+    "place_precision": 0.45454545454545453,
+    "recall": 0.7708333333333334,
+    "provisional_only": true,
     "verified_rows": 0,
+    "produced_entries": 46,
+    "expected_entries": 48,
+    "matched_correct_type": 37,
+    "labeled_required_attributes": 37,
+    "correct_required_attributes": 34,
+    "resolved_places": 11,
+    "correct_resolved_places": 5,
+    "needs_review_rate": 0.10869565217391304,
+    "review_reasons": {
+      "unresolved_place": 5,
+      "low_confidence": 5
+    },
+    "silent_drops": 3,
     "distribution": {
-      "spoken": 1,
-      "caption": 3,
-      "no_place": 2,
-      "unverified": 12,
-      "listicle": 2
+      "place": 10,
+      "workout": 6,
+      "recipe": 6,
+      "product": 4,
+      "style_home": 4,
+      "media_learning": 4,
+      "empty": 4,
+      "mixed": 2
     },
-    "required_distribution": {
-      "caption": 6,
-      "on_screen": 4,
-      "spoken": 3,
-      "listicle": 3,
-      "no_place": 2,
-      "chain": 2
+    "checks": {
+      "composition": "FAIL",
+      "classification_at_least_85_percent": "FAIL",
+      "required_attribute_precision_at_least_80_percent": "FAIL",
+      "place_precision_at_least_85_percent": "FAIL",
+      "recall_at_least_75_percent": "FAIL",
+      "zero_silent_drops": "FAIL",
+      "four_empty_reels": "PASS",
+      "five_plus_listicle": "PASS",
+      "both_mixed_have_two_types": "FAIL",
+      "review_rate_under_20_percent": "PASS",
+      "terminal_under_60_seconds": "PASS"
     },
-    "required_distribution_met": false,
-    "acceptance": "FAIL: verified labels, composition, or accuracy thresholds are not satisfied."
+    "acceptance": "FAIL"
   },
   "cost": {
-    "average_usd": 0.03480095,
-    "cache_hit_rate": 0.16,
-    "places_calls": 21,
-    "cache_hits": 4,
-    "basis": "Measured provider usage \u00d7 configured rates; local compute excluded."
+    "total_usd": 0.5960354999999999,
+    "average_usd": 0.014900887499999998,
+    "prompt_cache_hit_rate": 0.9722222222222222,
+    "llm_requests": 36,
+    "places_calls": 16,
+    "place_cache_hits": 0,
+    "by_type": {
+      "place": {
+        "save_equivalents": 6.0,
+        "llm_usd": 0.0183132,
+        "total_usd": 0.5303132,
+        "mean_llm_usd": 0.0030522,
+        "mean_total_usd": 0.08838553333333334
+      },
+      "no_entries": {
+        "save_equivalents": 13.0,
+        "llm_usd": 0.0105636,
+        "total_usd": 0.0105636,
+        "mean_llm_usd": 0.0008125846153846153,
+        "mean_total_usd": 0.0008125846153846153
+      },
+      "workout": {
+        "save_equivalents": 4.0,
+        "llm_usd": 0.0065938,
+        "total_usd": 0.0065938,
+        "mean_llm_usd": 0.00164845,
+        "mean_total_usd": 0.00164845
+      },
+      "recipe": {
+        "save_equivalents": 6.0,
+        "llm_usd": 0.0187042,
+        "total_usd": 0.0187042,
+        "mean_llm_usd": 0.0031173666666666666,
+        "mean_total_usd": 0.0031173666666666666
+      },
+      "product": {
+        "save_equivalents": 3.6,
+        "llm_usd": 0.00981092,
+        "total_usd": 0.00981092,
+        "mean_llm_usd": 0.0027252555555555558,
+        "mean_total_usd": 0.0027252555555555558
+      },
+      "media": {
+        "save_equivalents": 0.4,
+        "llm_usd": 0.00222988,
+        "total_usd": 0.00222988,
+        "mean_llm_usd": 0.0055747,
+        "mean_total_usd": 0.0055747
+      },
+      "style": {
+        "save_equivalents": 1.0,
+        "llm_usd": 0.0020657,
+        "total_usd": 0.0020657,
+        "mean_llm_usd": 0.0020657,
+        "mean_total_usd": 0.0020657
+      },
+      "home": {
+        "save_equivalents": 2.0,
+        "llm_usd": 0.0053214000000000004,
+        "total_usd": 0.0053214000000000004,
+        "mean_llm_usd": 0.0026607000000000002,
+        "mean_total_usd": 0.0026607000000000002
+      },
+      "learning": {
+        "save_equivalents": 4.0,
+        "llm_usd": 0.0104328,
+        "total_usd": 0.0104328,
+        "mean_llm_usd": 0.0026082,
+        "mean_total_usd": 0.0026082
+      }
+    },
+    "basis": "Known usage lower bound; provider usage unavailable for some requests. Measured tokens/requests times configured rates; local compute excluded. Mixed saves allocated by entry count.",
+    "usage_unavailable_requests": 1,
+    "complete": false
   },
   "rows": [
     {
-      "url": "https://www.instagram.com/reel/DaDPI6muPFN/?igsh=NTc4MTIwNjQ2YQ==",
+      "id": "golden-01",
+      "category": "place",
+      "url": "https://www.instagram.com/reel/DaDPI6muPFN/",
+      "source_title": "The Bay Shack Pizzeria",
       "expected": [
-        "The Bay Shack Pizzeria"
+        {
+          "content_type": "place",
+          "title": "The Bay Shack Pizzeria",
+          "attributes": {
+            "venue_kind": "restaurant"
+          }
+        }
       ],
-      "category": "spoken",
       "labels_verified": false,
-      "label_notes": "Hand-read archived spoken transcript; absence from caption not independently verified.",
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Archived spoken transcript; city unverified.",
+      "tags": [],
+      "save_id": "6d4fce84-49fb-43de-a509-8aee57b1f724",
       "produced": [
         {
-          "name": "The Bay Shack Pizzeria",
+          "id": "9dc4d5ee-4b20-470c-8f12-f0d8bf06bff4",
+          "content_type": "place",
+          "title": "Bayshack Pizzeria, Worli",
+          "summary": "Pure vegetarian restaurant serving authentic Neapolitan pizza and pasta with Jain-friendly options.",
+          "attributes": {
+            "cuisine": "Italian",
+            "venue_kind": "restaurant",
+            "price_level": null
+          },
           "needs_review": false,
-          "google_place_id": "ChIJQx0c7-nP5zsRtMMkolX-HpI"
+          "review_reason": null,
+          "place_id": "436fcd47-e1de-4ac6-a14e-c010b598fdf5",
+          "place_name": "The Bay Shack Pizzeria",
+          "city": "Mumbai",
+          "formatted_address": "Shop no.8, Kakad Estate, Dr RG Thadani Marg, B Wing, Siddharth Nagar, Worli, Mumbai, Maharashtra 400018, India",
+          "lat": 19.0014295,
+          "lng": 72.8149327
         }
       ],
       "result": {
         "status": "resolved",
         "error_reason": null,
         "cost": {
+          "llm_usd": 0.0020707,
           "ocr_cost": 0.0,
-          "cache_hits": 1,
+          "cache_hits": 0,
           "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 4.271019957959652,
-          "places_calls": 0,
-          "estimated_usd": 0.001399,
-          "llm_tokens_in": 924,
-          "llm_tokens_out": 95,
+          "ocr_seconds": 2.0876957090804353,
+          "llm_requests": 1,
+          "places_calls": 1,
+          "content_types": {
+            "place": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0340707,
+          "llm_tokens_in": 341,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 173,
+          "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+          ],
           "transcription_cost": 0.0,
-          "transcription_seconds": 13.189163333037868
+          "places_calls_by_type": {
+            "place": 1
+          },
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 6.9993391670286655,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009853,
+          "llm_usage_unavailable_requests": 0
         },
         "signals": {
           "caption": {
@@ -79,33 +215,62 @@
         },
         "unavailable_signals": {}
       },
-      "elapsed_seconds": 24.537,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
+      "elapsed_seconds": 22.598,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "9dc4d5ee-4b20-470c-8f12-f0d8bf06bff4",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
     },
     {
+      "id": "golden-02",
+      "category": "place",
       "url": "https://vt.tiktok.com/ZSCDMwK3f/",
+      "source_title": "Ornella Munich",
       "expected": [
-        "Ornella"
+        {
+          "content_type": "place",
+          "title": "Ornella",
+          "attributes": {
+            "venue_kind": "restaurant"
+          },
+          "city": "Munich"
+        }
       ],
-      "category": "caption",
       "labels_verified": false,
-      "label_notes": "Hand-read archived caption names Ornella in Munich.",
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Archived caption.",
+      "tags": [],
+      "save_id": "ab3b2926-90aa-4950-a60f-3661f80d3371",
       "produced": [],
       "result": {
         "status": "failed",
         "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
         "cost": {
+          "llm_usd": 0.0,
           "ocr_cost": 0.0,
           "cache_hits": 0,
           "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
           "ocr_seconds": 0.0,
+          "llm_requests": 0,
           "places_calls": 0,
+          "cost_complete": true,
           "estimated_usd": 0.0,
           "llm_tokens_in": 0,
+          "llm_cache_hits": 0,
           "llm_tokens_out": 0,
           "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
+          "llm_cache_read_tokens": 0,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.0,
+          "llm_usage_unavailable_requests": 0
         },
         "signals": {
           "caption": {
@@ -123,472 +288,58 @@
         },
         "unavailable_signals": {}
       },
-      "elapsed_seconds": 4.709,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.instagram.com/reel/DZQEbgvRroH/",
-      "expected": [],
-      "category": "no_place",
-      "labels_verified": false,
-      "label_notes": "Hand-read archived sports caption and OCR; complete video not independently viewed.",
-      "produced": [],
-      "result": {
-        "status": "no_places_found",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 4.501992041943595,
-          "places_calls": 0,
-          "estimated_usd": 0.000693,
-          "llm_tokens_in": 673,
-          "llm_tokens_out": 4,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 11.62364754092414
-        },
-        "signals": {
-          "caption": {
-            "characters": 82,
-            "sha256": "fe89bc68b0dc56a17fb7e4bddd1493506eda8912532530f086bc10dda08ad6bf"
-          },
-          "ocr": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "transcript": {
-            "characters": 122,
-            "sha256": "880c76c814b3ffede53a8f13c2ea84d53a6c602d7e9a2958acef65ad98dfd275"
-          }
-        },
-        "unavailable_signals": {}
-      },
-      "elapsed_seconds": 20.81,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.instagram.com/reel/DaclEJUqSdh/",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [],
-      "result": {
-        "status": "no_places_found",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 4.137151666916907,
-          "places_calls": 0,
-          "estimated_usd": 0.000976,
-          "llm_tokens_in": 956,
-          "llm_tokens_out": 4,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 20.48685387498699
-        },
-        "signals": {
-          "caption": {
-            "characters": 90,
-            "sha256": "724acebc2fcdc1cf74ac5a7c32dc6bb38f9a101868ab37cdf8713c4f84b522ae"
-          },
-          "ocr": {
-            "characters": 239,
-            "sha256": "0ccb188f23e21bc90f1b1dd9ac571971beab11565c4d25f66fd4d7b65d0f3ccd"
-          },
-          "transcript": {
-            "characters": 598,
-            "sha256": "15683eaa1b619b208615798aede0cf8c5087307d6951c376632782e0570407cd"
-          }
-        },
-        "unavailable_signals": {}
-      },
-      "elapsed_seconds": 34.176,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.instagram.com/p/DJEzB4SM_o4/",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [
-        {
-          "name": "Lake Hollywood Park",
-          "needs_review": false,
-          "google_place_id": "ChIJIWe65uK_woARj5O0F9JFBJw"
-        },
-        {
-          "name": "Griffith Observatory",
-          "needs_review": false,
-          "google_place_id": "ChIJywjU6WG_woAR3NrWwrEH_3M"
-        },
-        {
-          "name": "Santa Monica Pier",
-          "needs_review": true,
-          "google_place_id": null
-        },
-        {
-          "name": "Hollywood Walk of Fame",
-          "needs_review": false,
-          "google_place_id": "ChIJXyC7WTu_woARPvVMCHBXd4U"
-        },
-        {
-          "name": "Funko Pop Store",
-          "needs_review": true,
-          "google_place_id": null
-        },
-        {
-          "name": "Angels Flight Railway",
-          "needs_review": false,
-          "google_place_id": "ChIJ_SlqhEzGwoARrIIERV62_po"
-        },
-        {
-          "name": "Venice",
-          "needs_review": false,
-          "google_place_id": "ChIJXWhSMMC6woARPI1cDbQBEY8"
-        },
-        {
-          "name": "Universal Studios",
-          "needs_review": true,
-          "google_place_id": null
-        },
-        {
-          "name": "Venice Canals",
-          "needs_review": false,
-          "google_place_id": "ChIJfdHQ5Ly6woARIws1jFhjGEE"
-        },
-        {
-          "name": "Rodeo Drive",
-          "needs_review": false,
-          "google_place_id": "Eh5Sb2RlbyBEciwgTG9zIEFuZ2VsZXMsIENBLCBVU0EiLiosChQKEgntx5tl5LvCgBHcaPVqdAGI8BIUChIJE9on3F3HwoAR9AhGJW_fL-I"
-        },
-        {
-          "name": "The Last Bookstore",
-          "needs_review": false,
-          "google_place_id": "ChIJ7YJ_IkrGwoARNak4CDihkYU"
-        },
-        {
-          "name": "Grand Central Market",
-          "needs_review": true,
-          "google_place_id": null
-        }
+      "elapsed_seconds": 4.023,
+      "matches": [],
+      "missed_expected_indices": [
+        0
       ],
-      "result": {
-        "status": "needs_review",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 3.531415708945133,
-          "places_calls": 12,
-          "estimated_usd": 0.389684,
-          "llm_tokens_in": 1359,
-          "llm_tokens_out": 865,
-          "places_field_masks": [
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
-          ],
-          "transcription_cost": 0.0,
-          "transcription_seconds": 8.506469124928117
-        },
-        "signals": {
-          "caption": {
-            "characters": 1692,
-            "sha256": "007da22820922405d39d58d54f3d3ead48cb359cc69db2a4d64c1b13022aeff6"
-          },
-          "ocr": {
-            "characters": 67,
-            "sha256": "27b7c61548aa0bceb6547382fdcdae5d7d429a4bfe95d38a89d0d52a1646d46d"
-          },
-          "transcript": {
-            "characters": 239,
-            "sha256": "2004ec0438139ded1d19f99f20e659f45b3624d6a5c85921ae8724eedb610443"
-          }
-        },
-        "unavailable_signals": {}
-      },
-      "elapsed_seconds": 45.645,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
     },
     {
-      "url": "https://www.youtube.com/shorts/i84Sc5uvQa8",
-      "expected": [],
-      "category": "no_place",
-      "labels_verified": false,
-      "label_notes": "Hand-read archived cooking transcript; complete video not independently viewed.",
-      "produced": [],
-      "result": {
-        "status": "no_places_found",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 0.1894809170626104,
-          "places_calls": 0,
-          "estimated_usd": 0.001498,
-          "llm_tokens_in": 1478,
-          "llm_tokens_out": 4,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
-        },
-        "signals": {
-          "caption": {
-            "characters": 2056,
-            "sha256": "63ca96979524a9c52ce022779667a78fb6e4f1eaf8e483e581fbb3175449171c"
-          },
-          "ocr": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
-        },
-        "unavailable_signals": {
-          "transcript": "No accessible audio track"
-        }
-      },
-      "elapsed_seconds": 19.267,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.youtube.com/shorts/CCMuiP18GoE",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [
-        {
-          "name": "JOE'S PIZZA",
-          "needs_review": true,
-          "google_place_id": null
-        }
-      ],
-      "result": {
-        "status": "needs_review",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 0.20213475008495152,
-          "places_calls": 1,
-          "estimated_usd": 0.033165,
-          "llm_tokens_in": 765,
-          "llm_tokens_out": 80,
-          "places_field_masks": [
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
-          ],
-          "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
-        },
-        "signals": {
-          "caption": {
-            "characters": 454,
-            "sha256": "be747aa698dcf398e2478d2c5d8137bb364d73af0e0324d77489b8b4832e0dc1"
-          },
-          "ocr": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
-        },
-        "unavailable_signals": {
-          "transcript": "No accessible audio track"
-        }
-      },
-      "elapsed_seconds": 15.636,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.instagram.com/p/Cgk0_MxDBeF/",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [
-        {
-          "name": "Hollywood Bowl",
-          "needs_review": false,
-          "google_place_id": "ChIJMwknwRu_woAR_eI2OM9ib2o"
-        }
-      ],
-      "result": {
-        "status": "resolved",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 1.8657699159812182,
-          "places_calls": 1,
-          "estimated_usd": 0.033134,
-          "llm_tokens_in": 739,
-          "llm_tokens_out": 79,
-          "places_field_masks": [
-            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
-          ],
-          "transcription_cost": 0.0,
-          "transcription_seconds": 5.9456681669689715
-        },
-        "signals": {
-          "caption": {
-            "characters": 289,
-            "sha256": "9cf7757848ac4d61941e4257354ccb1ff27c76114c72c8af5e52287b2843054d"
-          },
-          "ocr": {
-            "characters": 97,
-            "sha256": "d5de3dece19b037f0f1d9aa9c9a348324e1775b5ce56b41b936b50419c86e916"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
-        },
-        "unavailable_signals": {}
-      },
-      "elapsed_seconds": 13.567,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.instagram.com/reel/DWt-RZQOgtC/?igsh=YzAyMDM1MGJkZA==",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [
-        {
-          "name": "Sugo Social",
-          "needs_review": false,
-          "google_place_id": "ChIJa8FnLARL3YARDWWGcG5KvbE"
-        }
-      ],
-      "result": {
-        "status": "resolved",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 1,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 1.6785961670102552,
-          "places_calls": 0,
-          "estimated_usd": 0.00139,
-          "llm_tokens_in": 990,
-          "llm_tokens_out": 80,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 3.2835471250582486
-        },
-        "signals": {
-          "caption": {
-            "characters": 918,
-            "sha256": "454ac8866b4f322bef97361a697b79881fdb2927c654a39731bb3726a0c37e5a"
-          },
-          "ocr": {
-            "characters": 168,
-            "sha256": "a6ae315c0be8eb25de833d9fa9b04e38e7d96d7a3006ff7781d6086d2e0b9dfd"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
-        },
-        "unavailable_signals": {}
-      },
-      "elapsed_seconds": 14.329,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://vt.tiktok.com/ZSCHKqQpV/",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [],
-      "result": {
-        "status": "failed",
-        "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 0.0,
-          "places_calls": 0,
-          "estimated_usd": 0.0,
-          "llm_tokens_in": 0,
-          "llm_tokens_out": 0,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
-        },
-        "signals": {
-          "caption": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "ocr": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
-        },
-        "unavailable_signals": {}
-      },
-      "elapsed_seconds": 3.774,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
+      "id": "golden-03",
+      "category": "place",
       "url": "https://vt.tiktok.com/ZSC9GQCVS/",
+      "source_title": "Peter Pan Donut & Pastry Shop",
       "expected": [
-        "Peter Pan Donut & Pastry Shop"
+        {
+          "content_type": "place",
+          "title": "Peter Pan Donut",
+          "attributes": {
+            "venue_kind": "cafe"
+          },
+          "city": "Brooklyn"
+        }
       ],
-      "category": "caption",
       "labels_verified": false,
-      "label_notes": "Hand-read archived caption includes full Brooklyn street address.",
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Archived caption gives Brooklyn address; cafe versus shop needs full review.",
+      "tags": [],
+      "save_id": "c8e78022-2d07-486f-bb78-a7928055ee37",
       "produced": [],
       "result": {
         "status": "failed",
         "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
         "cost": {
+          "llm_usd": 0.0,
           "ocr_cost": 0.0,
           "cache_hits": 0,
           "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
           "ocr_seconds": 0.0,
+          "llm_requests": 0,
           "places_calls": 0,
+          "cost_complete": true,
           "estimated_usd": 0.0,
           "llm_tokens_in": 0,
+          "llm_cache_hits": 0,
           "llm_tokens_out": 0,
           "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
+          "llm_cache_read_tokens": 0,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.0,
+          "llm_usage_unavailable_requests": 0
         },
         "signals": {
           "caption": {
@@ -606,56 +357,214 @@
         },
         "unavailable_signals": {}
       },
-      "elapsed_seconds": 3.604,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
+      "elapsed_seconds": 4.186,
+      "matches": [],
+      "missed_expected_indices": [
+        0
+      ],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
     },
     {
-      "url": "https://www.instagram.com/p/DNQqeSYxhGq/",
+      "id": "golden-04",
+      "category": "place",
+      "url": "https://www.instagram.com/reel/Dbzg5DJIMzU/",
+      "source_title": "Shivaji Park",
       "expected": [
-        "Yunomi Handroll",
-        "Fitoor",
-        "Ka\u2019teen"
+        {
+          "content_type": "place",
+          "title": "Shivaji Park",
+          "attributes": {
+            "venue_kind": "activity"
+          },
+          "city": "Mumbai"
+        }
       ],
-      "category": "listicle",
       "labels_verified": false,
-      "label_notes": "Hand-read archived caption hashtags and OCR; full video not independently viewed.",
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Archived caption.",
+      "tags": [],
+      "save_id": "3468091f-3fe5-4791-a720-52f4b6dbb70f",
+      "produced": [],
+      "result": {
+        "status": "no_content_found",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0010947,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 2.0734415829647332,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0010947,
+          "llm_tokens_in": 210,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 19.02104737504851,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.008877,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 94,
+            "sha256": "71e9129833637bf609f31ab049693f4c6218230096975743cd1475c2613d5fbc"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 488,
+            "sha256": "3d2ef8882377a9545f46e5d2f2abde2a372995087de8b4701306ea0cf338d0ab"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 28.503,
+      "matches": [],
+      "missed_expected_indices": [
+        0
+      ],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-05",
+      "category": "place",
+      "url": "https://www.instagram.com/p/DNQqeSYxhGq/",
+      "source_title": "Three Los Angeles restaurants",
+      "expected": [
+        {
+          "content_type": "place",
+          "title": "Yunomi Handroll",
+          "attributes": {
+            "venue_kind": "restaurant"
+          },
+          "city": "Los Angeles"
+        },
+        {
+          "content_type": "place",
+          "title": "Fitoor",
+          "attributes": {
+            "venue_kind": "restaurant"
+          },
+          "city": "Los Angeles"
+        },
+        {
+          "content_type": "place",
+          "title": "Ka\u2019teen",
+          "attributes": {
+            "venue_kind": "restaurant"
+          },
+          "city": "Los Angeles"
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Archived caption and OCR.",
+      "tags": [
+        "listicle"
+      ],
+      "save_id": "83561154-2c2a-447a-9159-cf612ceeccfb",
       "produced": [
         {
-          "name": "Yunomi Handroll",
+          "id": "3819020c-2761-4b8d-9f65-64a7cc9865bf",
+          "content_type": "place",
+          "title": "Fitoor",
+          "summary": "Indian restaurant in Santa Monica, Los Angeles for summer dining.",
+          "attributes": {
+            "cuisine": "Indian",
+            "venue_kind": "restaurant",
+            "price_level": null
+          },
           "needs_review": false,
-          "google_place_id": "ChIJQcsF2q27woAR0kYUVPw4-2o"
+          "review_reason": null,
+          "place_id": "5e77ea50-204e-4c81-b971-b586cf47b27b",
+          "place_name": "FITOOR",
+          "city": "Santa Monica",
+          "formatted_address": "1755 Ocean Ave, Santa Monica, CA 90401, USA",
+          "lat": 34.0087067,
+          "lng": -118.4914474
         },
         {
-          "name": "Ka'Teen",
+          "id": "67e1c78f-209a-4205-89b5-29e82c0bf7ab",
+          "content_type": "place",
+          "title": "Ka'Teen",
+          "summary": "Yucatecan restaurant in Hollywood, Los Angeles for summer dining.",
+          "attributes": {
+            "cuisine": "Yucatan",
+            "venue_kind": "restaurant",
+            "price_level": null
+          },
           "needs_review": true,
-          "google_place_id": null
+          "review_reason": "unresolved_place;low_confidence",
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
         },
         {
-          "name": "Fitoor",
-          "needs_review": true,
-          "google_place_id": null
+          "id": "9d77ab88-6131-4ce3-8b6b-70667d45189a",
+          "content_type": "place",
+          "title": "Yunomi Handroll",
+          "summary": "Handroll restaurant in Culver City, Los Angeles for summer dining.",
+          "attributes": {
+            "cuisine": "Japanese",
+            "venue_kind": "restaurant",
+            "price_level": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": "cf03e89f-25e9-436a-9ee9-f37312d9bd06",
+          "place_name": "Yunomi Handroll",
+          "city": "Culver City",
+          "formatted_address": "9300 Culver Blvd, Culver City, CA 90232, USA",
+          "lat": 34.0243902,
+          "lng": -118.3934002
         }
       ],
       "result": {
         "status": "needs_review",
         "error_reason": null,
         "cost": {
+          "llm_usd": 0.0031087,
           "ocr_cost": 0.0,
           "cache_hits": 0,
           "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 2.070549334050156,
+          "ocr_seconds": 2.2152666250476614,
+          "llm_requests": 1,
           "places_calls": 3,
-          "estimated_usd": 0.097943,
-          "llm_tokens_in": 843,
-          "llm_tokens_out": 220,
+          "content_types": {
+            "place": 3
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0991087,
+          "llm_tokens_in": 219,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 405,
           "places_field_masks": [
             "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
             "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
             "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
           ],
           "transcription_cost": 0.0,
-          "transcription_seconds": 11.164569917018525
+          "places_calls_by_type": {
+            "place": 3
+          },
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 18.18923820904456,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010891,
+          "llm_usage_unavailable_requests": 0
         },
         "signals": {
           "caption": {
@@ -667,203 +576,221 @@
             "sha256": "e1b064909297ae4c3e7175604c71014004e3600d86299afa6c098bd4e180a7ca"
           },
           "transcript": {
-            "characters": 63,
-            "sha256": "8c8d46f29a74d679423aa64a989fc5eb5ec89ab1250b2c1ebaf332f49be33afd"
+            "characters": 12,
+            "sha256": "bd08a09e4ef865151ee5ba4818f546690cbe42822fad09facb8df29324492653"
           }
         },
         "unavailable_signals": {}
       },
-      "elapsed_seconds": 25.029,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://vt.tiktok.com/ZSC7tbwb4/",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [],
-      "result": {
-        "status": "failed",
-        "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 0.0,
-          "places_calls": 0,
-          "estimated_usd": 0.0,
-          "llm_tokens_in": 0,
-          "llm_tokens_out": 0,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
+      "elapsed_seconds": 41.396,
+      "matches": [
+        {
+          "expected_index": 1,
+          "produced_id": "3819020c-2761-4b8d-9f65-64a7cc9865bf",
+          "correct_type": true
         },
-        "signals": {
-          "caption": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "ocr": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
+        {
+          "expected_index": 2,
+          "produced_id": "67e1c78f-209a-4205-89b5-29e82c0bf7ab",
+          "correct_type": true
         },
-        "unavailable_signals": {}
-      },
-      "elapsed_seconds": 3.548,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.instagram.com/reel/DW90cOkEUTu/",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [],
-      "result": {
-        "status": "no_places_found",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 2.2621434580069035,
-          "places_calls": 0,
-          "estimated_usd": 0.000707,
-          "llm_tokens_in": 687,
-          "llm_tokens_out": 4,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 15.057572375051677
-        },
-        "signals": {
-          "caption": {
-            "characters": 80,
-            "sha256": "bcead7cf20d94976fc398f4260092bf7c87549fe5ea2c0bcc42bdb9f55cba53a"
-          },
-          "ocr": {
-            "characters": 137,
-            "sha256": "ff80e891cbcf859af3af4b4156bec687945e398f2cb03684e84072f3ce6f47fd"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
-        },
-        "unavailable_signals": {}
-      },
-      "elapsed_seconds": 21.915,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.youtube.com/shorts/aMZGAhmDHys",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [],
-      "result": {
-        "status": "no_places_found",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 0.11267129192128778,
-          "places_calls": 0,
-          "estimated_usd": 0.000726,
-          "llm_tokens_in": 706,
-          "llm_tokens_out": 4,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
-        },
-        "signals": {
-          "caption": {
-            "characters": 380,
-            "sha256": "c17d752fa6af06393ca27497331f1c23e43207192f97b9f43e3642009e2c64dc"
-          },
-          "ocr": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
-        },
-        "unavailable_signals": {
-          "transcript": "No accessible audio track"
+        {
+          "expected_index": 0,
+          "produced_id": "9d77ab88-6131-4ce3-8b6b-70667d45189a",
+          "correct_type": true
         }
-      },
-      "elapsed_seconds": 12.954,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
     },
     {
+      "id": "golden-06",
+      "category": "place",
       "url": "https://www.instagram.com/p/DUpDIg1k87g/",
+      "source_title": "Five Los Angeles area destinations",
       "expected": [
-        "Point Dume",
-        "Hollywood Sign",
-        "Los Leones Trail",
-        "El Matador State Beach",
-        "Point Mugu State Beach"
+        {
+          "content_type": "place",
+          "title": "Point Dume",
+          "attributes": {
+            "venue_kind": "activity"
+          }
+        },
+        {
+          "content_type": "place",
+          "title": "Hollywood Sign",
+          "attributes": {
+            "venue_kind": "activity"
+          }
+        },
+        {
+          "content_type": "place",
+          "title": "Los Leones Trail",
+          "attributes": {
+            "venue_kind": "activity"
+          },
+          "aliases": [
+            "Los Liones",
+            "Los Leones"
+          ]
+        },
+        {
+          "content_type": "place",
+          "title": "El Matador State Beach",
+          "attributes": {
+            "venue_kind": "activity"
+          }
+        },
+        {
+          "content_type": "place",
+          "title": "Point Mugu State Beach",
+          "attributes": {
+            "venue_kind": "activity"
+          }
+        }
       ],
-      "category": "listicle",
       "labels_verified": false,
-      "label_notes": "Hand-read archived caption listing five destinations.",
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Archived caption lists five names; individual cities/addresses unverified.",
+      "tags": [
+        "listicle",
+        "five_plus"
+      ],
+      "save_id": "9315d794-2492-4273-b54a-a038de237034",
       "produced": [
         {
-          "name": "Los Liones Canyon Trail",
+          "id": "2d631a70-805e-4658-8706-7ea92e0d0877",
+          "content_type": "place",
+          "title": "Point Dume",
+          "summary": "Ocean views and gorgeous yellow wildflowers.",
+          "attributes": {
+            "cuisine": null,
+            "venue_kind": "activity",
+            "price_level": null
+          },
+          "needs_review": true,
+          "review_reason": "unresolved_place;low_confidence",
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "2eeb0be5-8b7c-44a0-83b5-7a44d7e5afd5",
+          "content_type": "place",
+          "title": "Point Mugu State Beach",
+          "summary": "Magical sand dune walk along the coast.",
+          "attributes": {
+            "cuisine": null,
+            "venue_kind": "activity",
+            "price_level": null
+          },
+          "needs_review": true,
+          "review_reason": "unresolved_place;low_confidence",
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "31b5ee09-7088-41fa-ab71-619950c92252",
+          "content_type": "place",
+          "title": "El Matador State Beach",
+          "summary": "Best at low tide for exploring sea caves.",
+          "attributes": {
+            "cuisine": null,
+            "venue_kind": "activity",
+            "price_level": null
+          },
+          "needs_review": true,
+          "review_reason": "unresolved_place;low_confidence",
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "3525d3db-14e6-48d7-81b9-d5f8eabe8660",
+          "content_type": "place",
+          "title": "Los Leones Trail",
+          "summary": "Sweeping coastal views hiking trail.",
+          "attributes": {
+            "cuisine": null,
+            "venue_kind": "activity",
+            "price_level": null
+          },
           "needs_review": false,
-          "google_place_id": "ChIJgQAX2sGjwoARNYeOpJ77aqI"
+          "review_reason": null,
+          "place_id": "235f3032-da34-4ddf-8e17-8acf7cdbdbb3",
+          "place_name": "Los Liones Canyon Trail",
+          "city": "Los Angeles",
+          "formatted_address": "Los Liones Canyon Trail, Los Angeles, CA 90272, USA",
+          "lat": 34.0499261,
+          "lng": -118.5597156
         },
         {
-          "name": "Hollywood Sign",
+          "id": "b5f76b64-1094-46a7-be80-ce84144a350f",
+          "content_type": "place",
+          "title": "Hollywood Sign",
+          "summary": "Iconic Los Angeles backdrop hiking spot.",
+          "attributes": {
+            "cuisine": null,
+            "venue_kind": "activity",
+            "price_level": null
+          },
           "needs_review": false,
-          "google_place_id": "ChIJfVpQRQq_woARQ5hwJsast6s"
-        },
-        {
-          "name": "Point Dume",
-          "needs_review": true,
-          "google_place_id": null
-        },
-        {
-          "name": "El Matador State Beach",
-          "needs_review": true,
-          "google_place_id": null
-        },
-        {
-          "name": "Point Mugu State Beach",
-          "needs_review": true,
-          "google_place_id": null
+          "review_reason": null,
+          "place_id": "60b00ba9-d75a-419f-9c64-920ca88ce4e1",
+          "place_name": "Hollywood Sign",
+          "city": "Los Angeles",
+          "formatted_address": "Los Angeles, CA 90068, USA",
+          "lat": 34.1341151,
+          "lng": -118.3215482
         }
       ],
       "result": {
         "status": "needs_review",
         "error_reason": null,
         "cost": {
+          "llm_usd": 0.0034907,
           "ocr_cost": 0.0,
-          "cache_hits": 1,
+          "cache_hits": 0,
           "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 0.1482194169657305,
-          "places_calls": 4,
-          "estimated_usd": 0.130689,
-          "llm_tokens_in": 829,
-          "llm_tokens_out": 372,
+          "ocr_seconds": 0.19552374992053956,
+          "llm_requests": 1,
+          "places_calls": 5,
+          "content_types": {
+            "place": 5
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.1634907,
+          "llm_tokens_in": 246,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 476,
           "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
             "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
             "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
             "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
             "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
           ],
           "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
+          "places_calls_by_type": {
+            "place": 5
+          },
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.011273,
+          "llm_usage_unavailable_requests": 0
         },
         "signals": {
           "caption": {
@@ -883,190 +810,3569 @@
           "transcript": "No accessible audio track"
         }
       },
-      "elapsed_seconds": 12.991,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.youtube.com/shorts/LvV7K_i7aDQ",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [],
-      "result": {
-        "status": "no_places_found",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 0.15179425000678748,
-          "places_calls": 0,
-          "estimated_usd": 0.000961,
-          "llm_tokens_in": 941,
-          "llm_tokens_out": 4,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
+      "elapsed_seconds": 28.059,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "2d631a70-805e-4658-8706-7ea92e0d0877",
+          "correct_type": true
         },
-        "signals": {
-          "caption": {
-            "characters": 691,
-            "sha256": "fd366250df390e2cfb3ebecb23e848b166a7a20e7b7079b6c4f980621bbdd972"
-          },
-          "ocr": {
-            "characters": 18,
-            "sha256": "3d05dc5303009df6ba12cacfaaeb2f0631b2a0fca869c67e28259934701ea6ca"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
+        {
+          "expected_index": 4,
+          "produced_id": "2eeb0be5-8b7c-44a0-83b5-7a44d7e5afd5",
+          "correct_type": true
         },
-        "unavailable_signals": {
-          "transcript": "No accessible audio track"
+        {
+          "expected_index": 3,
+          "produced_id": "31b5ee09-7088-41fa-ab71-619950c92252",
+          "correct_type": true
+        },
+        {
+          "expected_index": 2,
+          "produced_id": "3525d3db-14e6-48d7-81b9-d5f8eabe8660",
+          "correct_type": true
+        },
+        {
+          "expected_index": 1,
+          "produced_id": "b5f76b64-1094-46a7-be80-ce84144a350f",
+          "correct_type": true
         }
-      },
-      "elapsed_seconds": 9.707,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.instagram.com/p/Da1ZOQmGtN_/",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [],
-      "result": {
-        "status": "no_places_found",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 0.0,
-          "places_calls": 0,
-          "estimated_usd": 0.000671,
-          "llm_tokens_in": 651,
-          "llm_tokens_out": 4,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 0.0
-        },
-        "signals": {
-          "caption": {
-            "characters": 119,
-            "sha256": "dc6f675e7ab990135da82642c699057d57014292ff65586c64f2a3191eb054cc"
-          },
-          "ocr": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          },
-          "transcript": {
-            "characters": 0,
-            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-          }
-        },
-        "unavailable_signals": {
-          "ocr": "No accessible frames",
-          "transcript": "No accessible audio track"
-        }
-      },
-      "elapsed_seconds": 3.817,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.instagram.com/reel/DZtN_qaIt0a/",
-      "expected": [],
-      "category": "unverified",
-      "labels_verified": false,
-      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
-      "produced": [],
-      "result": {
-        "status": "no_places_found",
-        "error_reason": null,
-        "cost": {
-          "ocr_cost": 0.0,
-          "cache_hits": 0,
-          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 1.392274749930948,
-          "places_calls": 0,
-          "estimated_usd": 0.001167,
-          "llm_tokens_in": 1147,
-          "llm_tokens_out": 4,
-          "transcription_cost": 0.0,
-          "transcription_seconds": 7.173028249992058
-        },
-        "signals": {
-          "caption": {
-            "characters": 1218,
-            "sha256": "363ef3e6a10866ff044f4325be6daf64f524b80f5585263256f4ab5136b84974"
-          },
-          "ocr": {
-            "characters": 343,
-            "sha256": "da1bac09f7b551a11044af4fc336468b787c9af8c14b6416a7f18322b072b049"
-          },
-          "transcript": {
-            "characters": 62,
-            "sha256": "0c1d99c831a8f76d9ed1404a7ac6563481fb5f3f17b24193ee55e19c7bd80efb"
-          }
-        },
-        "unavailable_signals": {}
-      },
-      "elapsed_seconds": 13.54,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
-    },
-    {
-      "url": "https://www.instagram.com/reel/Dbzg5DJIMzU/?igsh=NjZiM2M3MzIxNA==",
-      "expected": [
-        "Shivaji Park"
       ],
-      "category": "caption",
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-07",
+      "category": "place",
+      "url": "https://www.youtube.com/watch?v=9gkX6m5lsUM",
+      "source_title": "Quick Tour of Starbucks Reserve Roastery TOKYO #shorts",
+      "expected": [
+        {
+          "content_type": "place",
+          "title": "Starbucks Reserve Roastery",
+          "attributes": {
+            "venue_kind": "cafe"
+          },
+          "city": "Tokyo"
+        }
+      ],
       "labels_verified": false,
-      "label_notes": "Hand-read archived caption hashtags name the park and Mumbai.",
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary description names 2 Chome 19-23 Aobadai, Meguro City.",
+      "tags": [
+        "chain"
+      ],
+      "save_id": "fb577efa-920f-4426-b11c-73cba44054da",
       "produced": [
         {
-          "name": "Shivaji Park",
+          "id": "5090b719-c2c4-49d9-8b6c-3b44070f46d2",
+          "content_type": "place",
+          "title": "Starbucks Reserve Roastery Tokyo",
+          "summary": "Premium Starbucks roastery location in Meguro, Tokyo featuring coffee and reserve offerings.",
+          "attributes": {
+            "cuisine": "coffee",
+            "venue_kind": "cafe",
+            "price_level": "$$"
+          },
           "needs_review": false,
-          "google_place_id": "ChIJZW2pbM7O5zsRh0qFytryWQg"
+          "review_reason": null,
+          "place_id": "b3d5320c-7cb9-49f5-9904-8416d7661080",
+          "place_name": "Starbucks Reserve\u00ae Roastery Tokyo",
+          "city": "Tokyo",
+          "formatted_address": "2-ch\u014dme-19-23 Aobadai, Meguro City, Tokyo 153-0042, Japan",
+          "lat": 35.6492642,
+          "lng": 139.6925907
         }
       ],
       "result": {
         "status": "resolved",
         "error_reason": null,
         "cost": {
+          "llm_usd": 0.0018337,
           "ocr_cost": 0.0,
-          "cache_hits": 1,
+          "cache_hits": 0,
           "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
-          "ocr_seconds": 3.230277333059348,
-          "places_calls": 0,
-          "estimated_usd": 0.001216,
-          "llm_tokens_in": 846,
-          "llm_tokens_out": 74,
+          "ocr_seconds": 0.10784808301832527,
+          "llm_requests": 1,
+          "places_calls": 1,
+          "content_types": {
+            "place": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0338337,
+          "llm_tokens_in": 219,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 150,
+          "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+          ],
           "transcription_cost": 0.0,
-          "transcription_seconds": 11.005018667085096
+          "places_calls_by_type": {
+            "place": 1
+          },
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 4.517382250051014,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009616,
+          "llm_usage_unavailable_requests": 0
         },
         "signals": {
           "caption": {
-            "characters": 94,
-            "sha256": "71e9129833637bf609f31ab049693f4c6218230096975743cd1475c2613d5fbc"
+            "characters": 361,
+            "sha256": "2b3c20d6ac7a562efa82bfe20bb0bbcc6edae3ed5b75bc3de1377f28afddebe8"
           },
           "ocr": {
             "characters": 0,
             "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
           },
           "transcript": {
-            "characters": 586,
-            "sha256": "ad5e9394085ec037e20a1e66cf4ab8460b42540a4827be394fbfd54e21543377"
+            "characters": 101,
+            "sha256": "f15c7ff795e299d7f16917ff710d9791e07f5e834d320d3d78f90025b162adfd"
           }
         },
         "unavailable_signals": {}
       },
-      "elapsed_seconds": 20.659,
-      "pass": false,
-      "failure": "Human labeling is incomplete."
+      "elapsed_seconds": 18.084,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "5090b719-c2c4-49d9-8b6c-3b44070f46d2",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-08",
+      "category": "place",
+      "url": "https://www.youtube.com/shorts/KaROj7X-gvc",
+      "source_title": "Mini tray at Starbucks Reserve Tokyo",
+      "expected": [
+        {
+          "content_type": "place",
+          "title": "Starbucks Reserve",
+          "attributes": {
+            "venue_kind": "cafe"
+          },
+          "city": "Tokyo"
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary indexed title; same chain/location as preceding fixture.",
+      "tags": [
+        "chain"
+      ],
+      "save_id": "47817a7d-e243-4a65-b760-f660f4a7165b",
+      "produced": [
+        {
+          "id": "194a0316-8850-49b1-844f-e0dc929565e8",
+          "content_type": "place",
+          "title": "Starbucks Reserve Tokyo",
+          "summary": "Specialty Starbucks location featuring mini trays with edible flowers and seasonal items.",
+          "attributes": {
+            "cuisine": null,
+            "venue_kind": "cafe",
+            "price_level": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": "b3d5320c-7cb9-49f5-9904-8416d7661080",
+          "place_name": "Starbucks Reserve\u00ae Roastery Tokyo",
+          "city": "Tokyo",
+          "formatted_address": "2-ch\u014dme-19-23 Aobadai, Meguro City, Tokyo 153-0042, Japan",
+          "lat": 35.6492642,
+          "lng": 139.6925907
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0018017,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.270165333058685,
+          "llm_requests": 1,
+          "places_calls": 1,
+          "content_types": {
+            "place": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0338017,
+          "llm_tokens_in": 257,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 136,
+          "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+          ],
+          "transcription_cost": 0.0,
+          "places_calls_by_type": {
+            "place": 1
+          },
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 5.695361249963753,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009584,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 497,
+            "sha256": "aece1282ead02b7bef7be16ffc202874c5d166e69b5b9e54942d9cc587590867"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 198,
+            "sha256": "ddf95e8f3b0e9027202d97800e378013d3d464d271206159ef3490a3363449b7"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 17.59,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "194a0316-8850-49b1-844f-e0dc929565e8",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-09",
+      "category": "place",
+      "url": "https://www.youtube.com/watch?v=A-0lG94aElQ",
+      "source_title": "5 MUST TRY TACOS Los Angeles with Chef Dafne",
+      "expected": [],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Five venues not independently labeled. Runtime/Shorts format unverified. This row fails composition acceptance.",
+      "tags": [
+        "listicle",
+        "labels_incomplete"
+      ],
+      "save_id": "45e39649-440b-4829-94ce-c71a7de4d147",
+      "produced": [
+        {
+          "id": "2044f30a-ef9c-4db8-a1f6-cde8fe4f4efb",
+          "content_type": "place",
+          "title": "Carnitas el Momo",
+          "summary": "Family-run street kitchen known for best carnitas tacos; sells out early.",
+          "attributes": {
+            "cuisine": "Mexican",
+            "venue_kind": "restaurant",
+            "price_level": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": "d1b401ec-b48b-49bc-ada8-e68b3b5d88a2",
+          "place_name": "Carnitas El Momo Boyle Heights",
+          "city": "Los Angeles",
+          "formatted_address": "2411 Fairmount St, Los Angeles, CA 90033, USA",
+          "lat": 34.0520007,
+          "lng": -118.2039096
+        },
+        {
+          "id": "5c7222b8-62ae-468c-be0d-b7898c52e442",
+          "content_type": "place",
+          "title": "Tacos Y Birria La Unica",
+          "summary": "Taco truck on Olympic Blvd serving quesobirria tacos with slow-cooked goat meat.",
+          "attributes": {
+            "cuisine": "Mexican",
+            "venue_kind": "restaurant",
+            "price_level": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": "ccde9e33-8450-457b-8816-5dd753e5db89",
+          "place_name": "Tacos y Birria La Unica",
+          "city": "Los Angeles",
+          "formatted_address": "2840 E Olympic Blvd, Los Angeles, CA 90023, USA",
+          "lat": 34.0225294,
+          "lng": -118.2165992
+        },
+        {
+          "id": "79561c9d-e95e-46d7-a6dc-d7636335f57e",
+          "content_type": "place",
+          "title": "Tacos Bajas",
+          "summary": "Baja-style fish taco stand in Los Angeles.",
+          "attributes": {
+            "cuisine": "Mexican",
+            "venue_kind": "restaurant",
+            "price_level": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": "6133e3b6-2792-4bc4-84d7-aca1bb7dbc5c",
+          "place_name": "Tacos Baja",
+          "city": "Los Angeles",
+          "formatted_address": "5385 Whittier Blvd, Los Angeles, CA 90022, USA",
+          "lat": 34.0200025,
+          "lng": -118.1544013
+        },
+        {
+          "id": "9d2cc49b-e4fc-48bc-a085-2f0eb19229a4",
+          "content_type": "place",
+          "title": "Tacos a Cabron",
+          "summary": "Street taco setup on Atlantic Blvd featuring ribs, carne asada, pastor, and chorizo tacos.",
+          "attributes": {
+            "cuisine": "Mexican",
+            "venue_kind": "restaurant",
+            "price_level": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": "8d91cca2-721c-4740-8728-cf227ff3141f",
+          "place_name": "Tacos a cabron",
+          "city": "Los Angeles",
+          "formatted_address": "3410 E Olympic Blvd, Los Angeles, CA 90023, USA",
+          "lat": 34.0184948,
+          "lng": -118.2046318
+        },
+        {
+          "id": "e2415c45-bb04-42f4-86bd-6deb823ef577",
+          "content_type": "place",
+          "title": "Sonoratown",
+          "summary": "Sonora-style carne asada tacos in downtown LA with slow-cooked beef and pinto beans.",
+          "attributes": {
+            "cuisine": "Mexican",
+            "venue_kind": "restaurant",
+            "price_level": null
+          },
+          "needs_review": true,
+          "review_reason": "unresolved_place;low_confidence",
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "needs_review",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0060077,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.13172950001899153,
+          "llm_requests": 1,
+          "places_calls": 5,
+          "content_types": {
+            "place": 5
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.1660077,
+          "llm_tokens_in": 1353,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 758,
+          "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+          ],
+          "transcription_cost": 0.0,
+          "places_calls_by_type": {
+            "place": 5
+          },
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.01379,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 4036,
+            "sha256": "6db72639974787675dea16c35914f5f00f56bbaac1563b24e23ca4d6266b5062"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 32.758,
+      "matches": [],
+      "missed_expected_indices": [],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-10",
+      "category": "place",
+      "url": "https://www.instagram.com/reel/DaclEJUqSdh/",
+      "source_title": "Existing real saved reel",
+      "expected": [],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Full source and expected venues unavailable; do not treat empty expected as no-content.",
+      "tags": [
+        "labels_incomplete"
+      ],
+      "save_id": "359f9a55-02df-44dc-858e-176527fcca41",
+      "produced": [],
+      "result": {
+        "status": "no_content_found",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0012577,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.939359667012468,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0012577,
+          "llm_tokens_in": 373,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 5.462508667027578,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.00904,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 90,
+            "sha256": "724acebc2fcdc1cf74ac5a7c32dc6bb38f9a101868ab37cdf8713c4f84b522ae"
+          },
+          "ocr": {
+            "characters": 239,
+            "sha256": "0ccb188f23e21bc90f1b1dd9ac571971beab11565c4d25f66fd4d7b65d0f3ccd"
+          },
+          "transcript": {
+            "characters": 598,
+            "sha256": "15683eaa1b619b208615798aede0cf8c5087307d6951c376632782e0570407cd"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 13.153,
+      "matches": [],
+      "missed_expected_indices": [],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-11",
+      "category": "workout",
+      "url": "https://www.youtube.com/watch?v=fMl1pwvXobk",
+      "source_title": "CHEST WORKOUT WITH DUMBBELL #shorts",
+      "expected": [
+        {
+          "content_type": "workout",
+          "title": "",
+          "attributes": {
+            "muscle_group": [
+              "chest"
+            ]
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary source title/description establishes muscle group.",
+      "tags": [],
+      "save_id": "04cc5e1f-23fa-4517-95fd-ec29a2ef53b7",
+      "produced": [
+        {
+          "id": "45545ac1-9b29-4730-b10d-26f11ef65953",
+          "content_type": "workout",
+          "title": "Chest Workout with Dumbbell",
+          "summary": "Dumbbell chest exercises targeting middle and lower chest.",
+          "attributes": {
+            "modality": "strength",
+            "equipment": [
+              "dumbbells"
+            ],
+            "difficulty": null,
+            "muscle_group": [
+              "chest"
+            ],
+            "duration_minutes": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0016477,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "workout": 1
+          },
+          "ocr_seconds": 2.5844104579882696,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "workout": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0016477,
+          "llm_tokens_in": 68,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 143,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 6.9703622499946505,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.00943,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 78,
+            "sha256": "252365bcb733367171e9960a90a53ce11ce6e38595d591247a6c674a70591199"
+          },
+          "ocr": {
+            "characters": 12,
+            "sha256": "bb09c8f5495939af42c2842468cb41188d5022c2d12c2fe8c646773cfb00eaff"
+          },
+          "transcript": {
+            "characters": 74,
+            "sha256": "e4c6cb3c2952125065b561986de328c23f4c7b44a9be7895fd515729903ac477"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 20.929,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "45545ac1-9b29-4730-b10d-26f11ef65953",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-12",
+      "category": "workout",
+      "url": "https://www.youtube.com/watch?v=gB4nd6tVel4",
+      "source_title": "Leg Workout #shorts",
+      "expected": [
+        {
+          "content_type": "workout",
+          "title": "",
+          "attributes": {
+            "muscle_group": [
+              "legs"
+            ]
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary source title/description establishes muscle group.",
+      "tags": [],
+      "save_id": "7ea06874-1a5d-4627-8415-9fa71467edf5",
+      "produced": [
+        {
+          "id": "cc8e64b3-c09f-4051-a308-e6d50ad75434",
+          "content_type": "workout",
+          "title": "Leg Workout",
+          "summary": "Bodyweight leg workout that can be performed anywhere.",
+          "attributes": {
+            "modality": "strength",
+            "equipment": [
+              "bodyweight"
+            ],
+            "difficulty": null,
+            "muscle_group": [
+              "legs"
+            ],
+            "duration_minutes": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0014917,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "workout": 1
+          },
+          "ocr_seconds": 3.3179342499934137,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "workout": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0014917,
+          "llm_tokens_in": 92,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 107,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 7.790342167019844,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009274,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 154,
+            "sha256": "7d2723f6085616fa7bf62d6259da14b63908b28b93fe32068d55c83a8a65315c"
+          },
+          "ocr": {
+            "characters": 24,
+            "sha256": "621ce2ba174ae70495d29560feb7bca7a520a3a3ec65f2c166d192a9e19753ad"
+          },
+          "transcript": {
+            "characters": 41,
+            "sha256": "d11ff06c42e5810a0a523321525cc44513063549dd7d7a20e8f1c388f7a1297e"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 17.449,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "cc8e64b3-c09f-4051-a308-e6d50ad75434",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-13",
+      "category": "workout",
+      "url": "https://www.youtube.com/watch?v=KyUNiRgraR8",
+      "source_title": "Complete arm workout #shorts",
+      "expected": [
+        {
+          "content_type": "workout",
+          "title": "",
+          "attributes": {
+            "muscle_group": [
+              "arms"
+            ]
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary source title/description establishes muscle group.",
+      "tags": [],
+      "save_id": "0b3b8ff5-d22e-4a41-90c6-615fbd91c1d8",
+      "produced": [],
+      "result": {
+        "status": "failed",
+        "error_reason": "The source could not be processed. Check that it is public, then retry.",
+        "cost": {
+          "llm_usd": 0.0031067,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.442062540911138,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0031067,
+          "llm_tokens_in": 1157,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 217,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 15.401629208005033,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010889,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 1408,
+            "sha256": "c80cb23aab82429f735cff08e5c16b6be79eaab59d43114b7325410174d74287"
+          },
+          "ocr": {
+            "characters": 204,
+            "sha256": "c87c7527fb1e76948df03a389b0ecf2cafebee2619b1ba24e433d976d5f48751"
+          },
+          "transcript": {
+            "characters": 1356,
+            "sha256": "2bb47e63f5bafbafd918123ace84744a584694116c78a7eb169599ec69070263"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 30.015,
+      "matches": [],
+      "missed_expected_indices": [
+        0
+      ],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-14",
+      "category": "workout",
+      "url": "https://www.youtube.com/watch?v=bRWcwVZQXKU",
+      "source_title": "Save this ARM workout",
+      "expected": [
+        {
+          "content_type": "workout",
+          "title": "",
+          "attributes": {
+            "muscle_group": [
+              "arms"
+            ]
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary source title/description establishes muscle group.",
+      "tags": [],
+      "save_id": "4d43b4d9-e439-438c-a40a-8b251ff1331a",
+      "produced": [
+        {
+          "id": "01f5ead7-dfc8-4d58-ba54-0b0aadc950fa",
+          "content_type": "workout",
+          "title": "ARM Workout",
+          "summary": "Upper body arm strengthening routine for gym sessions.",
+          "attributes": {
+            "modality": null,
+            "equipment": null,
+            "difficulty": null,
+            "muscle_group": [
+              "arms"
+            ],
+            "duration_minutes": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0016837,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "workout": 1
+          },
+          "ocr_seconds": 1.3435339590068907,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "workout": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0016837,
+          "llm_tokens_in": 129,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 138,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 4.646038749953732,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009466,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 112,
+            "sha256": "f8ccaf74bcac8bc3c2c9a5f77e6398d5f76531f66aa8ff9065f88f7bf66d155f"
+          },
+          "ocr": {
+            "characters": 9,
+            "sha256": "89587161a4b8a3c45f43e01f744e1dadb9db614456e353207fabbe4c78470f69"
+          },
+          "transcript": {
+            "characters": 264,
+            "sha256": "43ea37be0b67f6cbe74eee8beca512df62e9cad7c4dd07ec7232a1bf051d3e89"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 15.941,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "01f5ead7-dfc8-4d58-ba54-0b0aadc950fa",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-15",
+      "category": "workout",
+      "url": "https://www.youtube.com/watch?v=Qw2VL8HUUMo",
+      "source_title": "5 Exercises for Core Workout #shorts",
+      "expected": [
+        {
+          "content_type": "workout",
+          "title": "",
+          "attributes": {
+            "muscle_group": [
+              "core"
+            ]
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary source title/description establishes muscle group.",
+      "tags": [],
+      "save_id": "5e284487-28bc-4012-a7ba-4c3b9f73efd0",
+      "produced": [
+        {
+          "id": "969a1d93-30bd-46f5-ba07-5208e83acca8",
+          "content_type": "workout",
+          "title": "5 Exercises for Core Workout",
+          "summary": "Five core exercises performed 30 seconds each to strengthen and stabilize core muscles.",
+          "attributes": {
+            "modality": "strength",
+            "equipment": [
+              "bodyweight"
+            ],
+            "difficulty": null,
+            "muscle_group": [
+              "core"
+            ],
+            "duration_minutes": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0017707,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "workout": 1
+          },
+          "ocr_seconds": 0.12068362499121577,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "workout": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0017707,
+          "llm_tokens_in": 166,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 148,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 9.606181500013918,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009553,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 487,
+            "sha256": "cce6621d30388962194551fafd92829283c4dbc0ac7abab8ff9695387328fd81"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 3,
+            "sha256": "08b041935798fbf6fd6ff51099ffedb140a475889986d14f5559ff8e7fc571dd"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 22.719,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "969a1d93-30bd-46f5-ba07-5208e83acca8",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-16",
+      "category": "workout",
+      "url": "https://www.youtube.com/watch?v=3s74Bh9UI4A",
+      "source_title": "Core Workout for Stronger Abs #shorts",
+      "expected": [
+        {
+          "content_type": "workout",
+          "title": "",
+          "attributes": {
+            "muscle_group": [
+              "core"
+            ]
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary source title/description establishes muscle group.",
+      "tags": [],
+      "save_id": "b8f5f2d8-74fd-4285-ac28-6d31091881aa",
+      "produced": [],
+      "result": {
+        "status": "failed",
+        "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
+        "cost": {
+          "llm_usd": 0.0,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.0,
+          "llm_requests": 0,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0,
+          "llm_tokens_in": 0,
+          "llm_cache_hits": 0,
+          "llm_tokens_out": 0,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 0,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.0,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 3.293,
+      "matches": [],
+      "missed_expected_indices": [
+        0
+      ],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-17",
+      "category": "recipe",
+      "url": "https://www.youtube.com/watch?v=k_xf8RwP9Wo",
+      "source_title": "Pad Thai Recipe (Part 1) #shorts",
+      "expected": [
+        {
+          "content_type": "recipe",
+          "title": "Pad Thai",
+          "attributes": {
+            "cuisine": "Thai"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description establishes recipe names and cuisine.",
+      "tags": [],
+      "save_id": "1fdce157-34c7-4d3d-bddc-581d3e41f0e6",
+      "produced": [
+        {
+          "id": "d2bd9902-b288-452d-99f8-e83e7230534d",
+          "content_type": "recipe",
+          "title": "Pad Thai",
+          "summary": "Stir-fried rice noodles with vegetables, eggs, and peanuts in a tamarind-based sauce, ready in under 20 minutes.",
+          "attributes": {
+            "cuisine": "Thai",
+            "dietary": [
+              "vegetarian"
+            ],
+            "meal_type": "dinner",
+            "prep_minutes": 20,
+            "key_ingredients": [
+              "rice noodles",
+              "coconut sugar",
+              "rice vinegar",
+              "soy sauce",
+              "fish sauce",
+              "coconut oil",
+              "shallot",
+              "ginger",
+              "garlic",
+              "eggs",
+              "green onions",
+              "peanuts"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0029317,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "recipe": 1
+          },
+          "ocr_seconds": 1.2994202499976382,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "recipe": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0029317,
+          "llm_tokens_in": 692,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 275,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 6.98987416701857,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010714,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 1410,
+            "sha256": "26efaca44f46176601b09ed47d366c30b3e874ebd01ce67160f04a8375a6129e"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 730,
+            "sha256": "39a859703014109a9ea8ca290056926520b535356d5b25212d1b35bf6d9682ff"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 22.305,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "d2bd9902-b288-452d-99f8-e83e7230534d",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-18",
+      "category": "recipe",
+      "url": "https://www.youtube.com/watch?v=c1QfsmBYakU",
+      "source_title": "How to Marinade Thai Pork Satay #Shorts",
+      "expected": [
+        {
+          "content_type": "recipe",
+          "title": "Pork Satay",
+          "attributes": {
+            "cuisine": "Thai"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description establishes recipe names and cuisine.",
+      "tags": [],
+      "save_id": "76fd365b-9d90-441c-a924-ccd0e9457e5e",
+      "produced": [
+        {
+          "id": "1a8ed5d0-d059-4e32-b5f5-3c5b84954a69",
+          "content_type": "recipe",
+          "title": "Thai Pork Satay - Skewers",
+          "summary": "Marinated pork satay with Thai spices, coconut milk, and grilling instructions.",
+          "attributes": {
+            "cuisine": "Thai",
+            "dietary": null,
+            "meal_type": "dinner",
+            "prep_minutes": null,
+            "key_ingredients": [
+              "pork",
+              "coriander seed",
+              "cumin powder",
+              "curry powder",
+              "turmeric powder",
+              "salt",
+              "palm sugar",
+              "black pepper powder",
+              "coconut milk"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0027437,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "recipe": 1
+          },
+          "ocr_seconds": 0.16408324998337775,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "recipe": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0027437,
+          "llm_tokens_in": 454,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 285,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 3.4586394999641925,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010526,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 919,
+            "sha256": "b914a37f46411671e58a9fec882aa8b526e8df414a50246f89c93eb00d6462da"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 23,
+            "sha256": "14ad4e0762b79163f76ef1b901a9f8d72ec5798f2e9cf17c24e274aaf738df59"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 13.792,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "1a8ed5d0-d059-4e32-b5f5-3c5b84954a69",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-19",
+      "category": "recipe",
+      "url": "https://www.youtube.com/watch?v=dSFU6YFT9J0",
+      "source_title": "BRUSCHETTA Like an Italian #Shorts",
+      "expected": [
+        {
+          "content_type": "recipe",
+          "title": "Bruschetta",
+          "attributes": {
+            "cuisine": "Italian"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description establishes recipe names and cuisine.",
+      "tags": [],
+      "save_id": "877aec77-458d-4b26-8925-703cf6755f5f",
+      "produced": [
+        {
+          "id": "1c11a534-a895-4a9a-91c0-6c3d90f6a310",
+          "content_type": "recipe",
+          "title": "Bruschetta with Tomatoes",
+          "summary": "Italian bruschetta with fresh tomatoes, garlic, basil, olive oil on grilled bread.",
+          "attributes": {
+            "cuisine": "Italian",
+            "dietary": null,
+            "meal_type": "snack",
+            "prep_minutes": null,
+            "key_ingredients": [
+              "tomatoes",
+              "bread",
+              "extra virgin olive oil",
+              "garlic",
+              "salt",
+              "pepper",
+              "basil"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0023427,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "recipe": 1
+          },
+          "ocr_seconds": 0.11131079099141061,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "recipe": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0023427,
+          "llm_tokens_in": 468,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 202,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 7.018385957926512,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010125,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 625,
+            "sha256": "5bdd8335fd79ef2ed620f6e5e7448ce0fa6b4ed39b7083daf529deee3cc083eb"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 885,
+            "sha256": "e6a19041a7e69b146e0bb7aaababca0b821d4c95782a4c0b337a03d8e47054b1"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 22.075,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "1c11a534-a895-4a9a-91c0-6c3d90f6a310",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-20",
+      "category": "recipe",
+      "url": "https://www.youtube.com/watch?v=VTuYlMW3DYQ",
+      "source_title": "Japanese curry #shorts",
+      "expected": [
+        {
+          "content_type": "recipe",
+          "title": "Curry",
+          "attributes": {
+            "cuisine": "Japanese"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description establishes recipe names and cuisine.",
+      "tags": [],
+      "save_id": "d2e71acc-93ff-4c8b-bb5e-608c8a059e3c",
+      "produced": [
+        {
+          "id": "c0727dd1-b4bf-4de1-b41b-40ce3f30139a",
+          "content_type": "recipe",
+          "title": "S&B Japanese Curry",
+          "summary": "Japanese curry with chicken thighs, vegetables, and S&B Golden Curry paste served over rice.",
+          "attributes": {
+            "cuisine": "Japanese",
+            "dietary": null,
+            "meal_type": "dinner",
+            "prep_minutes": 45,
+            "key_ingredients": [
+              "S&B Golden Curry",
+              "chicken thighs",
+              "carrot",
+              "potato",
+              "onion",
+              "ginger",
+              "garlic",
+              "apple",
+              "chicken stock",
+              "honey"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0023217,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "recipe": 1
+          },
+          "ocr_seconds": 1.1955319170374423,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "recipe": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0023217,
+          "llm_tokens_in": 362,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 219,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 4.602520041982643,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010104,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 854,
+            "sha256": "6ea5b8371ef4ea89467c5af773bb27ec44d708b10c507b74e7f6c33a8ee81b49"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 199,
+            "sha256": "3bb3acc645bc22e8c61dcd8564e37d43aafe938b405055903733deb439f9852a"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 19.507,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "c0727dd1-b4bf-4de1-b41b-40ce3f30139a",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-21",
+      "category": "recipe",
+      "url": "https://www.youtube.com/watch?v=DnCdJ65rHhc",
+      "source_title": "5 Must Try Indian Recipes in One Video #Shorts",
+      "expected": [
+        {
+          "content_type": "recipe",
+          "title": "Aloo Paratha",
+          "attributes": {
+            "cuisine": "Indian"
+          }
+        },
+        {
+          "content_type": "recipe",
+          "title": "Chole Masala",
+          "attributes": {
+            "cuisine": "Indian"
+          }
+        },
+        {
+          "content_type": "recipe",
+          "title": "Sabudana Vada",
+          "attributes": {
+            "cuisine": "Indian"
+          }
+        },
+        {
+          "content_type": "recipe",
+          "title": "Egg Roll",
+          "attributes": {
+            "cuisine": "Indian"
+          }
+        },
+        {
+          "content_type": "recipe",
+          "title": "Seviyan Kheer",
+          "attributes": {
+            "cuisine": "Indian"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description establishes recipe names and cuisine.",
+      "tags": [],
+      "save_id": "b14c20dc-3bb7-41d4-bc33-13134a07f0ff",
+      "produced": [
+        {
+          "id": "05b875aa-7210-41a2-b5dc-7cce0ca63ef6",
+          "content_type": "recipe",
+          "title": "Aloo Paratha",
+          "summary": "Soft whole wheat paratha stuffed with spicy potato filling, roasted with ghee until golden and crispy.",
+          "attributes": {
+            "cuisine": "Indian",
+            "dietary": [
+              "vegetarian"
+            ],
+            "meal_type": "breakfast",
+            "prep_minutes": null,
+            "key_ingredients": [
+              "whole wheat flour",
+              "potato",
+              "ghee",
+              "spices"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "34a2f685-5579-4238-a974-7e6832094aea",
+          "content_type": "recipe",
+          "title": "Chole Masala",
+          "summary": "Punjabi-style chickpeas cooked in a rich onion-tomato gravy with aromatic Indian spices.",
+          "attributes": {
+            "cuisine": "Indian",
+            "dietary": [
+              "vegetarian",
+              "vegan"
+            ],
+            "meal_type": "lunch",
+            "prep_minutes": null,
+            "key_ingredients": [
+              "chickpeas",
+              "onion",
+              "tomato",
+              "Indian spices"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "652b2698-4973-4897-8872-1d4de044df6d",
+          "content_type": "recipe",
+          "title": "Seviyan Kheer",
+          "summary": "Creamy vermicelli pudding made with milk, cardamom, sugar, and dry fruits.",
+          "attributes": {
+            "cuisine": "Indian",
+            "dietary": [
+              "vegetarian"
+            ],
+            "meal_type": "dessert",
+            "prep_minutes": null,
+            "key_ingredients": [
+              "vermicelli",
+              "milk",
+              "cardamom",
+              "sugar",
+              "dry fruits"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "d7c047c0-2393-4be4-991b-5489831685b9",
+          "content_type": "recipe",
+          "title": "Egg Roll",
+          "summary": "Flaky paratha layered with egg, onions, sauces, and spices, rolled into a street-style snack.",
+          "attributes": {
+            "cuisine": "Indian",
+            "dietary": null,
+            "meal_type": "snack",
+            "prep_minutes": null,
+            "key_ingredients": [
+              "paratha",
+              "egg",
+              "onion",
+              "sauces",
+              "spices"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "df429060-64f8-4b6b-80a2-c6c9b9ba11ea",
+          "content_type": "recipe",
+          "title": "Sabudana Vada",
+          "summary": "Crispy sago and potato fritters mixed with peanuts and spices, deep-fried to perfection.",
+          "attributes": {
+            "cuisine": "Indian",
+            "dietary": [
+              "vegetarian"
+            ],
+            "meal_type": "snack",
+            "prep_minutes": null,
+            "key_ingredients": [
+              "sago",
+              "potato",
+              "peanuts",
+              "spices"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0062667,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "recipe": 5
+          },
+          "ocr_seconds": 1.1909257910447195,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "recipe": 5
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0062667,
+          "llm_tokens_in": 1062,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 868,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 11.465582292061299,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.014049,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 1287,
+            "sha256": "aef754eb75b2bbcd51bcb549813e464e15587c2700dcba149c7948608d7647d0"
+          },
+          "ocr": {
+            "characters": 8,
+            "sha256": "fd729eff3bd97585ca2846b12bf9f446393637c1e451d98e8e8963e98d8e5cd8"
+          },
+          "transcript": {
+            "characters": 693,
+            "sha256": "66d10a142cefb45fadb885d64c7086c54665cfa3b3b52382ac5b3c86400fce81"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 40.983,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "05b875aa-7210-41a2-b5dc-7cce0ca63ef6",
+          "correct_type": true
+        },
+        {
+          "expected_index": 1,
+          "produced_id": "34a2f685-5579-4238-a974-7e6832094aea",
+          "correct_type": true
+        },
+        {
+          "expected_index": 4,
+          "produced_id": "652b2698-4973-4897-8872-1d4de044df6d",
+          "correct_type": true
+        },
+        {
+          "expected_index": 3,
+          "produced_id": "d7c047c0-2393-4be4-991b-5489831685b9",
+          "correct_type": true
+        },
+        {
+          "expected_index": 2,
+          "produced_id": "df429060-64f8-4b6b-80a2-c6c9b9ba11ea",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-22",
+      "category": "recipe",
+      "url": "https://www.youtube.com/watch?v=HIEmxwF8kcA",
+      "source_title": "Authentic Mexican Guacamole #shorts",
+      "expected": [
+        {
+          "content_type": "recipe",
+          "title": "Guacamole",
+          "attributes": {
+            "cuisine": "Mexican"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description establishes recipe names and cuisine.",
+      "tags": [],
+      "save_id": "69538339-afbb-4997-8f80-424313cf13e1",
+      "produced": [
+        {
+          "id": "e1c4a179-74f0-40b5-9d84-7a22245bf560",
+          "content_type": "recipe",
+          "title": "Authentic Mexican Guacamole",
+          "summary": "Traditional Mexican guacamole recipe with avocado and tomatillos.",
+          "attributes": {
+            "cuisine": "Mexican",
+            "dietary": null,
+            "meal_type": "snack",
+            "prep_minutes": null,
+            "key_ingredients": [
+              "avocado",
+              "tomatillos"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0020977,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "recipe": 1
+          },
+          "ocr_seconds": 1.418549041962251,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "recipe": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0020977,
+          "llm_tokens_in": 373,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 172,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 5.373819333035499,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.00988,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 822,
+            "sha256": "cc3f163255ee260c058f564704d562d3d8fed6c60d03313f2e88e3204de9affe"
+          },
+          "ocr": {
+            "characters": 14,
+            "sha256": "cfac7999269b693da2c9b81edadba8a3bf03b88b5de91c676aa55b6cb265755a"
+          },
+          "transcript": {
+            "characters": 5,
+            "sha256": "2069bf878326d3527727e8bdbc8d1c5628bf6189731c5e2736cb0fac8dfc3db9"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 20.192,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "e1c4a179-74f0-40b5-9d84-7a22245bf560",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-23",
+      "category": "product",
+      "url": "https://www.youtube.com/watch?v=6EhiPZj1W-g",
+      "source_title": "iPhone 15 vale la pena #shorts",
+      "expected": [
+        {
+          "content_type": "product",
+          "title": "iPhone 15",
+          "attributes": {
+            "product_category": "electronics"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description; exact submodels may need full-video review.",
+      "tags": [],
+      "save_id": "bdb150e8-4128-4318-aa94-419ef5047d5d",
+      "produced": [
+        {
+          "id": "430dbe78-649e-4776-a2e6-cdaa9c85d361",
+          "content_type": "product",
+          "title": "iPhone 15 Review",
+          "summary": "iPhone 15 offers excellent cameras and performance but suffers from excessive heating issues.",
+          "attributes": {
+            "brand": "Apple",
+            "model": "iPhone 15",
+            "price": null,
+            "use_case": "smartphone",
+            "product_category": "electronics"
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0020127,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "product": 1
+          },
+          "ocr_seconds": 1.3055236249929294,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "product": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0020127,
+          "llm_tokens_in": 388,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 152,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 9.813852916937321,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009795,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 106,
+            "sha256": "ee1f0c7fc3a84b785de98b941d99200e477eaa08284d24b24db6ae225605aed5"
+          },
+          "ocr": {
+            "characters": 52,
+            "sha256": "4774cea150c08a40c322371d56807965d9287016accfe4efe14cb7ee86d2deb0"
+          },
+          "transcript": {
+            "characters": 990,
+            "sha256": "474139705389539762b5418fe4fca881c9e3606d9e83cb1db5d5d93cc4d23f2c"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 32.216,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "430dbe78-649e-4776-a2e6-cdaa9c85d361",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-24",
+      "category": "product",
+      "url": "https://www.youtube.com/watch?v=MR7YETLF03A",
+      "source_title": "Apple Watch + iPhone 15 review #shorts",
+      "expected": [
+        {
+          "content_type": "product",
+          "title": "Apple Watch",
+          "attributes": {
+            "product_category": "electronics"
+          }
+        },
+        {
+          "content_type": "product",
+          "title": "iPhone 15",
+          "attributes": {
+            "product_category": "electronics"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description; exact submodels may need full-video review.",
+      "tags": [],
+      "save_id": "8e15f948-244b-4ae7-a90a-363f1f23c5a7",
+      "produced": [
+        {
+          "id": "17e31cb5-5ac7-4f43-91e5-fc4fc7d02e82",
+          "content_type": "product",
+          "title": "iPhone 15 Pro Max",
+          "summary": "Flagship smartphone with A17 Pro chip and console-quality gaming performance in larger form factor.",
+          "attributes": {
+            "brand": "Apple",
+            "model": "iPhone 15 Pro Max",
+            "price": null,
+            "use_case": "Mobile gaming and premium photography with advanced processor",
+            "product_category": "electronics"
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "604299b4-0ece-4c7b-8a85-48e3b602a1af",
+          "content_type": "product",
+          "title": "Apple Watch Series 9",
+          "summary": "Smartwatch featuring Double Tap gesture control for music, messages, and smart stack navigation.",
+          "attributes": {
+            "brand": "Apple",
+            "model": "Series 9",
+            "price": null,
+            "use_case": "Wearable smartwatch with gesture control and notification management",
+            "product_category": "electronics"
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "730dc316-84e7-4ee1-9048-9c9c61fab16f",
+          "content_type": "media",
+          "title": "Resident Evil Village",
+          "summary": "Console-quality mobile game available on iPhone 15 Pro demonstrating advanced gaming performance.",
+          "attributes": {
+            "genre": "survival horror",
+            "creator": null,
+            "media_kind": "game",
+            "release_year": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "bd5c4075-5237-4115-b2ac-c8277b687862",
+          "content_type": "media",
+          "title": "Assassin's Creed Mirage",
+          "summary": "Console-quality mobile game available on iPhone 15 Pro for demonstrating gaming capabilities.",
+          "attributes": {
+            "genre": "action",
+            "creator": null,
+            "media_kind": "game",
+            "release_year": null
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "fdb35b30-d81b-44db-aabe-0604ab68f6b5",
+          "content_type": "product",
+          "title": "iPhone 15 Pro",
+          "summary": "Mobile phone with A17 Pro chip optimized for console-quality mobile gaming with 5x telephoto zoom.",
+          "attributes": {
+            "brand": "Apple",
+            "model": "iPhone 15 Pro",
+            "price": null,
+            "use_case": "Mobile gaming and photography with advanced processor and telephoto capabilities",
+            "product_category": "electronics"
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0055747,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "media": 2,
+            "product": 3
+          },
+          "ocr_seconds": 2.0940620419569314,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "media": 2,
+            "product": 3
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0055747,
+          "llm_tokens_in": 560,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 830,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 9.45323470805306,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.013357,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 582,
+            "sha256": "39b4af0817914d8fc0166b5d37d68f9acb227aff0fdb20a61f9810c4e222f978"
+          },
+          "ocr": {
+            "characters": 178,
+            "sha256": "c2da94655f06f5ff4eabedfc91f1633eb2886619e33d108441eb1686f4d08996"
+          },
+          "transcript": {
+            "characters": 1006,
+            "sha256": "09498c3a1ddab26fd16a562e6bc2157b0aa934a4a4280dc2cc97d8f48159f3aa"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 38.422,
+      "matches": [
+        {
+          "expected_index": 1,
+          "produced_id": "17e31cb5-5ac7-4f43-91e5-fc4fc7d02e82",
+          "correct_type": true
+        },
+        {
+          "expected_index": 0,
+          "produced_id": "604299b4-0ece-4c7b-8a85-48e3b602a1af",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-25",
+      "category": "product",
+      "url": "https://www.youtube.com/watch?v=RVREnwMFDWs",
+      "source_title": "iPhone 16 & iPhone 16 Plus FIRST LOOK #shorts",
+      "expected": [
+        {
+          "content_type": "product",
+          "title": "iPhone 16",
+          "attributes": {
+            "product_category": "electronics"
+          }
+        },
+        {
+          "content_type": "product",
+          "title": "iPhone 16 Plus",
+          "attributes": {
+            "product_category": "electronics"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description; exact submodels may need full-video review.",
+      "tags": [],
+      "save_id": "c63ff26f-99d9-4e6b-b5c8-a09b674ff85e",
+      "produced": [
+        {
+          "id": "5889ec45-1cdc-4f83-b9c5-98f15a46b1b9",
+          "content_type": "product",
+          "title": "iPhone 16 Plus",
+          "summary": "Apple's larger iPhone 16 Plus variant with same design features as iPhone 16 including vertical camera layout and capture button.",
+          "attributes": {
+            "brand": "Apple",
+            "model": "iPhone 16 Plus",
+            "price": null,
+            "use_case": "smartphone",
+            "product_category": "electronics"
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        },
+        {
+          "id": "db9be429-f4cd-44c8-8d99-ca2ea46a4410",
+          "content_type": "product",
+          "title": "iPhone 16",
+          "summary": "Apple's new iPhone 16 features redesigned vertical camera layout, capture button, and aluminum frame with round corners.",
+          "attributes": {
+            "brand": "Apple",
+            "model": "iPhone 16",
+            "price": null,
+            "use_case": "smartphone",
+            "product_category": "electronics"
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0027987,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "product": 2
+          },
+          "ocr_seconds": 1.2536755420733243,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "product": 2
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0027987,
+          "llm_tokens_in": 354,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 316,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 14.678100042045116,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010581,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 233,
+            "sha256": "ccb4b57f6adc1e50acae9b6d26dacb5b68bc8edc1b1d9d24c40e2d2847a7d917"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 851,
+            "sha256": "f56e9f91b28260e00c4d7c2cb76a74aa4dc8d55d24f1fe4839ef00ae0fc7c81c"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 32.122,
+      "matches": [
+        {
+          "expected_index": 1,
+          "produced_id": "5889ec45-1cdc-4f83-b9c5-98f15a46b1b9",
+          "correct_type": true
+        },
+        {
+          "expected_index": 0,
+          "produced_id": "db9be429-f4cd-44c8-8d99-ca2ea46a4410",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-26",
+      "category": "product",
+      "url": "https://www.youtube.com/watch?v=357RayzSodU",
+      "source_title": "Unboxing NEW iPhone 16 pink #shorts",
+      "expected": [
+        {
+          "content_type": "product",
+          "title": "iPhone 16",
+          "attributes": {
+            "product_category": "electronics"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title/description; exact submodels may need full-video review.",
+      "tags": [],
+      "save_id": "9cb20a26-d104-4f39-802a-166b3caba34c",
+      "produced": [
+        {
+          "id": "4d9fabe2-f1cb-46b0-966d-4bf725d43729",
+          "content_type": "product",
+          "title": "iPhone 16 in Pink",
+          "summary": "Unboxing of the new iPhone 16 in pink color.",
+          "attributes": {
+            "brand": "Apple",
+            "model": "iPhone 16",
+            "price": null,
+            "use_case": null,
+            "product_category": "electronics"
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0016547,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "product": 1
+          },
+          "ocr_seconds": 1.4721119579626247,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "product": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0016547,
+          "llm_tokens_in": 90,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 140,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 18.696801458019763,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009437,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 73,
+            "sha256": "9562a4478d6f8d37302908308e7148b3cc4bd72d3582e069f10967a5fb7e6480"
+          },
+          "ocr": {
+            "characters": 40,
+            "sha256": "acd6ee45b426388618f805e96d963bf1cd319324a12fae3e4c6e86802bee588f"
+          },
+          "transcript": {
+            "characters": 7,
+            "sha256": "ce79be155240c370a109004eaa57cb0c9019d6e5b91b4ea01ab32b16315e56dc"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 29.644,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "4d9fabe2-f1cb-46b0-966d-4bf725d43729",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-27",
+      "category": "style_home",
+      "url": "https://www.youtube.com/watch?v=Yn7DyCQWU9E",
+      "source_title": "Perfect Street Style White Crop Top & Black Shorts #outfit #shorts",
+      "expected": [
+        {
+          "content_type": "style",
+          "title": "",
+          "attributes": {
+            "garment_type": [
+              "tops",
+              "trousers"
+            ]
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Shorts mapped to the registry trousers enum; review styling versus product distinction.",
+      "tags": [],
+      "save_id": "2e650411-d280-43a3-96ea-9dd9c071a20b",
+      "produced": [],
+      "result": {
+        "status": "failed",
+        "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
+        "cost": {
+          "llm_usd": 0.0,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.0,
+          "llm_requests": 0,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0,
+          "llm_tokens_in": 0,
+          "llm_cache_hits": 0,
+          "llm_tokens_out": 0,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 0,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.0,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 3.338,
+      "matches": [],
+      "missed_expected_indices": [
+        0
+      ],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-28",
+      "category": "style_home",
+      "url": "https://www.youtube.com/watch?v=3eY6PVkC5nw",
+      "source_title": "A Simple Guide to Styling Shorts",
+      "expected": [
+        {
+          "content_type": "style",
+          "title": "",
+          "attributes": {
+            "garment_type": [
+              "trousers"
+            ]
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary description includes Shorts tag.",
+      "tags": [],
+      "save_id": "981f2e5b-6400-497e-bccd-168891a9b8bc",
+      "produced": [
+        {
+          "id": "de24f56d-3e66-4db5-819b-18e97f615cd9",
+          "content_type": "style",
+          "title": "A Simple Guide To Styling Shorts",
+          "summary": "Match shorts fabric and formality to appropriate tops and footwear for cohesive outfits.",
+          "attributes": {
+            "colors": null,
+            "season": "year_round",
+            "occasion": null,
+            "garment_type": [
+              "shorts"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0020657,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "style": 1
+          },
+          "ocr_seconds": 1.6635147500783205,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "style": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0020657,
+          "llm_tokens_in": 286,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 183,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 13.177966292016208,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009848,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 96,
+            "sha256": "6e4e06852874db9e29e22c13abce74dd122a5627c8975a40f462ddaf42eacf95"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 832,
+            "sha256": "b6ed7db1659a8829dd82752fe8353d0f419bc5874d96dfd4a821ddc869ff93cb"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 35.381,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "de24f56d-3e66-4db5-819b-18e97f615cd9",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-29",
+      "category": "style_home",
+      "url": "https://www.youtube.com/watch?v=ZnW0PGWAzkU",
+      "source_title": "Kitchen organization #shorts",
+      "expected": [
+        {
+          "content_type": "home",
+          "title": "",
+          "attributes": {
+            "room": "kitchen"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title.",
+      "tags": [],
+      "save_id": "11719789-686c-4413-8624-bdb84718302c",
+      "produced": [
+        {
+          "id": "7a233e67-4c00-4b6f-b81e-4dd09205e881",
+          "content_type": "home",
+          "title": "Kitchen Organization",
+          "summary": "Kitchen organization and storage solutions for countertop and cabinet organization.",
+          "attributes": {
+            "room": "kitchen",
+            "style": null,
+            "materials": null,
+            "project_kind": "organization"
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0030857,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "home": 1
+          },
+          "ocr_seconds": 0.0,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "home": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0030857,
+          "llm_tokens_in": 1426,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 159,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010868,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 4777,
+            "sha256": "7c8dc5c6b7350aecacd710196f079f251df2ad6c612828b8c79f94aff398e001"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "ocr": "Media was unavailable within the processing deadline",
+          "transcript": "Media was unavailable within the processing deadline"
+        }
+      },
+      "elapsed_seconds": 36.699,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "7a233e67-4c00-4b6f-b81e-4dd09205e881",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-30",
+      "category": "style_home",
+      "url": "https://www.youtube.com/watch?v=3wogFor0lP0",
+      "source_title": "Kitchen Organization #shorts",
+      "expected": [
+        {
+          "content_type": "home",
+          "title": "",
+          "attributes": {
+            "room": "kitchen"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary title.",
+      "tags": [],
+      "save_id": "6f5d67de-4906-4855-9b53-4d2275873a9c",
+      "produced": [
+        {
+          "id": "12a4892f-41f8-4d95-8749-265d0d627dd0",
+          "content_type": "home",
+          "title": "Kitchen Organization",
+          "summary": "Clean and organize kitchen cabinets, replace shelf paper, and tidy surfaces.",
+          "attributes": {
+            "room": "kitchen",
+            "style": null,
+            "materials": [
+              "shelf paper"
+            ],
+            "project_kind": "organization"
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0022357,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "home": 1
+          },
+          "ocr_seconds": 0.0,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "home": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0022357,
+          "llm_tokens_in": 811,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 112,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010018,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 123,
+            "sha256": "abdfca31e62e11775d79099a98cb078078cd9f1747a6a421f77d9a4caa5ae32d"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 939,
+            "sha256": "9957044110439620eaa601bf22b02c486bf272b134fd3eb8a7bf72ddae80c16c"
+          }
+        },
+        "unavailable_signals": {
+          "ocr": "Media was unavailable within the processing deadline"
+        }
+      },
+      "elapsed_seconds": 35.845,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "12a4892f-41f8-4d95-8749-265d0d627dd0",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-31",
+      "category": "media_learning",
+      "url": "https://www.youtube.com/watch?v=x7X9w_GIm1s",
+      "source_title": "Python in 100 Seconds",
+      "expected": [
+        {
+          "content_type": "learning",
+          "title": "",
+          "attributes": {
+            "subject": "Python"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Short video, not verified as a vertical Shorts post.",
+      "tags": [],
+      "save_id": "2ee5dbac-32a5-4a54-abf7-f9da34a303be",
+      "produced": [
+        {
+          "id": "b358e70c-3757-447d-889a-8f39f5a193e2",
+          "content_type": "learning",
+          "title": "Python in 100 Seconds",
+          "summary": "Overview of Python language features, history, and applications in web, data science, and scripting.",
+          "attributes": {
+            "level": "beginner",
+            "format": "explanation",
+            "subject": "Python programming",
+            "key_takeaways": [
+              "Python is the world's most popular programming language",
+              "Easy to learn yet suitable for professional software",
+              "Used in web applications, data science, and server-side scripts",
+              "Python syntax and indentation rules",
+              "Python type system",
+              "Python release history"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0023067,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "learning": 1
+          },
+          "ocr_seconds": 0.11844075005501509,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "learning": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0023067,
+          "llm_tokens_in": 297,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 229,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010089,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 792,
+            "sha256": "b5fda074f8aa31be424efcdb62ec8464bb42dcc4c5823f5735e0a8ef81c92d55"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 15.383,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "b358e70c-3757-447d-889a-8f39f5a193e2",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-32",
+      "category": "media_learning",
+      "url": "https://www.youtube.com/watch?v=DHjqpvDnNGE",
+      "source_title": "JavaScript in 100 Seconds",
+      "expected": [
+        {
+          "content_type": "learning",
+          "title": "",
+          "attributes": {
+            "subject": "JavaScript"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Short video, not verified as a vertical Shorts post.",
+      "tags": [],
+      "save_id": "bef49336-0b6a-43a5-a79e-0d75044e5fd5",
+      "produced": [
+        {
+          "id": "44df46db-91b2-47cc-b48f-bf8656d9ef9b",
+          "content_type": "learning",
+          "title": "JavaScript in 100 Seconds",
+          "summary": "Overview of JavaScript's history, evolution, and applications across web, servers, mobile, and desktop.",
+          "attributes": {
+            "level": "beginner",
+            "format": "explanation",
+            "subject": "JavaScript",
+            "key_takeaways": [
+              "JavaScript built the web",
+              "Powers websites, Node.js servers, mobile apps, and desktop software",
+              "ECMAScript vs JavaScript distinction",
+              "Var vs Let vs Const",
+              "How to run JS in browser"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0024237,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "learning": 1
+          },
+          "ocr_seconds": 0.09834233298897743,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "learning": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0024237,
+          "llm_tokens_in": 359,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 240,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.010206,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 964,
+            "sha256": "f3f017d80caae8a8ad20d2c9c2d879fd90deaa991caf7d0819526a825e8b2fb5"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 14.996,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "44df46db-91b2-47cc-b48f-bf8656d9ef9b",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-33",
+      "category": "media_learning",
+      "url": "https://www.youtube.com/watch?v=YOlr79NaAtQ",
+      "source_title": "What is THIS in JavaScript in 100 Seconds",
+      "expected": [
+        {
+          "content_type": "learning",
+          "title": "",
+          "attributes": {
+            "subject": "JavaScript"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Short video, not verified as a vertical Shorts post.",
+      "tags": [],
+      "save_id": "6ed989c1-5f1b-4bfa-a53f-b316e5a7b086",
+      "produced": [
+        {
+          "id": "d92b139c-3af6-4aac-9e2c-a2ad7bd3917d",
+          "content_type": "learning",
+          "title": "What is THIS in JavaScript?",
+          "summary": "Explanation of the \"this\" keyword in JavaScript with advanced discussion.",
+          "attributes": {
+            "level": "beginner",
+            "format": "explanation",
+            "subject": "JavaScript this keyword",
+            "key_takeaways": [
+              "Understanding the this keyword in JavaScript",
+              "Context and scope of this binding"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0019037,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "learning": 1
+          },
+          "ocr_seconds": 0.10354066698346287,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "learning": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0019037,
+          "llm_tokens_in": 229,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 162,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.009686,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 552,
+            "sha256": "59e365de62e15d6c4b8588dde7e66ab400cc13914fbb15b515f3cec9b7872f7b"
+          },
+          "ocr": {
+            "characters": 4,
+            "sha256": "679eaac16659c013675081e715f7ef761bdd183f1d7f55d079eb46ad6e322ac5"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 12.998,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "d92b139c-3af6-4aac-9e2c-a2ad7bd3917d",
+          "correct_type": true
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-34",
+      "category": "media_learning",
+      "url": "https://www.youtube.com/watch?v=Dyliijbw_aQ",
+      "source_title": "5 Lessons from Atomic Habits in Under 60 Seconds #SHORTS",
+      "expected": [
+        {
+          "content_type": "media",
+          "title": "Atomic Habits",
+          "attributes": {
+            "media_kind": "book"
+          }
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Could also yield learning entries; exhaustive labels unverified.",
+      "tags": [],
+      "save_id": "c5e5ddb1-3e10-4e61-9377-3da4e1f33e16",
+      "produced": [
+        {
+          "id": "7ff442b9-686a-4bc1-a04e-a72cd002b7ad",
+          "content_type": "learning",
+          "title": "5 Key Lessons from Atomic Habits",
+          "summary": "Five core principles from James Clear's Atomic Habits: small habits compound to big changes, focus on systems over goals, identity-based\u2026",
+          "attributes": {
+            "level": "beginner",
+            "format": "explanation",
+            "subject": "habit formation and self-improvement",
+            "key_takeaways": [
+              "Small habits lead to big changes through compound effect",
+              "Focus on systems not goals",
+              "Change habits by focusing on identity not outcomes",
+              "Apply four laws of behavior change: make it obvious, attractive, easy, satisfying",
+              "Be patient for habits to take effect"
+            ]
+          },
+          "needs_review": false,
+          "review_reason": null,
+          "place_id": null,
+          "place_name": null,
+          "city": null,
+          "formatted_address": null,
+          "lat": null,
+          "lng": null
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0037987,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "geo_skipped": {
+            "learning": 1
+          },
+          "ocr_seconds": 1.0416860000696033,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "content_types": {
+            "learning": 1
+          },
+          "cost_complete": true,
+          "estimated_usd": 0.0037987,
+          "llm_tokens_in": 1624,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 262,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 9.869633833062835,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.011581,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 4028,
+            "sha256": "ffe4ae0cc6c9e95ad86b889c1268dc9d13cfcffa664161473307ad35a08179d1"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 1066,
+            "sha256": "1d9a538f361604e5de029df1edd84c2c690a717c527be631cba5d68777bacf54"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 21.551,
+      "matches": [
+        {
+          "expected_index": 0,
+          "produced_id": "7ff442b9-686a-4bc1-a04e-a72cd002b7ad",
+          "correct_type": false
+        }
+      ],
+      "missed_expected_indices": [],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-35",
+      "category": "empty",
+      "url": "https://www.youtube.com/watch?v=kN9pjVCeKY4",
+      "source_title": "TOP 5 CAT SLEEPING MOMENTS #shorts",
+      "expected": [],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Entertainment-only judgment from title/description; full video not independently viewed.",
+      "tags": [],
+      "save_id": "5c25396e-943a-4d66-ac18-9ac189f0b318",
+      "produced": [],
+      "result": {
+        "status": "no_content_found",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0010867,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.962619041907601,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0010867,
+          "llm_tokens_in": 202,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 11.351865457952954,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.008869,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 53,
+            "sha256": "9d972e5bbb21df270fae6be252b34ae818e302a9287463515bd1c6b22603adb7"
+          },
+          "ocr": {
+            "characters": 139,
+            "sha256": "efbfbaccff71c2749978ebc3c141ff957f89601a890c3ac25a6cef0e767a43d3"
+          },
+          "transcript": {
+            "characters": 125,
+            "sha256": "31e7affcc99e5ac4572103d0dfffa125d63cdab6b2151ef9d5251c5b0ef616bb"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 18.822,
+      "matches": [],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-36",
+      "category": "empty",
+      "url": "https://www.youtube.com/watch?v=ruW-b7mUgnk",
+      "source_title": "Cat sleeping positions #shorts",
+      "expected": [],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Entertainment-only judgment from title/description; full video not independently viewed.",
+      "tags": [],
+      "save_id": "e640dbb6-174d-4288-b2c0-304a26a7813e",
+      "produced": [],
+      "result": {
+        "status": "no_content_found",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0009397,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.9085896250326186,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0009397,
+          "llm_tokens_in": 55,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 4.868529582978226,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.008722,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 36,
+            "sha256": "4024bdc885e3abaa45fdafc99061b0c3255ee1cb11986cf45b8aa5ec67981985"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 28,
+            "sha256": "1512c25304995291945e92c0451ade9af9d8970041ad70e2a3f86afe9a7ca757"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 13.387,
+      "matches": [],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-37",
+      "category": "empty",
+      "url": "https://www.youtube.com/watch?v=N88hXQ4KOOs",
+      "source_title": "Ranking Funny Dog Videos #shorts",
+      "expected": [],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Entertainment-only judgment from title/description; full video not independently viewed.",
+      "tags": [],
+      "save_id": "155e7b85-1c83-48be-8cb5-36a474e7882d",
+      "produced": [],
+      "result": {
+        "status": "no_content_found",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0011317,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.7075688330223784,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0011317,
+          "llm_tokens_in": 247,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 5.288449208019301,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.008914,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 273,
+            "sha256": "b1148880afd8979c1ccabfac05edff886c3d309541fe8c741d432880e30195da"
+          },
+          "ocr": {
+            "characters": 122,
+            "sha256": "3d8708c1c6b016e1a73c05c73fda0e8ebd4e514f5ec04b103506d149a9c42c76"
+          },
+          "transcript": {
+            "characters": 84,
+            "sha256": "d6e7915f61d662637fcb3ab43e129b8d39e6c71ed968b479ed5b87e9be8ffdf5"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 15.521,
+      "matches": [],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-38",
+      "category": "empty",
+      "url": "https://www.instagram.com/reel/DZQEbgvRroH/",
+      "source_title": "Sports entertainment reel",
+      "expected": [],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Archived sports caption/OCR; no actionable content found in available signals.",
+      "tags": [],
+      "save_id": "b19bfe53-8a0e-45e8-8558-ee5a9d0269e1",
+      "produced": [],
+      "result": {
+        "status": "no_content_found",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0009747,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.5231834159931168,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0009747,
+          "llm_tokens_in": 90,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 4.509089750004932,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.008757,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 82,
+            "sha256": "fe89bc68b0dc56a17fb7e4bddd1493506eda8912532530f086bc10dda08ad6bf"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 122,
+            "sha256": "880c76c814b3ffede53a8f13c2ea84d53a6c602d7e9a2958acef65ad98dfd275"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 11.962,
+      "matches": [],
+      "missed_expected_indices": [],
+      "provisional_match": true,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-39",
+      "category": "mixed",
+      "url": "https://www.youtube.com/watch?v=QRlbP0_WtM0",
+      "source_title": "My Productive & REALISTIC 6am Morning Routine | Protein Pancakes, Workout, & B\u01d0ng Recipe",
+      "expected": [
+        {
+          "content_type": "recipe",
+          "title": "Pancakes",
+          "attributes": {}
+        },
+        {
+          "content_type": "workout",
+          "title": "",
+          "attributes": {}
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Source description indicates two types but required attributes/exhaustive entries and short-video format unverified.",
+      "tags": [
+        "labels_incomplete"
+      ],
+      "save_id": "296ca2a5-4e1f-4321-b0ce-4396869d8513",
+      "produced": [],
+      "result": {
+        "status": "failed",
+        "error_reason": "The source could not be processed. Check that it is public, then retry.",
+        "cost": {
+          "llm_usd": 0.0,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Known usage only; provider usage was unavailable for one or more requests. Local compute excluded.",
+          "ocr_seconds": 0.17665375000797212,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "cost_complete": false,
+          "estimated_usd": 0.0,
+          "llm_tokens_in": 0,
+          "llm_cache_hits": 0,
+          "llm_tokens_out": 0,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 0,
+          "transcription_seconds": 0.0,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.0,
+          "llm_usage_unavailable_requests": 1
+        },
+        "signals": {
+          "caption": {
+            "characters": 2675,
+            "sha256": "56120e4c180275c2ea00ce596877d6b7749ace328684892e2f38a8cd614dbfff"
+          },
+          "ocr": {
+            "characters": 18,
+            "sha256": "2e1662e4a602ecbf304ced282e7498cd88fef70cd1f6adfc573e686d4f322228"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 31.485,
+      "matches": [],
+      "missed_expected_indices": [
+        0,
+        1
+      ],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
+    },
+    {
+      "id": "golden-40",
+      "category": "mixed",
+      "url": "https://www.youtube.com/watch?v=IteBR-wmHGo",
+      "source_title": "Morning Routine #shorts",
+      "expected": [
+        {
+          "content_type": "recipe",
+          "title": "",
+          "attributes": {}
+        },
+        {
+          "content_type": "workout",
+          "title": "",
+          "attributes": {}
+        }
+      ],
+      "labels_verified": false,
+      "label_scope": "Independent source title/description or archived human-read signals; full video and exhaustive entry coverage not independently verified.",
+      "label_notes": "Primary search result exists; source fetching throttled. Two-type expectation needs independent verification.",
+      "tags": [
+        "labels_incomplete"
+      ],
+      "save_id": "65b1b499-043a-459f-9259-635c0894a365",
+      "produced": [],
+      "result": {
+        "status": "no_content_found",
+        "error_reason": null,
+        "cost": {
+          "llm_usd": 0.0009717,
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.1933336249785498,
+          "llm_requests": 1,
+          "places_calls": 0,
+          "cost_complete": true,
+          "estimated_usd": 0.0009717,
+          "llm_tokens_in": 87,
+          "llm_cache_hits": 1,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "llm_cache_read_tokens": 8647,
+          "transcription_seconds": 4.184950417024083,
+          "llm_cache_write_tokens": 0,
+          "llm_uncached_equivalent_usd": 0.008754,
+          "llm_usage_unavailable_requests": 0
+        },
+        "signals": {
+          "caption": {
+            "characters": 29,
+            "sha256": "1d4152580e5151a7ea99abf5a530303cfcb2544c3eef2f6819f2eee3283e32af"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 123,
+            "sha256": "26991f806e38c33e50f7b0be4be38286f86781a5ed61809b09981c23b05ebe3d"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 12.367,
+      "matches": [],
+      "missed_expected_indices": [
+        0,
+        1
+      ],
+      "provisional_match": false,
+      "passed": false,
+      "failure": "Full independent labels are incomplete; provisional results cannot pass acceptance."
     }
   ]
 }

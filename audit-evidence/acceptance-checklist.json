@@ -1,0 +1,332 @@
+[
+  {
+    "id": "5.1.1",
+    "requirement": "Both exact purge scans return zero hits",
+    "result": "PASS",
+    "evidence": "Exact requested commands; purge-scans.json. No additional exclusions."
+  },
+  {
+    "id": "5.1.2",
+    "requirement": "Retired listener directory is absent",
+    "result": "PASS",
+    "evidence": "source-preconditions.json: listener_exists=false."
+  },
+  {
+    "id": "5.1.3",
+    "requirement": "Retired environment settings are absent",
+    "result": "PASS",
+    "evidence": "All root/app/API environment examples and live local files, Render config and both systemd units inspected by key only."
+  },
+  {
+    "id": "5.1.4",
+    "requirement": "Backend/app checks and native builds succeed",
+    "result": "PASS",
+    "evidence": "29 Postgres/backend checks, 12 app checks, TypeScript and Python compilation; Debug/Release simulator and signed Release iPhone build 20 succeeded. Dependency build warnings remain."
+  },
+  {
+    "id": "5.2.1",
+    "requirement": "Migration dry-run includes all three ownership buckets",
+    "result": "PASS",
+    "evidence": "migration-preflight.json: 0 single-owner, 0 multi-owner, 21 unresolved originals; restored rehearsal before live application."
+  },
+  {
+    "id": "5.2.2",
+    "requirement": "Retired database tables are dropped",
+    "result": "PASS",
+    "evidence": "database-final.json: zero retired tables remaining."
+  },
+  {
+    "id": "5.2.3",
+    "requirement": "Every original item is accounted for",
+    "result": "PASS",
+    "evidence": "Live 0 private entries + 21 quarantined originals = 21 originals. Test migration exercises duplication for multiple owners while counting distinct originals."
+  },
+  {
+    "id": "5.2.4",
+    "requirement": "No arbitrary owner was assigned",
+    "result": "PASS",
+    "evidence": "All 21 ownerless originals remain quarantined. Existing phone-test database retained all 8 entry IDs/owners/notes/folder links."
+  },
+  {
+    "id": "F.1.1",
+    "requirement": "Ten complete registry schemas",
+    "result": "PASS",
+    "evidence": "config/content_types.yaml and integration test. Other has only topic; other schemas contain 3\u20135 attributes."
+  },
+  {
+    "id": "F.1.2",
+    "requirement": "Eleventh category works by changing YAML only, then is removed",
+    "result": "PASS",
+    "evidence": "Live handmade origami video + OCR classified as Craft; filter/detail/Crafts \u2192 Paper observed without rebuild. Source hashes unchanged except YAML. Ten categories restored and test entry removed."
+  },
+  {
+    "id": "F.1.3",
+    "requirement": "Unknown attribute writes rejected",
+    "result": "PASS",
+    "evidence": "API and actual Postgres trigger tests reject unknown keys; extraction drops/logs them and retains missing-required review reasons."
+  },
+  {
+    "id": "F.2.0",
+    "requirement": "Forty fully hand-labeled real reels with required composition",
+    "result": "FAIL",
+    "evidence": "Forty real URL attempts cover the nominal 10/6/6/4/4/4/4/2 buckets, but no row has complete independent video labels. Some URLs are unavailable and some short videos are not verified vertical reels. Existing provisional labels omit subjects and contain mismatches."
+  },
+  {
+    "id": "F.2.1",
+    "requirement": "Classification accuracy at least 85%",
+    "result": "FAIL",
+    "evidence": "Provisional metrics below; incomplete independent labels prevent an acceptance pass regardless of the numeric threshold."
+  },
+  {
+    "id": "F.2.2",
+    "requirement": "Required-attribute precision at least 80%",
+    "result": "FAIL",
+    "evidence": "Provisional metrics below; incomplete independent labels prevent an acceptance pass regardless of the numeric threshold."
+  },
+  {
+    "id": "F.2.3",
+    "requirement": "Resolved-place precision at least 85%",
+    "result": "FAIL",
+    "evidence": "Provisional metrics below; incomplete independent labels prevent an acceptance pass regardless of the numeric threshold."
+  },
+  {
+    "id": "F.2.4",
+    "requirement": "Recall at least 75%",
+    "result": "FAIL",
+    "evidence": "Provisional metrics below; incomplete independent labels prevent an acceptance pass regardless of the numeric threshold."
+  },
+  {
+    "id": "F.2.5",
+    "requirement": "Zero silent drops",
+    "result": "FAIL",
+    "evidence": "3 provisional expected entries missing without a failed save. Complete independent labels are still required."
+  },
+  {
+    "id": "F.2.6",
+    "requirement": "Four no-content reels return no_content_found",
+    "result": "PASS",
+    "evidence": "All four designated empty fixtures returned zero entries and no_content_found."
+  },
+  {
+    "id": "F.2.7",
+    "requirement": "Five-plus listicle produces separate entries",
+    "result": "PASS",
+    "evidence": "The five-hike reel produced five separate place entries. Another taco list produced five; an Indian recipe compilation produced five recipes."
+  },
+  {
+    "id": "F.2.8",
+    "requirement": "Both mixed fixtures produce two types",
+    "result": "FAIL",
+    "evidence": "First designated mixed fixture failed processing; second returned no content. A different product fixture did produce product and media entries, which does not substitute for these checks."
+  },
+  {
+    "id": "F.2.9",
+    "requirement": "Review rate below 20%",
+    "result": "PASS",
+    "evidence": "5/46 entries = 10.87%. Five unresolved-place reasons and five low-confidence reasons refer to the same five entries."
+  },
+  {
+    "id": "F.3.1",
+    "requirement": "Instagram, TikTok and YouTube native share sheets work",
+    "result": "FAIL",
+    "evidence": "Physical iPhone unavailable; required host matrix not executed for build 20. Native queue/SQLite idempotency and 50-write durability tests pass as supporting evidence, not as a replacement for this check."
+  },
+  {
+    "id": "F.3.2",
+    "requirement": "Return under 400 ms in each native host, measured",
+    "result": "FAIL",
+    "evidence": "Physical iPhone unavailable; required host matrix not executed for build 20. Native queue/SQLite idempotency and 50-write durability tests pass as supporting evidence, not as a replacement for this check."
+  },
+  {
+    "id": "F.3.3",
+    "requirement": "Backgrounded and force-quit share survival",
+    "result": "FAIL",
+    "evidence": "Physical iPhone unavailable; required host matrix not executed for build 20. Native queue/SQLite idempotency and 50-write durability tests pass as supporting evidence, not as a replacement for this check."
+  },
+  {
+    "id": "F.3.4",
+    "requirement": "Airplane-mode queue automatically resolves after reconnect",
+    "result": "FAIL",
+    "evidence": "Physical iPhone unavailable; required host matrix not executed for build 20. Native queue/SQLite idempotency and 50-write durability tests pass as supporting evidence, not as a replacement for this check."
+  },
+  {
+    "id": "F.3.5",
+    "requirement": "Fifty consecutive native-host shares without crash",
+    "result": "FAIL",
+    "evidence": "Physical iPhone unavailable; required host matrix not executed for build 20. Native queue/SQLite idempotency and 50-write durability tests pass as supporting evidence, not as a replacement for this check."
+  },
+  {
+    "id": "F.3.6",
+    "requirement": "Duplicate native-host share creates one save with its N entries",
+    "result": "FAIL",
+    "evidence": "Physical iPhone unavailable; required host matrix not executed for build 20. Native queue/SQLite idempotency and 50-write durability tests pass as supporting evidence, not as a replacement for this check."
+  },
+  {
+    "id": "F.3.7",
+    "requirement": "Zero network calls from the extension process",
+    "result": "FAIL",
+    "evidence": "Physical iPhone unavailable; required host matrix not executed for build 20. Native queue/SQLite idempotency and 50-write durability tests pass as supporting evidence, not as a replacement for this check."
+  },
+  {
+    "id": "F.4.1",
+    "requirement": "Recent launches first and new save appears within 2 seconds",
+    "result": "FAIL",
+    "evidence": "Recent default verified after relaunch. Cold-launch visibility latency was not measured."
+  },
+  {
+    "id": "F.4.2",
+    "requirement": "Inline verification appears only when needs_review is true",
+    "result": "PASS",
+    "evidence": "Controlled Thai recipe and unresolved-cuisine recipe inspected together; only unresolved recipe prompted. Original unresolved-place cards also show specific reasons."
+  },
+  {
+    "id": "F.4.3",
+    "requirement": "No review badge, banner or tab red dot",
+    "result": "PASS",
+    "evidence": "Recent, Map, Settings and Debug navigation inspected; pending-review counters absent."
+  },
+  {
+    "id": "F.4.4",
+    "requirement": "Dismissal survives restart",
+    "result": "PASS",
+    "evidence": "Mystery recipe dismissed, app terminated/relaunched; no prompt. Database verified_at persisted and needs_review=false."
+  },
+  {
+    "id": "F.4.5",
+    "requirement": "Map includes every anchored entry and no others",
+    "result": "PASS",
+    "evidence": "Two actual anchored places plus a controlled product sharing one place rendered; unanchored workout filter had no markers. Coordinate filtering/clustering tests also pass."
+  },
+  {
+    "id": "F.4.6",
+    "requirement": "Every feature works with location denied",
+    "result": "FAIL",
+    "evidence": "Denied permission and verified saved-place bounding-box fallback. Complete denial sweep across every feature, including account/export/notifications, was not performed."
+  },
+  {
+    "id": "F.4.7",
+    "requirement": "Granted location yields correct ascending Near me distances",
+    "result": "PASS",
+    "evidence": "Simulated public Santa Monica point: Los Liones 7.3 km, Hollywood Sign 21 km, ascending. Date-line/distance unit tests pass."
+  },
+  {
+    "id": "F.4.8",
+    "requirement": "Registry-specific marker icons differ",
+    "result": "PASS",
+    "evidence": "Product shopping-bag marker and place pin marker observed using controlled test entry and actual saved places."
+  },
+  {
+    "id": "F.4.9",
+    "requirement": "Release has three tabs and Debug has four",
+    "result": "PASS",
+    "evidence": "Release simulator observed Recent/Map/Settings; restored Debug observed Recent/Map/Groups/Settings. TestFlight-specific runtime remains untested."
+  },
+  {
+    "id": "F.5.1",
+    "requirement": "Type/facet auto-filing",
+    "result": "PASS",
+    "evidence": "All 46 final-run entries have type and facet folders. Other intentionally has no facet; unknown required facets remain reviewable rather than inventing a value."
+  },
+  {
+    "id": "F.5.2",
+    "requirement": "Multi-valued facets file into every matching subfolder",
+    "result": "PASS",
+    "evidence": "Real Postgres and app tests: chest-and-arms entry is in both Chest and Arms."
+  },
+  {
+    "id": "F.5.3",
+    "requirement": "No empty automatic folders",
+    "result": "PASS",
+    "evidence": "Final-run database query: zero empty automatic folders; pruning tests pass. Empty custom folders are permitted."
+  },
+  {
+    "id": "F.5.4",
+    "requirement": "Deleting custom folder preserves entries",
+    "result": "PASS",
+    "evidence": "Owner-scoped API integration test deletes folder and retains entry and automatic memberships."
+  },
+  {
+    "id": "F.5.5",
+    "requirement": "Search covers title, summary, attributes, folders and place name",
+    "result": "PASS",
+    "evidence": "Database search and actual SQLite tests cover these fields, notes, semantic ranking and ownership isolation."
+  },
+  {
+    "id": "F.6.1",
+    "requirement": "Debug reports measured cost per save by content type",
+    "result": "PASS",
+    "evidence": "Debug UI showed Recipe/Workout/Product/Place/No Entries buckets. Live provider measurements in cost-by-type.json; zero-cost controlled UI fixtures are clearly separated from paid measurements."
+  },
+  {
+    "id": "F.6.2",
+    "requirement": "No geocoding for geo:never across golden set",
+    "result": "PASS",
+    "evidence": "golden-geo-and-folders.json: zero calls attributed to never types across the final 40-save run; per-save skip/call counters retained."
+  },
+  {
+    "id": "F.6.3",
+    "requirement": "Five different real reels for one venue make one Places call",
+    "result": "FAIL",
+    "evidence": "Boundary probe with five controlled save fixtures made one real Google lookup and four cache hits. Five distinct real videos naming the same venue were not tested end to end."
+  },
+  {
+    "id": "F.6.4",
+    "requirement": "Ingestion uses exactly the five allowed Places fields",
+    "result": "PASS",
+    "evidence": "All 16 logged final-run ingestion calls and the live cache probe used the exact mask. Detail view separately requests only rating and regularOpeningHours, cached lazily."
+  },
+  {
+    "id": "F.6.5",
+    "requirement": "Actual prompt caching and measured on/off costs",
+    "result": "PASS",
+    "evidence": "Final real-source run: 97.22% request cache-hit rate. Twenty controlled on/off calls plus two warm follow-ups; full measurements below. These are actual calls, not only counterfactual estimates."
+  },
+  {
+    "id": "F.7.1",
+    "requirement": "Flag false in built Release and TestFlight configurations",
+    "result": "FAIL",
+    "evidence": "Built Release runtime verified off. No TestFlight archive/distribution runtime was tested."
+  },
+  {
+    "id": "F.7.2",
+    "requirement": "No reachable entry point when flag is off",
+    "result": "PASS",
+    "evidence": "Release simulator three-tab navigation and directory-absent Debug three-tab navigation observed."
+  },
+  {
+    "id": "F.7.3",
+    "requirement": "Placeholder contains only a view and the one allowed storage key",
+    "result": "PASS",
+    "evidence": "Only index.tsx; one boolean AsyncStorage key, console interest event, no network/model capability. Existing persisted confirmation is supported by the pre-addendum test, not reasserted as a new tap measurement."
+  },
+  {
+    "id": "F.7.4",
+    "requirement": "No direct outside imports or core-layer imports",
+    "result": "PASS",
+    "evidence": "No direct import from the placeholder directory; optional Debug discovery loads the view, which only imports React, React Native and AsyncStorage."
+  },
+  {
+    "id": "F.7.5",
+    "requirement": "Delete directory, complete all required checks, then restore",
+    "result": "FAIL",
+    "evidence": "Both native configurations and 28 backend/12 app tests passed while absent, Debug remained usable; directory restored and 29/12 checks passed. Aggregate golden accuracy and physical-host checks did not pass, so the strict combined criterion fails."
+  },
+  {
+    "id": "F.8.1",
+    "requirement": "Every golden save terminal within 60 seconds",
+    "result": "PASS",
+    "evidence": "40/40 attempts terminal; maximum 41.396s. Failed/no-content states count as terminal, not successful extraction."
+  },
+  {
+    "id": "F.8.2",
+    "requirement": "Kill mid-processing and relaunch loses nothing and leaves nothing stuck",
+    "result": "FAIL",
+    "evidence": "Lease expiry, one retry, checkpoint reuse, preserved edits and local queue acknowledgement recovery pass automated tests. Full native mid-processing kill/relaunch loop was not executed for this build."
+  },
+  {
+    "id": "F.8.3",
+    "requirement": "First launch offline/no account/no location, queue then auto-resolve",
+    "result": "FAIL",
+    "evidence": "Offline first-launch SQLite/queue tests pass. Complete native share-host \u2192 reconnect \u2192 resolve/file loop not run for build 20."
+  }
+]

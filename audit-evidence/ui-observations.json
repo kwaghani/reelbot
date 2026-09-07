@@ -1,0 +1,42 @@
+{
+  "surface": "ReelBot Audit iOS 26.5 simulator, controlled fixtures in separate test owner",
+  "recent_default": true,
+  "inline_review_only_when_needed": true,
+  "dismissal_survives_restart": true,
+  "dismissal_database_verified": true,
+  "generic_workout_editor_saved_strength": true,
+  "editor_database_verified": true,
+  "cold_launch_under_2_seconds": "FAIL: not measured",
+  "location_denied_map_saved_bounds": true,
+  "all_features_with_location_denied": "FAIL: full feature sweep not run",
+  "near_me_sorted": [
+    {
+      "title": "Los Liones Canyon Trail",
+      "distance_km": 7.3
+    },
+    {
+      "title": "Hollywood Sign",
+      "distance_km": 21
+    }
+  ],
+  "location_used": "simulated public test point 34.0119,-118.4951",
+  "map_has_only_anchored_entries": true,
+  "map_product_bag_and_place_pin_icons_observed": true,
+  "unanchored_workout_filter_has_no_markers": true,
+  "map_cluster_observed": true,
+  "debug_cost_by_type_observed": [
+    "Recipe",
+    "Workout",
+    "Product",
+    "Place",
+    "No Entries"
+  ],
+  "cost_ui_fixture_note": "Controlled fixture rows have zero provider cost. Existing real place save has measured legacy total; final-provider measurements are in cost-by-type.json.",
+  "eleventh_type_filter_detail_and_type_facet_folders": true,
+  "review_badges_banners_tab_counts": false,
+  "physical_host_matrix": "FAIL: iPhone unavailable",
+  "kill_mid_processing_full_native_loop": "FAIL: not run for this build",
+  "offline_first_launch_native_resolve_loop": "FAIL: not run for this build",
+  "controlled_fixture_saves_removed": 4,
+  "original_personal_entries_remaining": 8
+}

@@ -1,17 +1,16 @@
 {
-  "directory_files": [
+  "files": [
     "index.tsx"
   ],
-  "persisted_interest": [
-    {
-      "key": "reelbot.groupsPlaceholder.interestTapped",
-      "value": "true"
-    }
-  ],
-  "event_observed": true,
-  "delete_directory_full_tests": "PASS",
-  "delete_directory_debug_build": "PASS",
-  "delete_directory_release_build": "PASS",
-  "delete_directory_real_url_execution": "PASS execution / FAIL accuracy acceptance",
-  "restored_full_tests": "PASS"
+  "only_storage_key": "reelbot.groupsPlaceholder.interestTapped",
+  "event": "groups_placeholder_interest_tapped",
+  "source_has_no_core_imports": true,
+  "debug_native_build_without_directory": "PASS",
+  "release_native_build_without_directory": "PASS",
+  "tests_without_directory": "PASS: 28 backend and 12 app tests at isolation checkpoint",
+  "tests_after_restoration": "PASS: 29 backend and 12 app tests",
+  "debug_ui_without_directory": "PASS: three tabs and cost screen still worked",
+  "directory_restored": true,
+  "full_acceptance_without_directory": "FAIL: real golden quality and physical host checks did not pass",
+  "shipping_gate": "Release simulator observed three tabs; TestFlight runtime not run"
 }
