@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from psycopg.types.json import Jsonb
 from worker.db import connect, claim, store_candidate, save_hash
@@ -55,6 +56,9 @@ def process(save_id):
             save = conn.execute('select * from saves where id=%s',(save_id,)).fetchone()
         if not save or save['status']!='processing':
             return
+        metrics={**new_metrics(),**save['cost']}
+        remaining=max(1,58-(datetime.now(timezone.utc)-save['started_at']).total_seconds())
+        signal.alarm(min(56,int(remaining)))
         url = canonical_source(save['source_url'])
         with connect() as conn:
             duplicate = conn.execute('select id from saves where url_hash=%s and id<>%s',
@@ -106,9 +110,10 @@ def run_one():
     if not save:
         return False
     started = time.monotonic()
+    deadline=max(1,min(55,57-(datetime.now(timezone.utc)-save['started_at']).total_seconds()))
     child = subprocess.Popen([sys.executable,'-m','worker.worker','--save',str(save['id'])],cwd=ROOT,start_new_session=True)
     try:
-        code = child.wait(timeout=55)
+        code = child.wait(timeout=deadline)
     except subprocess.TimeoutExpired:
         os.killpg(child.pid,signal.SIGKILL)
         child.wait()
@@ -122,15 +127,56 @@ def run_one():
     return True
 
 
-def main():
-    logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
-    if len(sys.argv)==3 and sys.argv[1]=='--save':
-        process(sys.argv[2]); return
+def maintain_embeddings():
+    from worker.db import items,vector_literal
+    from worker.embed import embed_document
     while True:
         try:
-            if not run_one(): time.sleep(1)
-        except Exception:
-            LOG.exception('Worker unavailable; durable queue retained')
+            with connect() as conn:
+                missing=conn.execute('select id,user_id,updated_at from user_places where embedding is null order by created_at limit 8').fetchall()
+            for pending in missing:
+                with connect() as conn:
+                    row=next((r for r in items(conn,pending['user_id']) if r['id']==pending['id']),None)
+                if row:
+                    text=' '.join([row['name'],row['city'],row['note'],' '.join(f['name'] for f in row['folders'])])
+                    vector=vector_literal(embed_document(text))
+                    with connect() as conn:
+                        conn.execute('update user_places set embedding=%s::vector where id=%s and updated_at=%s',(vector,row['id'],pending['updated_at']))
             time.sleep(3)
+        except Exception:
+            LOG.exception('Search indexing will retry')
+            time.sleep(15)
+
+
+def main():
+    logging.basicConfig(level=logging.INFO,format='%(asctime)s %(levelname)s %(message)s')
+    if len(sys.argv)==2 and sys.argv[1]=='--index':
+        maintain_embeddings(); return
+    if len(sys.argv)==3 and sys.argv[1]=='--save':
+        # A child still expires if its supervising worker is killed.
+        signal.signal(signal.SIGALRM,lambda *_: os._exit(124))
+        signal.alarm(56)
+        process(sys.argv[2]); return
+    indexer=subprocess.Popen([sys.executable,'-m','worker.worker','--index'],cwd=ROOT)
+    def stop(*_):
+        raise SystemExit(0)
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
+    try:
+        while True:
+            try:
+                if indexer.poll() is not None:
+                    indexer=subprocess.Popen([sys.executable,'-m','worker.worker','--index'],cwd=ROOT)
+                if not run_one(): time.sleep(1)
+            except Exception:
+                LOG.exception('Worker unavailable; durable queue retained')
+                time.sleep(3)
+    finally:
+        indexer.terminate()
+        try:
+            indexer.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            indexer.kill()
+            indexer.wait()
 
 if __name__=='__main__': main()

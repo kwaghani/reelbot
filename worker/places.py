@@ -96,3 +96,20 @@ def resolve(conn, candidate, metrics, search=text_search):
         (best["id"],best["displayName"]["text"],best["formattedAddress"],loc["latitude"],loc["longitude"],
          best.get("primaryType","other"),city,cache_key)).fetchone()
     return dict(row), confidence, None
+
+
+def details(conn,place):
+    """Explicit detail views only; never called during ingestion. Cache for 30 days."""
+    from datetime import datetime,timezone,timedelta
+    from psycopg.types.json import Jsonb
+    from urllib.parse import quote
+    conn.execute('select pg_advisory_xact_lock(hashtextextended(%s,0))',('details:'+str(place['id']),))
+    current=conn.execute('select * from places where id=%s',(place['id'],)).fetchone()
+    if current['details'] is not None and current['details_refreshed_at'] and datetime.now(timezone.utc)-current['details_refreshed_at']<timedelta(days=30):
+        return current['details']
+    request=Request('https://places.googleapis.com/v1/places/'+quote(place['google_place_id'],safe=''),
+        headers={'X-Goog-Api-Key':os.environ['GOOGLE_MAPS_API_KEY'],
+                 'X-Goog-FieldMask':'rating,reviews,photos,regularOpeningHours'})
+    with urlopen(request,timeout=10) as response: result=json.load(response)
+    conn.execute('update places set details=%s,details_refreshed_at=now() where id=%s',(Jsonb(result),place['id']))
+    return result

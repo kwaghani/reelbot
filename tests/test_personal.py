@@ -1,5 +1,5 @@
 """Real disposable Postgres integration tests for isolation, recovery, cache and search."""
-import os,sys,unittest,hashlib
+import os,sys,unittest,hashlib,subprocess,tempfile
 from pathlib import Path
 from uuid import uuid4
 from unittest.mock import patch
@@ -111,6 +111,72 @@ class PersonalTests(unittest.TestCase):
         candidate={'name':'A','city_hint':None,'country_hint':None,'category_guess':None,'confidence':.4,'evidence':'OCR A'}
         self.assertEqual(len(CANDIDATES.validate_python([{**candidate,'name':str(n)} for n in range(6)])),6)
         with self.assertRaises(ValueError): CANDIDATES.validate_python([{**candidate,'confidence':2}])
+    def test_slow_media_retains_caption_for_extraction(self):
+        from worker.pipeline import collect_signals
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory,'caption.txt').write_text('Five hikes: Point Dume, Hollywood Sign, Los Leones, El Matador, Point Mugu')
+            with patch('worker.pipeline.subprocess.Popen') as spawn, patch('worker.pipeline.os.killpg') as kill:
+                spawn.return_value.wait.side_effect=[subprocess.TimeoutExpired('collector',30),0]
+                spawn.return_value.pid=12345
+                signals=collect_signals('https://instagram.com/reel/A/',directory,new_metrics())
+            self.assertIn('Five hikes',signals['caption'])
+            self.assertTrue(signals['partial'])
+            self.assertIn('transcript',signals['unavailable'])
+            kill.assert_called_once()
+    def test_server_queue_wait_expires_and_backoff_is_bounded(self):
+        saved=self.save(self.a)
+        with connect() as conn:
+            conn.execute("update saves set created_at=now()-interval '61 seconds',updated_at=now()-interval '61 seconds' where id=%s",(saved['id'],))
+        state=self.client.get('/sync',headers=self.a['headers']).json()['saves'][0]
+        self.assertEqual(state['status'],'failed')
+        self.assertEqual(state['attempts'],1)
+        self.assertIsNotNone(state['retry_at'])
+        with connect() as conn:
+            self.assertIsNone(claim(conn))
+            conn.execute("update saves set retry_at=now()-interval '1 second'")
+            self.assertEqual(claim(conn)['attempts'],2)
+    def test_manual_retry_gets_fresh_deadline_and_keeps_prior_cost(self):
+        from worker.worker import process
+        from worker.db import fail_expired
+        saved=self.save(self.a)
+        with connect() as conn:
+            conn.execute('''update saves set status='failed',attempts=2,created_at=now()-interval '1 day',
+                updated_at=now()-interval '1 day',cost='{"llm_tokens_in":100,"llm_tokens_out":10,"places_calls":1}'::jsonb where id=%s''',(saved['id'],))
+        self.assertEqual(self.client.post('/saves/'+saved['id']+'/retry',headers=self.a['headers']).status_code,200)
+        with connect() as conn:
+            claimed=claim(conn)
+            self.assertEqual(claimed['attempts'],1)
+            self.assertEqual(fail_expired(conn),0)
+        def extract(signals,metrics):
+            metrics['llm_tokens_in']+=50
+            return []
+        with patch('worker.worker.collect_signals',return_value={'caption':'A cooking recipe'}),patch('worker.worker.extract_candidates',side_effect=extract),patch('worker.worker.signal.alarm'):
+            process(saved['id'])
+        with connect() as conn:
+            final=conn.execute('select status,cost from saves where id=%s',(saved['id'],)).fetchone()
+        self.assertEqual(final['status'],'no_places_found')
+        self.assertEqual(final['cost']['places_calls'],1)
+        self.assertEqual(final['cost']['llm_tokens_in'],150)
+    def test_folder_edits_invalidate_semantic_index(self):
+        row,_=self.venue(self.save(self.a),self.a)
+        folder=self.client.post('/folders',headers=self.a['headers'],json={'name':'Weekend'}).json()
+        self.client.post('/folders/assign',headers=self.a['headers'],json={'item_ids':[str(row['id'])],'destination_id':folder['id']})
+        with connect() as conn: conn.execute('update user_places set embedding=%s::vector where id=%s',(str([1.0]+[0.0]*383),row['id']))
+        self.assertEqual(self.client.patch('/folders/'+folder['id'],headers=self.a['headers'],json={'name':'Holiday'}).status_code,200)
+        with connect() as conn:
+            self.assertIsNone(conn.execute('select embedding from user_places where id=%s',(row['id'],)).fetchone()['embedding'])
+    def test_linked_apple_library_cannot_merge_into_a_different_account(self):
+        with connect() as conn:
+            conn.execute("update users set apple_user_id='existing-a' where id=%s",(self.a['user'],))
+            conn.execute("update users set apple_user_id='existing-b' where id=%s",(self.b['user'],))
+        nonce=self.client.get('/auth/apple/challenge',headers=self.a['headers']).json()['nonce']
+        with patch('jwt.PyJWKClient') as keys, patch('jwt.decode',return_value={'sub':'existing-b','nonce':nonce}):
+            keys.return_value.get_signing_key_from_jwt.return_value.key='test-key'
+            response=self.client.post('/auth/apple',headers=self.a['headers'],json={'identity_token':'x'*20,'nonce':nonce})
+        self.assertEqual(response.status_code,409,response.text)
+        with connect() as conn:
+            owner=conn.execute('select user_id from devices where token_hash=%s',(hashlib.sha256(self.a['headers']['Authorization'][7:].encode()).hexdigest(),)).fetchone()
+            self.assertEqual(str(owner['user_id']),self.a['user'])
     def test_invalid_apple_token_cannot_link(self):
         self.assertEqual(self.client.post('/auth/apple',headers=self.a['headers'],json={'identity_token':'invalid.'*6,'nonce':'a'*64}).status_code,401)
 

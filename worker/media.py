@@ -7,6 +7,7 @@ import html
 import io
 import ipaddress
 import socket
+import shutil
 import json
 import logging
 import os
@@ -40,7 +41,6 @@ except ImportError as exc:
 
 TRANSCRIPT_SAVE_CHARS = 1500
 OCR_SAVE_CHARS = 800
-ANTHROPIC_MODEL = os.getenv("ANTHROPIC_FAST_MODEL", "claude-sonnet-5").strip() or "claude-sonnet-5"
 
 LOG = logging.getLogger("reelbot.pipeline")
 
@@ -144,19 +144,21 @@ def ytdlp_options(url: str, workdir: Path | None = None) -> dict[str, Any]:
         "noplaylist": True,
         "ignoreerrors": False,
         "ignore_no_formats_error": True,
-        "socket_timeout": 20,
-        "retries": 2,
+        "socket_timeout": 8,
+        "retries": 0,
         "max_filesize": 100_000_000,
-        "fragment_retries": 2,
+        "fragment_retries": 0,
     }
     target = impersonate_target()
+    if shutil.which('node'):
+        opts['js_runtimes'] = {'node': {'path': shutil.which('node')}}
     if target is not None:
         opts["impersonate"] = target
     if workdir is not None:
         opts.update(
             {
                 "outtmpl": str(workdir / "source.%(ext)s"),
-                "format": "bv*+ba/best",
+                "format": "b[height<=480]/bv[height<=480]+ba/worst[ext=mp4]/worst",
                 "merge_output_format": "mp4",
             }
         )
@@ -431,6 +433,8 @@ def stage_ingest(url: str, workdir: Path) -> IngestResult:
         raise StageError("ingest", "This YouTube video is unavailable")
     reel_id = str(metadata.get("id") or f"url_{url_hash(url)}")
     write_json(workdir / "info.json", metadata)
+    # Preserve useful caption evidence before slower optional media downloads.
+    (workdir / "caption.txt").write_text(extract_caption(metadata), encoding="utf-8")
 
     selected_video_info: dict[str, Any] | None = None
     if video_download_enabled() and not metadata_only:
@@ -543,7 +547,7 @@ def extract_audio(video_path: Path, workdir: Path) -> Path | None:
     ]
 
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=90)
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False, timeout=8)
     except Exception as exc:
         raise StageError("audio", f"ffmpeg audio extraction failed: {exc}") from exc
 
@@ -623,7 +627,12 @@ def stage_transcript(video_path: Path, workdir: Path) -> str:
         segments, _info = model.transcribe(str(audio_path))
         # Preserve Whisper's segment boundaries so downstream quality filters
         # can remove noisy music without throwing away nearby useful speech.
-        transcript = "\n".join(segment.text.strip() for segment in segments if segment.text).strip()
+        lines = []
+        for segment in segments:
+            if segment.text:
+                lines.append(segment.text.strip())
+                (workdir / "transcript.txt").write_text("\n".join(lines), encoding="utf-8")
+        transcript = "\n".join(lines)
     except StageError:
         raise
     except Exception as exc:
@@ -687,7 +696,8 @@ def stage_ocr(video_path: Path, workdir: Path) -> str:
     for frame_path in frames:
         try:
             with Image.open(frame_path) as image:
-                raw_texts.append(pytesseract.image_to_string(image))
+                raw_texts.append(pytesseract.image_to_string(image, timeout=4))
+                (workdir / "ocr.txt").write_text(clean_ocr_text(raw_texts), encoding="utf-8")
         except pytesseract.TesseractNotFoundError as exc:
             raise StageError("ocr", f"tesseract executable not found: {exc}") from exc
         except Exception as exc:
@@ -720,5 +730,3 @@ def stage_thumbnail_ocr(image_path: Path | None, workdir: Path) -> str:
     ocr_text = clean_ocr_text([raw_text])
     (workdir / "ocr.txt").write_text(ocr_text, encoding="utf-8")
     return ocr_text
-
-

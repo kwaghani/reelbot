@@ -138,7 +138,7 @@ def delete_item(item_id:UUID,user=Depends(require_user)):
 def edit_note(item_id:UUID,body:Note,user=Depends(require_user)):
     with connect() as conn:
         owned(conn,'user_places',item_id,user)
-        conn.execute('update user_places set note=%s,updated_at=now() where id=%s and user_id=%s',(body.note,item_id,user))
+        conn.execute('update user_places set note=%s,embedding=null,updated_at=now() where id=%s and user_id=%s',(body.note,item_id,user))
     return {'saved':True}
 
 @app.post('/items/{item_id}/confirm')
@@ -178,6 +178,9 @@ def edit_folder(folder_id:UUID,body:FolderEdit,user=Depends(require_user)):
         folder=owned(conn,'folders',folder_id,user)
         if body.name is not None and folder['kind']!='custom': raise HTTPException(422,'Automatic folder names follow their places.')
         if body.name is not None and not body.name.strip(): raise HTTPException(422,'Enter a folder name.')
+        if body.name is not None:
+            conn.execute('''update user_places set embedding=null,updated_at=now() where user_id=%s and id in
+                (select user_place_id from folder_items where folder_id=%s and user_id=%s)''',(user,folder_id,user))
         return conn.execute('''update folders set name=coalesce(%s,name),sort_order=coalesce(%s,sort_order),
             hidden=coalesce(%s,hidden) where id=%s and user_id=%s returning *''',
             (body.name.strip() if body.name else None,body.sort_order,body.hidden,folder_id,user)).fetchone()
@@ -187,6 +190,8 @@ def delete_folder(folder_id:UUID,user=Depends(require_user)):
     with connect() as conn:
         row=conn.execute('select * from folders where id=%s and user_id=%s',(folder_id,user)).fetchone()
         if row and row['kind']!='custom': raise HTTPException(422,'You can hide this automatic folder.')
+        conn.execute('''update user_places set embedding=null,updated_at=now() where user_id=%s and id in
+            (select user_place_id from folder_items where folder_id=%s and user_id=%s)''',(user,folder_id,user))
         conn.execute("delete from folders where id=%s and user_id=%s and kind='custom'",(folder_id,user))
     return {'deleted':True}
 
@@ -198,6 +203,7 @@ def assign(body:Assignment,user=Depends(require_user)):
         source=owned(conn,'folders',body.source_id,user) if body.source_id else None
         for identifier in body.item_ids:
             owned(conn,'user_places',identifier,user)
+            conn.execute('update user_places set embedding=null,updated_at=now() where id=%s and user_id=%s',(identifier,user))
             conn.execute('insert into folder_items(folder_id,user_place_id,user_id) values(%s,%s,%s) on conflict do nothing',
                          (body.destination_id,identifier,user))
             if body.move and source and source['kind']=='custom' and body.source_id!=body.destination_id:
@@ -261,11 +267,22 @@ def apple(body:Apple,user=Depends(require_user)):
         nonce=conn.execute("delete from events where user_id=%s and kind='apple_nonce' and detail->>'hash'=%s and created_at>now()-interval '10 minutes' returning id",(user,digest)).fetchone()
         if not nonce: raise HTTPException(401,'Sign-in expired. Please retry.')
         conn.execute('select pg_advisory_xact_lock(hashtextextended(%s,0))',('apple:'+claims['sub'],))
+        linked=conn.execute('select apple_user_id from users where id=%s for update',(user,)).fetchone()
+        if linked['apple_user_id'] and linked['apple_user_id']!=claims['sub']:
+            raise HTTPException(409,'This library is linked to another Apple account.')
         existing=conn.execute('select id from users where apple_user_id=%s',(claims['sub'],)).fetchone()
         if existing and existing['id']!=user:
             merge_library(conn,user,existing['id']); user=existing['id']
         else:
-            linked=conn.execute('select apple_user_id from users where id=%s for update',(user,)).fetchone()
-            if linked['apple_user_id'] and linked['apple_user_id']!=claims['sub']: raise HTTPException(409,'This library is linked to another Apple account.')
             conn.execute('update users set apple_user_id=%s where id=%s',(claims['sub'],user))
     return {'user_id':user,'apple_linked':True}
+
+@app.get('/items/{item_id}/details')
+def place_details(item_id:UUID,user=Depends(require_user)):
+    from worker.places import details
+    with connect() as conn:
+        item=owned(conn,'user_places',item_id,user)
+        if not item['place_id']: return {}
+        place=conn.execute('select * from places where id=%s',(item['place_id'],)).fetchone()
+        try: return details(conn,place)
+        except Exception as exc: raise HTTPException(503,'Extra place details are unavailable. Your saved address is still available.') from exc

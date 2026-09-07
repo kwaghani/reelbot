@@ -14,6 +14,7 @@ RUN apt-get update \
         curl \
         ffmpeg \
         libgomp1 \
+        nodejs \
         tesseract-ocr \
     && rm -rf /var/lib/apt/lists/*
 

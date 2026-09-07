@@ -39,8 +39,10 @@ def enqueue(conn, user_id, url):
 
 def fail_expired(conn):
     rows = conn.execute('''update saves set status='failed',error_reason='Processing timed out. You can retry.',
-        retry_at=case when attempts<2 then now()+interval '15 seconds' else null end,updated_at=now(),resolved_at=now()
-        where status='processing' and started_at<=now()-interval '58 seconds' returning id''').fetchall()
+        retry_at=case when attempts<2 then now()+interval '15 seconds' else null end,
+        attempts=greatest(attempts,1),updated_at=now(),resolved_at=now()
+        where (status='processing' and started_at<=now()-interval '58 seconds')
+            or (status='queued' and updated_at<=now()-interval '58 seconds') returning id''').fetchall()
     for row in rows:
         conn.execute("update jobs set status='failed',error_reason='Processing timed out. You can retry.',updated_at=now() where save_id=%s",(row['id'],))
     return len(rows)
@@ -48,7 +50,9 @@ def fail_expired(conn):
 
 def claim(conn):
     fail_expired(conn)
-    row = conn.execute('''update saves set status='processing',started_at=now(),updated_at=now(),
+    # The first attempt includes queue wait; manual retries receive a fresh arrival timestamp.
+    row = conn.execute('''update saves set status='processing',
+        started_at=case when attempts=0 then updated_at else now() end,updated_at=now(),
         attempts=attempts+1,error_reason=null,retry_at=null,resolved_at=null where id=(
         select id from saves where status='queued' or (status='failed' and attempts<2 and retry_at<=now())
         order by created_at for update skip locked limit 1) returning *''').fetchone()
@@ -73,6 +77,7 @@ def items(conn,user_id):
 
 def file_place(conn, row, place):
     owner, item_id = row['user_id'],row['id']
+    conn.execute('update user_places set embedding=null,updated_at=now() where id=%s and user_id=%s',(item_id,owner))
     # Re-resolution only replaces automatic assignments; personal organization survives retries.
     conn.execute('''delete from folder_items fi using folders f where fi.folder_id=f.id
         and fi.user_place_id=%s and fi.user_id=%s and f.kind<>'custom' ''',(item_id,owner))
