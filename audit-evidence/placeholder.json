@@ -1,0 +1,17 @@
+{
+  "directory_files": [
+    "index.tsx"
+  ],
+  "persisted_interest": [
+    {
+      "key": "reelbot.groupsPlaceholder.interestTapped",
+      "value": "true"
+    }
+  ],
+  "event_observed": true,
+  "delete_directory_full_tests": "PASS",
+  "delete_directory_debug_build": "PASS",
+  "delete_directory_release_build": "PASS",
+  "delete_directory_real_url_execution": "PASS execution / FAIL accuracy acceptance",
+  "restored_full_tests": "PASS"
+}

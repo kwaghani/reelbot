@@ -1,0 +1,36 @@
+{
+  "dry_run": {
+    "total_items": 21,
+    "single_identifiable_saver": 0,
+    "multiple_savers": 0,
+    "no_resolvable_saver": 21,
+    "expected_personal_rows": 0,
+    "unresolved_saver_associations": 0
+  },
+  "applied": {
+    "total_items": 21,
+    "single_identifiable_saver": 0,
+    "multiple_savers": 0,
+    "no_resolvable_saver": 21,
+    "expected_personal_rows": 0,
+    "unresolved_saver_associations": 0,
+    "personal_rows": 0,
+    "orphan_rows": 21,
+    "accounted_items": 21
+  },
+  "public_tables": [
+    "devices",
+    "events",
+    "folder_items",
+    "folders",
+    "jobs",
+    "orphaned_items",
+    "places",
+    "saves",
+    "schema_migrations",
+    "user_places",
+    "users"
+  ],
+  "arbitrary_owners": 0,
+  "backup_restore": "Verified 21 items restored and migrated in disposable database; only restore warning was pre-existing public schema."
+}

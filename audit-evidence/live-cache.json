@@ -1,0 +1,90 @@
+{
+  "scope": "Five distinct real source URLs with a controlled identical extracted candidate, two owners, actual Google HTTP requests; extraction is bypassed.",
+  "calls": 1,
+  "hits": 4,
+  "rows": [
+    {
+      "place_id": "1b2bbc03-0d34-4e10-8273-cd70673911ba",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 1,
+        "cache_hits": 0,
+        "estimated_usd": 0.0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+        "places_field_masks": [
+          "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+        ]
+      },
+      "needs_review": false
+    },
+    {
+      "place_id": "1b2bbc03-0d34-4e10-8273-cd70673911ba",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 0,
+        "cache_hits": 1,
+        "estimated_usd": 0.0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded."
+      },
+      "needs_review": false
+    },
+    {
+      "place_id": "1b2bbc03-0d34-4e10-8273-cd70673911ba",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 0,
+        "cache_hits": 1,
+        "estimated_usd": 0.0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded."
+      },
+      "needs_review": false
+    },
+    {
+      "place_id": "1b2bbc03-0d34-4e10-8273-cd70673911ba",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 0,
+        "cache_hits": 1,
+        "estimated_usd": 0.0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded."
+      },
+      "needs_review": false
+    },
+    {
+      "place_id": "1b2bbc03-0d34-4e10-8273-cd70673911ba",
+      "metrics": {
+        "transcription_cost": 0.0,
+        "ocr_cost": 0.0,
+        "transcription_seconds": 0.0,
+        "ocr_seconds": 0.0,
+        "llm_tokens_in": 0,
+        "llm_tokens_out": 0,
+        "places_calls": 0,
+        "cache_hits": 1,
+        "estimated_usd": 0.0,
+        "cost_basis": "Measured usage; configured API rates. Local compute excluded."
+      },
+      "needs_review": false
+    }
+  ]
+}

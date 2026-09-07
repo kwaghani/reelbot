@@ -10,7 +10,7 @@
     "build:ios:preview": "npx eas-cli build --platform ios --profile preview",
     "build:ios:production": "npx eas-cli build --platform ios --profile production",
     "credentials:ios": "npx eas-cli credentials --platform ios",
-    "prebuild:ios": "expo prebuild --platform ios",
+    "prebuild:ios": "expo prebuild --platform ios --clean",
     "submit:ios": "npx eas-cli submit --platform ios",
     "typecheck": "tsc --noEmit",
     "test": "node --test tests/*.test.cjs",

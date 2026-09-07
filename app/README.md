@@ -1,75 +1,13 @@
-# ReelBot iOS App
+# ReelBot for iOS
 
-Minimal Expo iOS client for the existing reel-bot backend. It has a stored display name and server-issued device session, four tabs (Saved, Folders, Groups, Ask), and an iOS share extension for Instagram/TikTok/YouTube links.
+Expo SDK 54 / React Native 0.81.5. The app has Saved, Folders, and Settings screens. It works without an account: SQLite holds the library and durable outbox, while Keychain holds a random anonymous device secret. Apple sign-in is available only as an optional sync step.
 
-## Configure
+Run `npm install`, configure `EXPO_PUBLIC_API_URL` in `.env`, and run `npm run prebuild:ios`. Prebuild generates the main target and extension, then `plugins/withPersonalQueue.js` replaces the extension runtime with the native queue writer in `native/`. Run `pod install` in the generated `ios/` directory and `npm run ios` to launch. Use `ReelBot.xcworkspace`; the canonical project is `ReelBot.xcodeproj`.
 
-Copy the app env example and fill the backend values. The iOS identifiers are already Apple-account-ready defaults for this project, but you can change them before registering the identifiers in Apple Developer.
+The shared container identifier is derived from the bundle identifier and remains `group.com.krishwaghani.reelbot`. Both targets must be signed with that entitlement. Build through Xcode with Apple Development signing for simulator container access; manually applying the full device entitlements to a simulator executable causes launch rejection. The queue writer uses individual UUID files and atomic writes, with file protection available after the first device unlock. Main-app acknowledgement happens only after SQLite commits.
 
-```bash
-cd app
-cp .env.example .env
-```
+The main app drains on launch, foreground entry, connectivity changes, foreground polling, and OS-granted background execution. iOS schedules background tasks; it does not promise immediate execution after force-quitting the main app. The extension can still queue a link while the main app is stopped.
 
-```bash
-EXPO_PUBLIC_API_URL=https://your-vps.example.com
-EXPO_PUBLIC_API_KEY=same-value-as-api-key
-EXPO_PUBLIC_TEST_GROUP_ID=00000000-0000-0000-0000-000000000000
-EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER=com.krishwaghani.reelbot
-EXPO_PUBLIC_APP_GROUP_IDENTIFIER=group.com.krishwaghani.reelbot
-EXPO_PUBLIC_APPLE_TEAM_ID=YOUR10CHARTEAMID
-```
+`npm test` exercises real SQLite persistence through the application data layer, concurrency, retry-safe acknowledgement, URL validation, API failures, and Release gating. `npm run typecheck` validates TypeScript. Release verification still requires the built native configuration and a signed physical-device pass.
 
-The build key admits private testers. Each installation also receives a private bearer token, persisted with its device ID and shared with the extension using App Group storage. All library actions require this session. Never send another installation’s device ID to claim its groups. This is device-based access; account recovery and multi-device login are not implemented.
-
-## Apple Setup
-
-Use the Apple developer account to create these identifiers before the first device build:
-
-1. Main app Bundle ID: `com.krishwaghani.reelbot`
-2. Share extension Bundle ID: `com.krishwaghani.reelbot.ShareExtension`
-3. App Group: `group.com.krishwaghani.reelbot`
-4. Enable the App Group capability on both Bundle IDs.
-5. Add your 10-character Team ID as `EXPO_PUBLIC_APPLE_TEAM_ID`.
-
-If you choose different identifiers, update `.env` before running prebuild or EAS.
-
-## Build And Run
-
-```bash
-cd app
-npm install
-npx eas login
-npm run credentials:ios
-npm run build:ios:dev
-npx expo start --dev-client
-```
-
-Install the generated development build on the iPhone, open it once, enter a display name, then share an Instagram or TikTok link into ReelBot from the iOS share sheet.
-
-Share extensions do not work in Expo Go. The extension only reads the shared URL and App Group settings, posts to `/share`, shows a short confirmation, and returns; the VPS worker still does all extraction and processing.
-
-## Local Native Check
-
-To inspect the generated Xcode project locally:
-
-```bash
-npm run prebuild:ios
-open ios/ReelBot.xcworkspace
-```
-
-In Xcode, confirm both the `ReelBot` target and `ReelBotShareExtension` target use your Apple team and have the same App Group. Commit or keep the generated `ios/` folder only if you want to manage native project files directly; EAS can generate it during cloud builds from `app.config.ts`.
-
-## Reliability update
-
-The backend schema and app must be updated together. Existing installations
-receive a new secure device identity and must rejoin private groups by invite;
-old records remain. The shared default library is explicitly labelled as shared
-with all testers. Choose the active library in Groups before using the extension.
-The extension says **Queued**, then Saved shows processing, saved, or failure.
-Original playback may require signing into Instagram/TikTok/YouTube separately.
-There is no in-app reel detail URL or login-return flow.
-
-Checks: `npm run typecheck` and `npm test`. The tests exercise the actual client
-request/session code with simulated network/storage boundaries; they do not
-claim to verify native App Group entitlements or external platform playback.
+Optional experimental views are discovered only behind a Debug gate that also checks a native compiled flag. Deleting an experimental view directory does not change the personal library imports or processing path.

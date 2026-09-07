@@ -1,0 +1,19 @@
+{
+  "files_checked": [
+    ".env",
+    ".env.example",
+    "app/.env",
+    "app/.env.example",
+    "api/.env.example",
+    "render.yaml",
+    "deploy/systemd/reelbot-worker.service",
+    "deploy/systemd/reelbot-api.service"
+  ],
+  "retired_environment_setting_hits": [],
+  "retired_listener_absent": true,
+  "nested_git_absent": true,
+  "ignored_secret_files": [
+    ".env",
+    "app/.env"
+  ]
+}

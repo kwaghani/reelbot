@@ -2,7 +2,7 @@ services:
   - type: web
     name: reelbot-api
     runtime: docker
-    plan: starter
+    plan: standard
     region: oregon
     dockerfilePath: ./Dockerfile
     dockerContext: .
@@ -12,39 +12,10 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
-      - key: API_KEY
-        sync: false
-      - key: TEST_GROUP_ID
-        sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: ANTHROPIC_MODEL
-        value: claude-fable-5
-      - key: ANTHROPIC_FAST_MODEL
-        value: claude-sonnet-5
       - key: GOOGLE_MAPS_API_KEY
         sync: false
-      - key: IG_COOKIES_PATH
-        value: ""
-      - key: REELBOT_ENABLE_VIDEO_DOWNLOAD
-        value: "false"
-      # The dedicated worker owns all ML (embeddings, whisper, ingest); the
-      # API must never load them or it exceeds the starter instance memory.
-      - key: REELBOT_API_DRAIN_JOBS
-        value: "false"
-      - key: NUDGE_INTERVAL_HOURS
-        value: "3"
-      - key: NUDGE_COOLDOWN_DAYS
-        value: "3"
-      - key: NUDGE_CLUSTER_COOLDOWN_DAYS
-        value: "14"
-      - key: NUDGE_MIN_ITEMS
-        value: "3"
-      - key: NUDGE_RECENCY_DAYS
-        value: "7"
-      - key: NUDGE_IMPACT_WINDOW_HOURS
-        value: "24"
-
+      - key: APPLE_BUNDLE_ID
+        value: com.krishwaghani.reelbot
   - type: worker
     name: reelbot-worker
     runtime: docker
@@ -53,83 +24,21 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     dockerCommand: ./deploy/render/start-worker.sh
-    maxShutdownDelaySeconds: 300
+    maxShutdownDelaySeconds: 60
     envVars:
       - key: DATABASE_URL
         sync: false
-      - key: API_KEY
-        sync: false
-      - key: TEST_GROUP_ID
-        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
-      - key: ANTHROPIC_MODEL
-        value: claude-fable-5
       - key: ANTHROPIC_FAST_MODEL
-        value: claude-sonnet-5
-      - key: EMBEDDING_MODEL
-        value: BAAI/bge-small-en-v1.5
+        value: claude-haiku-4-5-20251001
       - key: GOOGLE_MAPS_API_KEY
         sync: false
-      - key: IG_COOKIES_PATH
-        value: ""
-      # Full video download for frame OCR (on-screen text like workout lists);
-      # media lives only in a temp dir per job and is deleted after extraction.
-      # Worker runs on the 2GB plan; keep this false on the 512MB API service.
+      - key: EMBEDDING_MODEL
+        value: BAAI/bge-small-en-v1.5
       - key: REELBOT_ENABLE_VIDEO_DOWNLOAD
         value: "true"
       - key: REELBOT_ENABLE_TRANSCRIPTION
         value: "true"
-      - key: REELBOT_ENABLE_VISION
-        value: "true"
-      - key: NUDGE_INTERVAL_HOURS
-        value: "3"
-      - key: NUDGE_COOLDOWN_DAYS
-        value: "3"
-      - key: NUDGE_CLUSTER_COOLDOWN_DAYS
-        value: "14"
-      - key: NUDGE_MIN_ITEMS
-        value: "3"
-      - key: NUDGE_RECENCY_DAYS
-        value: "7"
-      - key: NUDGE_IMPACT_WINDOW_HOURS
-        value: "24"
-
-  - type: cron
-    name: reelbot-scheduler
-    runtime: docker
-    plan: starter
-    region: oregon
-    schedule: "0 */3 * * *"
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    dockerCommand: ./deploy/render/run-scheduler-once.sh
-    envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: API_KEY
-        sync: false
-      - key: TEST_GROUP_ID
-        sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: ANTHROPIC_FAST_MODEL
-        value: claude-sonnet-5
-      - key: GOOGLE_MAPS_API_KEY
-        sync: false
       - key: IG_COOKIES_PATH
         value: ""
-      - key: REELBOT_ENABLE_VIDEO_DOWNLOAD
-        value: "false"
-      - key: NUDGE_INTERVAL_HOURS
-        value: "3"
-      - key: NUDGE_COOLDOWN_DAYS
-        value: "3"
-      - key: NUDGE_CLUSTER_COOLDOWN_DAYS
-        value: "14"
-      - key: NUDGE_MIN_ITEMS
-        value: "3"
-      - key: NUDGE_RECENCY_DAYS
-        value: "7"
-      - key: NUDGE_IMPACT_WINDOW_HOURS
-        value: "24"

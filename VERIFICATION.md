@@ -1,116 +1,48 @@
-# Repeatable verification and rollout
+# Executed verification
 
-## Safe local checks
+This record distinguishes executed checks from acceptance failures. An unavailable check is FAIL. Provider-boundary tests do not establish real-video accuracy or physical share-sheet performance. Final measurements and the URL-by-URL table are in the accompanying execution report and `audit-evidence/`.
 
-Use a disposable Postgres database with pgvector. Never point these tests at the
-configured remote DATABASE_URL. The integration suite refuses non-loopback URLs
-or database names without `audit`. External extraction/AI/WhatsApp delivery are
-substituted only at their service boundaries in tests; database operations,
-authorization, queue state, worker writes and transaction rollback are real.
+The test environment uses disposable loopback Postgres databases whose names contain `test`, separate from the migrated live database. Run `TEST_DATABASE_URL=<disposable loopback URL> scripts/run_checks.sh`. This runs database integration tests, real SQLite application tests, TypeScript checking, and Python compilation. Never use the live database for this command.
 
-The audit used a separate Docker container named `reelbot-audit-db`, localhost
-port 55439, database `reelbot_audit`, and Supabase Postgres 17.6.1.106. Setup:
+| Requirement | Result | Evidence / limitation |
+|---|---|---|
+| 5.1 Both exact source scans return zero hits | PASS | Both exact commands returned zero hits; `audit-evidence/purge-scans.txt`. |
+| 5.1 Retired listener directory absent | PASS | Entire directory removed, including dependency tree. |
+| 5.1 Removed transport environment settings absent | PASS | Eight first-party configuration files checked; no retired settings. `audit-evidence/source-checks.json`. |
+| 5.1 Backend/app build and full tests | PASS | Python compilation, 14 backend/integration tests, 7 SQLite/client tests, TypeScript; Debug and signed Release simulator builds. Both configurations also built with the placeholder directory removed; `audit-evidence/builds.json`. |
+| 5.2 Dry run includes three ownership buckets | PASS | `audit-evidence/migration.json`: 0 single, 0 multiple, 21 unresolved, total 21. |
+| 5.2 Retired ownership/transport tables dropped | PASS | Live migration catalog verification; target public schema only. |
+| 5.2 All originals accounted for | PASS | Live: 0 personal rows + 21 orphans = 21 originals. Synthetic fan-out test accounts by distinct original IDs because multi-owner records produce multiple rows. |
+| 5.2 No arbitrary owner | PASS | All 21 unresolvable live records preserved with full payload; synthetic identity mapping exercised. |
+| 5.3 Precision at least 85% | FAIL | No independently verified complete signal-specific labels; numerator/denominator unavailable, reported as null. |
+| 5.3 Recall at least 75% | FAIL | Required 6/4/3/3/2/2 fixture composition and full-video labeling incomplete. |
+| 5.3 Zero silently missed venues | FAIL | Every extracted candidate is persisted before lookups; missing-source venues cannot be enumerated without complete labels. |
+| 5.3 Both no-place videos correctly empty | FAIL | Actual outputs available, but full-video labels remain unverified. |
+| 5.3 Five-plus listicle creates separate entries | PASS | Five separate entries from `DUpDIg1k87g`; 12 from `DJEzB4SM_o4`. Full recall of the larger list is unverified. |
+| 5.4 All three native host share sheets | FAIL | Required native host apps unavailable on the audit simulator; paired physical devices unavailable. Safari is supplementary evidence only. |
+| 5.4 All three return under 400 ms | FAIL | Safari measured 236.315 ms to completion dispatch, queue write 15.711 ms. No measurements from the required three native hosts. |
+| 5.4 Backgrounded and force-quit main app | PASS | Safari native extension queued with the app backgrounded and after terminating it. Completion dispatch was 236.315 ms and 193.571 ms respectively. Required native-host matrix remains untested. |
+| 5.4 Airplane mode reconnect without action | FAIL | Local offline queue is tested; physical OS background/reconnect test unavailable. iOS does not promise execution after force-quit. |
+| 5.4 Fifty consecutive shares without crash | FAIL | 50 native filesystem writes and 50 application-layer saves pass; these are not 50 native-host extension presentations. |
+| 5.4 Duplicate reel gives one entry | PASS | Real SQLite tests include concurrent duplicate variants and restart-safe acknowledgement; API unique per-owner source hash verified. |
+| 5.4 Zero extension-origin network calls | FAIL | Native writer contains no network code and no React runtime; runtime traffic attribution not captured. |
+| 5.5 Save visible within two seconds of cold launch | FAIL | Local saved row visibly renders; no defensible cold-launch UI timing capture was completed. |
+| 5.5 Every real-URL save terminal within sixty seconds | PASS | All 20 direct worker attempts terminal; maximum 45.645 seconds. Four sources failed access. Offline/OS scheduling wait excluded. |
+| 5.5 Resolved coordinates/address valid | PASS | All 15 resolved candidate rows have valid addresses/coordinates; `audit-evidence/golden-integrity.json`. |
+| 5.5 Every resolved place has city/category folders | PASS | All 15 resolved candidate rows have city and category assignments; real-run SQL and integration assertions. |
+| 5.5 Custom deletion preserves places | PASS | Database and local operation tests retain the places and automatic folders. |
+| 5.5 Search matches name, city, note | PASS | Real database lexical/vector ranking, actual embedding smoke run, and offline SQLite search tests. |
+| 5.5 Kill during processing and relaunch without loss | PASS | Simulator app terminated while the Instagram source was processing; relaunch retained both sources and all five resulting venues. No processing rows remained. Backend interrupted-lease recovery and bounded retry also pass. |
+| 5.5 First offline launch without account | PASS | SQLite tests with network/identity unavailable; signed simulator opens without onboarding and preserves a queued link during service failure. |
+| 5.6 Debug screen measured cost | PASS | Built signed Debug app visibly showed two completed saves, $0.0821/save and five address lookups, while placeholder directory was absent; `audit-evidence/debug-cost.png`. Rates estimate provider charges; local compute excluded. |
+| 5.6 Five sources use one global lookup | PASS | `audit-evidence/live-cache.json`: actual Google request, five distinct source URLs, same controlled extracted candidate, two owners, one call/four hits. This bypasses extraction. |
+| 5.6 Ingestion masks contain only required fields | PASS | Live request logging and cache test use the five specified fields with the required API `places.` prefixes. Lazy detail requests are separate and intentionally use detail fields. |
+| 5.7 Built Release/TestFlight flag disabled | FAIL | Signed Release navigation and native compilation verified; no TestFlight archive/delivery built or tested. |
+| 5.7 Flag-off entry point unreachable | PASS | Installed Release Settings has no experimental entry; Release application test rejects even an incorrectly true native flag. |
+| 5.7 View-only directory and one allowed key | PASS | Directory inspection: one view, one boolean-value AsyncStorage key, no networking/model files. |
+| 5.7 No imports from outside or into core | PASS | Generic optional discovery; no explicit imports into the directory; view imports UI and the permitted storage API only. |
+| 5.7 Delete directory and all 5.3–5.6 pass | FAIL | Removed directory while rerunning tests, evaluation and build; no dependency failure. Underlying physical/label acceptance failures persist. Directory restored afterward; full tests pass again. Both native configurations built without it, and actual Debug cost/Safari queue/real-URL checks executed while absent. |
 
-```sh
-docker run --name reelbot-audit-db \
-  -e POSTGRES_PASSWORD=reelbot-local-audit-only -e POSTGRES_DB=reelbot_audit \
-  -p 127.0.0.1:55439:5432 -d public.ecr.aws/supabase/postgres:17.6.1.106
-docker exec -e PGPASSWORD=reelbot-local-audit-only -i reelbot-audit-db \
-  psql -U supabase_admin -d reelbot_audit -v ON_ERROR_STOP=1 < db/schema.sql
-docker exec -e PGPASSWORD=reelbot-local-audit-only reelbot-audit-db \
-  psql -U supabase_admin -d reelbot_audit \
-  -c 'grant usage, create on schema public to postgres; grant all on all tables in schema public to postgres;'
-```
+Backups remain outside the source tree. The live database dump was restored into a disposable database before migration. No existing deployment was resumed: the API, worker, and retired scheduled service were already suspended in Render. This is an implementation and test branch, not a completed production rollout.
 
-Install `requirements-dev.txt`, `listener/package-lock.json` and
-`app/package-lock.json` with their respective package managers, then:
-
-```sh
-TEST_DATABASE_URL=postgresql://postgres:reelbot-local-audit-only@127.0.0.1:55439/reelbot_audit \
-  ./scripts/run_checks.sh
-```
-
-The test password above belongs only to the disposable loopback container. The
-suite creates synthetic users/groups/jobs in that database and never starts a
-WhatsApp connection. Stop/remove only this container after use, when its audit
-fixtures are no longer needed.
-
-## Application contract
-
-1. `POST /devices` with the private build key and `{ "user_name": "Test name" }`
-   returns `{ "device_id": "...", "token": "..." }`. Persist the token privately.
-2. All data requests use `x-api-key` plus `Authorization: Bearer <device token>`.
-   Any supplied device_id must equal the authenticated device. UUIDs and display
-   names alone never grant membership. The default library is shared by testers.
-3. Create a group or join with its six-character code. Reads, imports, query,
-   copies and deletion require membership on the server. Ten join attempts per
-   device per ten minutes are allowed. Invitation links and account login are
-   not implemented; invites carry a code entered in Groups.
-4. `POST /share` returns 202 `{ "status": "queued", "job_id": "..." }`.
-   Acceptance is not extraction success. `GET /jobs/{job_id}` gives queued,
-   processing, done, error or cancelled. Only its sender can poll that job.
-   `GET /items` exposes group processing/failure cards and saved records.
-5. Use a stable `request_id` on query/import retries after uncertain network
-   results. Reusing it for different content gives 409. New explicit import
-   attempts can use new IDs after a terminal failure. Active duplicate imports
-   are coalesced per sender, group and canonical URL.
-6. Queued queries that exceed the API wait return status=processing and job_id,
-   with no fabricated final answer. Poll the same job for the actual result.
-7. Delete removes an item and its saver rows for the whole selected group and
-   cancels associated imports. It does not remove copies in other groups or
-   delete the external reel. There is no undo/trash feature.
-
-## Coordinated rollout required
-
-Apply the additive `db/schema.sql` upgrade before deploying the API, worker,
-listener and rebuilt iOS client. It adds device sessions, invitation attempt
-tracking, job identifiers and nudge delivery linkage. RLS is enabled and client
-Data API grants revoked; only trusted server connections access these tables.
-The schema was applied twice to the audit DB to verify repeatability.
-
-API-key-only old clients are deliberately rejected. Existing records are
-preserved, but the old caller-chosen IDs cannot be securely converted into
-credentials. Users receive a new device identity and rejoin private groups by
-invite code. If a group's invite is no longer available, a trusted operator must
-recover it from the server; never implement an ID-only public recovery endpoint.
-There is no account recovery or cross-device session synchronization.
-
-The main app and share extension must have the same App Group entitlement.
-Open the rebuilt app and choose a library before sharing. The extension no
-longer falls back silently to a different library when session/settings are
-missing. Verify on a physical iPhone before release; a simulator cannot prove
-Instagram/TikTok share-sheet behavior or real platform playback.
-
-Paid AI/Places calls and real WhatsApp delivery require a separately configured
-sandbox/test environment. Do not use production chats or send notifications to
-real users to complete these checks. Current configured model IDs must be
-available to that provider account; published model documentation alone does
-not verify account access. Older nudge rows without a delivery link are excluded
-from the impact report because delivery cannot be proved retroactively.
-
-## Native simulator verification
-
-The audit used an isolated iPhone 17 / iOS 26.5 simulator and a Release build with
-`EXPO_NO_DOTENV=1`, loopback API URL, local test API key and a dedicated test group
-UUID. Paid keys were blank in the local API/worker. Both app repositories must be
-included when reviewing/shipping this work; root Git ignores the nested `app/`.
-
-Use Xcode simulator signing with the existing entitlements:
-`CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- CODE_SIGNING_REQUIRED=NO`.
-A build with signing disabled can launch but lacks simulator App Group containers,
-so it does not adequately test extension storage. Signing binaries afterward
-alone did not supply the simulator's embedded entitlement mapping. A normal
-Xcode-signed simulator build did. Do not enable remote provisioning or substitute
-production settings just to run local tests.
-
-The installed `react-native-shared-group-preferences` bridge returns JSON strings
-on iOS despite its generic object declaration. `sharedGroup.ts` now decodes both
-strings and objects; the client regression suite covers settings and job receipts.
-The same App Group ID must be embedded in both native targets.
-
-The final local API (port 8019), disposable database, and audit simulator are left
-available for inspection. The query-only worker is stopped; no WhatsApp listener,
-scheduler, ingestion daemon, or paid provider service is running for the audit.
-The retained database contains only synthetic audit fixtures. To release local
-resources, stop the audit API, stop `reelbot-audit-db`, and shut down only the
-simulator named ReelBot Audit. Do not remove unrelated containers/simulators.
+Final evaluation cost: $0.03480095 per source on average; 21 measured Text Search calls, four cache hits, 16% hit rate. Cache was warm from earlier runs. This is measured usage multiplied by configured rates, not invoice reconciliation; interrupted unreported provider work and hosting compute are excluded.

@@ -48,6 +48,10 @@ module.exports = function withPersonalQueue(config) {
     const index = source.indexOf("target 'ReelBotShareExtension' do");
     if (index < 0) throw new Error('Expected generated extension Podfile target.');
     fs.writeFileSync(podfile, source.slice(0, index) + "# Queue-only extension uses Foundation/UIKit and no Pods.\ntarget 'ReelBotShareExtension' do\nend\n");
+    const entitlementPath = path.join(root, 'ReelBotShareExtension', 'ReelBotShareExtension.entitlements');
+    const entitlements = plist.parse(fs.readFileSync(entitlementPath, 'utf8'));
+    delete entitlements['com.apple.developer.applesignin'];
+    fs.writeFileSync(entitlementPath, plist.build(entitlements));
     const infoPath = path.join(root, 'ReelBotShareExtension', 'Info.plist');
     const info = plist.parse(fs.readFileSync(infoPath, 'utf8'));
     info.AppGroupIdentifier = config.extra.appGroupIdentifier;

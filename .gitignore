@@ -7,8 +7,6 @@ node_modules/
 app/node_modules/
 ios/
 android/
-listener/auth_info/
-listener/latest-qr.png
 out/
 instagram-cookies.txt
 www.instagram.com_cookies.txt

@@ -1,65 +1,11 @@
-> Reliability update (2026-09-06): See [VERIFICATION.md](VERIFICATION.md) before deployment. Data routes now require a server-issued device bearer token plus the build API key. Old API-key-only curl examples below describe the legacy client. A queued confirmation is not a completed save.
+# Share verification
 
-# ReelBot Share Sheet Test
+The extension accepts URL and plain-text items, finds a supported video link, writes one atomic queue file, and completes the extension request. It loads Foundation/UIKit, not a React Native runtime. Its source contains no networking, session check, or library selection. Container failures display a visible error with a Close button.
 
-Run this after installing a fresh development, preview, or TestFlight build on a real iPhone.
+Both app and extension require the same App Group entitlement. An unsigned simulator build cannot access the container. Queue files are acknowledged only after the main app commits them to SQLite. Repeated imports normalize the URL and remain idempotent.
 
-## Happy Path
+Physical acceptance requires Instagram, TikTok, and YouTube installed on a connected iPhone. For each host, measure from extension presentation to completion, including provider loading, and verify less than 400 ms. Repeat while the main app is backgrounded and stopped. Disable networking, share, reconnect, and observe processing without touching the queue. Repeat 50 times while checking process memory and crash reports. Capture network activity by extension PID; a static source scan alone does not prove a measured zero-call result.
 
-1. Open ReelBot once.
-2. Enter a display name and tap `Continue`.
-3. Open Instagram.
-4. Find a reel.
-5. Tap Share.
-6. Confirm `ReelBot` appears in the iOS share sheet.
-7. Tap `ReelBot`.
-8. Confirm the extension shows `Sent to ReelBot 👍`.
-9. Open ReelBot.
-10. Go to the `Saved` tab.
-11. Confirm a `Saving...` receipt is visible after the share.
-12. Pull to refresh.
-13. Confirm the place appears within about 1 minute, after the backend worker processes the reel.
+The native writer logs `queue_write_ms` and `completion_ms` through the system log. Main-app background refresh is scheduled by iOS, and force-quitting the main app can prevent background processing until it is opened again. Queue persistence and immediate background processing are separate checks.
 
-## If ReelBot Does Not Appear
-
-This is usually an activation-rule or native-build issue.
-
-1. Confirm the installed build is a native dev/preview/TestFlight build, not Expo Go.
-2. Run `cd app && npx expo prebuild --platform ios --clean`.
-3. Confirm `ios/ReelBotShareExtension/Info.plist` contains:
-   - `NSExtensionActivationSupportsWebURLWithMaxCount`
-   - `NSExtensionActivationSupportsText`
-4. Rebuild and reinstall the app.
-
-## If ReelBot Appears But Nothing Saves
-
-This is usually App Group, HTTPS API URL, or API key mismatch.
-
-1. Open ReelBot once before sharing. The main app writes `API_URL`, `API_KEY`, `TEST_GROUP_ID`, and display name into the App Group for the extension.
-2. Confirm Apple Developer Portal has `group.com.krishwaghani.reelbot` enabled on both:
-   - `com.krishwaghani.reelbot`
-   - `com.krishwaghani.reelbot.ShareExtension`
-3. Confirm the installed build used an HTTPS API URL, not a LAN HTTP URL:
-   - `EXPO_PUBLIC_API_URL=https://YOUR_API_DOMAIN`
-4. From the phone, open `https://YOUR_API_DOMAIN/healthz`.
-5. From a terminal, confirm the API key works:
-
-```bash
-curl -i -H "x-api-key: YOUR_API_KEY" https://YOUR_API_DOMAIN/items
-```
-
-6. Confirm EAS production or preview env has the same values as the backend:
-
-```bash
-cd app
-npx eas-cli env:list --environment production
-```
-
-7. Check backend logs while sharing:
-
-```bash
-journalctl -u reelbot-api -n 100 --no-pager
-journalctl -u reelbot-worker -n 100 --no-pager
-```
-
-The share extension only captures the URL and POSTs to `/share`; extraction and saving happen later in the worker.
+Actual measurements and unavailable cases are recorded in `VERIFICATION.md`. The paired physical devices were unavailable during this run, and the simulator has no installed copies of the three host apps; their device-level checks must therefore be reported as failures until executed.

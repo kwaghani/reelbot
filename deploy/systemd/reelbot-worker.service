@@ -1,5 +1,5 @@
 [Unit]
-Description=Shared Reel Bot worker
+Description=ReelBot personal library worker
 After=network-online.target
 Wants=network-online.target
 

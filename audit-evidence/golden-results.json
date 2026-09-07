@@ -1,0 +1,1072 @@
+{
+  "metrics": {
+    "precision": null,
+    "recall": null,
+    "true_positive_resolved": 0,
+    "false_positive_resolved": 0,
+    "found_labeled_venues": 0,
+    "labeled_venues": 0,
+    "verified_rows": 0,
+    "distribution": {
+      "spoken": 1,
+      "caption": 3,
+      "no_place": 2,
+      "unverified": 12,
+      "listicle": 2
+    },
+    "required_distribution": {
+      "caption": 6,
+      "on_screen": 4,
+      "spoken": 3,
+      "listicle": 3,
+      "no_place": 2,
+      "chain": 2
+    },
+    "required_distribution_met": false,
+    "acceptance": "FAIL: verified labels, composition, or accuracy thresholds are not satisfied."
+  },
+  "cost": {
+    "average_usd": 0.03480095,
+    "cache_hit_rate": 0.16,
+    "places_calls": 21,
+    "cache_hits": 4,
+    "basis": "Measured provider usage \u00d7 configured rates; local compute excluded."
+  },
+  "rows": [
+    {
+      "url": "https://www.instagram.com/reel/DaDPI6muPFN/?igsh=NTc4MTIwNjQ2YQ==",
+      "expected": [
+        "The Bay Shack Pizzeria"
+      ],
+      "category": "spoken",
+      "labels_verified": false,
+      "label_notes": "Hand-read archived spoken transcript; absence from caption not independently verified.",
+      "produced": [
+        {
+          "name": "The Bay Shack Pizzeria",
+          "needs_review": false,
+          "google_place_id": "ChIJQx0c7-nP5zsRtMMkolX-HpI"
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 1,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 4.271019957959652,
+          "places_calls": 0,
+          "estimated_usd": 0.001399,
+          "llm_tokens_in": 924,
+          "llm_tokens_out": 95,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 13.189163333037868
+        },
+        "signals": {
+          "caption": {
+            "characters": 861,
+            "sha256": "c599ae0682dc25f700a35b328bb9eb156b73d83b26a4149ece004a4930f9a2e4"
+          },
+          "ocr": {
+            "characters": 20,
+            "sha256": "6a7140c6ada3f47e11f10a9006e0134296e10a907173bc810395d02296a82eef"
+          },
+          "transcript": {
+            "characters": 197,
+            "sha256": "380a30f73798a08eb56541c8720917fab81b6915d640e02d1bca5a8f70621cb0"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 24.537,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://vt.tiktok.com/ZSCDMwK3f/",
+      "expected": [
+        "Ornella"
+      ],
+      "category": "caption",
+      "labels_verified": false,
+      "label_notes": "Hand-read archived caption names Ornella in Munich.",
+      "produced": [],
+      "result": {
+        "status": "failed",
+        "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.0,
+          "places_calls": 0,
+          "estimated_usd": 0.0,
+          "llm_tokens_in": 0,
+          "llm_tokens_out": 0,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 4.709,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/reel/DZQEbgvRroH/",
+      "expected": [],
+      "category": "no_place",
+      "labels_verified": false,
+      "label_notes": "Hand-read archived sports caption and OCR; complete video not independently viewed.",
+      "produced": [],
+      "result": {
+        "status": "no_places_found",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 4.501992041943595,
+          "places_calls": 0,
+          "estimated_usd": 0.000693,
+          "llm_tokens_in": 673,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 11.62364754092414
+        },
+        "signals": {
+          "caption": {
+            "characters": 82,
+            "sha256": "fe89bc68b0dc56a17fb7e4bddd1493506eda8912532530f086bc10dda08ad6bf"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 122,
+            "sha256": "880c76c814b3ffede53a8f13c2ea84d53a6c602d7e9a2958acef65ad98dfd275"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 20.81,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/reel/DaclEJUqSdh/",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [],
+      "result": {
+        "status": "no_places_found",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 4.137151666916907,
+          "places_calls": 0,
+          "estimated_usd": 0.000976,
+          "llm_tokens_in": 956,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 20.48685387498699
+        },
+        "signals": {
+          "caption": {
+            "characters": 90,
+            "sha256": "724acebc2fcdc1cf74ac5a7c32dc6bb38f9a101868ab37cdf8713c4f84b522ae"
+          },
+          "ocr": {
+            "characters": 239,
+            "sha256": "0ccb188f23e21bc90f1b1dd9ac571971beab11565c4d25f66fd4d7b65d0f3ccd"
+          },
+          "transcript": {
+            "characters": 598,
+            "sha256": "15683eaa1b619b208615798aede0cf8c5087307d6951c376632782e0570407cd"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 34.176,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/p/DJEzB4SM_o4/",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [
+        {
+          "name": "Lake Hollywood Park",
+          "needs_review": false,
+          "google_place_id": "ChIJIWe65uK_woARj5O0F9JFBJw"
+        },
+        {
+          "name": "Griffith Observatory",
+          "needs_review": false,
+          "google_place_id": "ChIJywjU6WG_woAR3NrWwrEH_3M"
+        },
+        {
+          "name": "Santa Monica Pier",
+          "needs_review": true,
+          "google_place_id": null
+        },
+        {
+          "name": "Hollywood Walk of Fame",
+          "needs_review": false,
+          "google_place_id": "ChIJXyC7WTu_woARPvVMCHBXd4U"
+        },
+        {
+          "name": "Funko Pop Store",
+          "needs_review": true,
+          "google_place_id": null
+        },
+        {
+          "name": "Angels Flight Railway",
+          "needs_review": false,
+          "google_place_id": "ChIJ_SlqhEzGwoARrIIERV62_po"
+        },
+        {
+          "name": "Venice",
+          "needs_review": false,
+          "google_place_id": "ChIJXWhSMMC6woARPI1cDbQBEY8"
+        },
+        {
+          "name": "Universal Studios",
+          "needs_review": true,
+          "google_place_id": null
+        },
+        {
+          "name": "Venice Canals",
+          "needs_review": false,
+          "google_place_id": "ChIJfdHQ5Ly6woARIws1jFhjGEE"
+        },
+        {
+          "name": "Rodeo Drive",
+          "needs_review": false,
+          "google_place_id": "Eh5Sb2RlbyBEciwgTG9zIEFuZ2VsZXMsIENBLCBVU0EiLiosChQKEgntx5tl5LvCgBHcaPVqdAGI8BIUChIJE9on3F3HwoAR9AhGJW_fL-I"
+        },
+        {
+          "name": "The Last Bookstore",
+          "needs_review": false,
+          "google_place_id": "ChIJ7YJ_IkrGwoARNak4CDihkYU"
+        },
+        {
+          "name": "Grand Central Market",
+          "needs_review": true,
+          "google_place_id": null
+        }
+      ],
+      "result": {
+        "status": "needs_review",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 3.531415708945133,
+          "places_calls": 12,
+          "estimated_usd": 0.389684,
+          "llm_tokens_in": 1359,
+          "llm_tokens_out": 865,
+          "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+          ],
+          "transcription_cost": 0.0,
+          "transcription_seconds": 8.506469124928117
+        },
+        "signals": {
+          "caption": {
+            "characters": 1692,
+            "sha256": "007da22820922405d39d58d54f3d3ead48cb359cc69db2a4d64c1b13022aeff6"
+          },
+          "ocr": {
+            "characters": 67,
+            "sha256": "27b7c61548aa0bceb6547382fdcdae5d7d429a4bfe95d38a89d0d52a1646d46d"
+          },
+          "transcript": {
+            "characters": 239,
+            "sha256": "2004ec0438139ded1d19f99f20e659f45b3624d6a5c85921ae8724eedb610443"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 45.645,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.youtube.com/shorts/i84Sc5uvQa8",
+      "expected": [],
+      "category": "no_place",
+      "labels_verified": false,
+      "label_notes": "Hand-read archived cooking transcript; complete video not independently viewed.",
+      "produced": [],
+      "result": {
+        "status": "no_places_found",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.1894809170626104,
+          "places_calls": 0,
+          "estimated_usd": 0.001498,
+          "llm_tokens_in": 1478,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 2056,
+            "sha256": "63ca96979524a9c52ce022779667a78fb6e4f1eaf8e483e581fbb3175449171c"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 19.267,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.youtube.com/shorts/CCMuiP18GoE",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [
+        {
+          "name": "JOE'S PIZZA",
+          "needs_review": true,
+          "google_place_id": null
+        }
+      ],
+      "result": {
+        "status": "needs_review",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.20213475008495152,
+          "places_calls": 1,
+          "estimated_usd": 0.033165,
+          "llm_tokens_in": 765,
+          "llm_tokens_out": 80,
+          "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+          ],
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 454,
+            "sha256": "be747aa698dcf398e2478d2c5d8137bb364d73af0e0324d77489b8b4832e0dc1"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 15.636,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/p/Cgk0_MxDBeF/",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [
+        {
+          "name": "Hollywood Bowl",
+          "needs_review": false,
+          "google_place_id": "ChIJMwknwRu_woAR_eI2OM9ib2o"
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.8657699159812182,
+          "places_calls": 1,
+          "estimated_usd": 0.033134,
+          "llm_tokens_in": 739,
+          "llm_tokens_out": 79,
+          "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+          ],
+          "transcription_cost": 0.0,
+          "transcription_seconds": 5.9456681669689715
+        },
+        "signals": {
+          "caption": {
+            "characters": 289,
+            "sha256": "9cf7757848ac4d61941e4257354ccb1ff27c76114c72c8af5e52287b2843054d"
+          },
+          "ocr": {
+            "characters": 97,
+            "sha256": "d5de3dece19b037f0f1d9aa9c9a348324e1775b5ce56b41b936b50419c86e916"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 13.567,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/reel/DWt-RZQOgtC/?igsh=YzAyMDM1MGJkZA==",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [
+        {
+          "name": "Sugo Social",
+          "needs_review": false,
+          "google_place_id": "ChIJa8FnLARL3YARDWWGcG5KvbE"
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 1,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.6785961670102552,
+          "places_calls": 0,
+          "estimated_usd": 0.00139,
+          "llm_tokens_in": 990,
+          "llm_tokens_out": 80,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 3.2835471250582486
+        },
+        "signals": {
+          "caption": {
+            "characters": 918,
+            "sha256": "454ac8866b4f322bef97361a697b79881fdb2927c654a39731bb3726a0c37e5a"
+          },
+          "ocr": {
+            "characters": 168,
+            "sha256": "a6ae315c0be8eb25de833d9fa9b04e38e7d96d7a3006ff7781d6086d2e0b9dfd"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 14.329,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://vt.tiktok.com/ZSCHKqQpV/",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [],
+      "result": {
+        "status": "failed",
+        "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.0,
+          "places_calls": 0,
+          "estimated_usd": 0.0,
+          "llm_tokens_in": 0,
+          "llm_tokens_out": 0,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 3.774,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://vt.tiktok.com/ZSC9GQCVS/",
+      "expected": [
+        "Peter Pan Donut & Pastry Shop"
+      ],
+      "category": "caption",
+      "labels_verified": false,
+      "label_notes": "Hand-read archived caption includes full Brooklyn street address.",
+      "produced": [],
+      "result": {
+        "status": "failed",
+        "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.0,
+          "places_calls": 0,
+          "estimated_usd": 0.0,
+          "llm_tokens_in": 0,
+          "llm_tokens_out": 0,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 3.604,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/p/DNQqeSYxhGq/",
+      "expected": [
+        "Yunomi Handroll",
+        "Fitoor",
+        "Ka\u2019teen"
+      ],
+      "category": "listicle",
+      "labels_verified": false,
+      "label_notes": "Hand-read archived caption hashtags and OCR; full video not independently viewed.",
+      "produced": [
+        {
+          "name": "Yunomi Handroll",
+          "needs_review": false,
+          "google_place_id": "ChIJQcsF2q27woAR0kYUVPw4-2o"
+        },
+        {
+          "name": "Ka'Teen",
+          "needs_review": true,
+          "google_place_id": null
+        },
+        {
+          "name": "Fitoor",
+          "needs_review": true,
+          "google_place_id": null
+        }
+      ],
+      "result": {
+        "status": "needs_review",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 2.070549334050156,
+          "places_calls": 3,
+          "estimated_usd": 0.097943,
+          "llm_tokens_in": 843,
+          "llm_tokens_out": 220,
+          "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+          ],
+          "transcription_cost": 0.0,
+          "transcription_seconds": 11.164569917018525
+        },
+        "signals": {
+          "caption": {
+            "characters": 317,
+            "sha256": "25e2ec6804a310fccedc2f7d4d9c860962e002e63a4871f7814928072c909294"
+          },
+          "ocr": {
+            "characters": 164,
+            "sha256": "e1b064909297ae4c3e7175604c71014004e3600d86299afa6c098bd4e180a7ca"
+          },
+          "transcript": {
+            "characters": 63,
+            "sha256": "8c8d46f29a74d679423aa64a989fc5eb5ec89ab1250b2c1ebaf332f49be33afd"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 25.029,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://vt.tiktok.com/ZSC7tbwb4/",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [],
+      "result": {
+        "status": "failed",
+        "error_reason": "The source provided no readable caption, on-screen text, or audio. Open it and retry.",
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.0,
+          "places_calls": 0,
+          "estimated_usd": 0.0,
+          "llm_tokens_in": 0,
+          "llm_tokens_out": 0,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 3.548,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/reel/DW90cOkEUTu/",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [],
+      "result": {
+        "status": "no_places_found",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 2.2621434580069035,
+          "places_calls": 0,
+          "estimated_usd": 0.000707,
+          "llm_tokens_in": 687,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 15.057572375051677
+        },
+        "signals": {
+          "caption": {
+            "characters": 80,
+            "sha256": "bcead7cf20d94976fc398f4260092bf7c87549fe5ea2c0bcc42bdb9f55cba53a"
+          },
+          "ocr": {
+            "characters": 137,
+            "sha256": "ff80e891cbcf859af3af4b4156bec687945e398f2cb03684e84072f3ce6f47fd"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 21.915,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.youtube.com/shorts/aMZGAhmDHys",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [],
+      "result": {
+        "status": "no_places_found",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.11267129192128778,
+          "places_calls": 0,
+          "estimated_usd": 0.000726,
+          "llm_tokens_in": 706,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 380,
+            "sha256": "c17d752fa6af06393ca27497331f1c23e43207192f97b9f43e3642009e2c64dc"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 12.954,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/p/DUpDIg1k87g/",
+      "expected": [
+        "Point Dume",
+        "Hollywood Sign",
+        "Los Leones Trail",
+        "El Matador State Beach",
+        "Point Mugu State Beach"
+      ],
+      "category": "listicle",
+      "labels_verified": false,
+      "label_notes": "Hand-read archived caption listing five destinations.",
+      "produced": [
+        {
+          "name": "Los Liones Canyon Trail",
+          "needs_review": false,
+          "google_place_id": "ChIJgQAX2sGjwoARNYeOpJ77aqI"
+        },
+        {
+          "name": "Hollywood Sign",
+          "needs_review": false,
+          "google_place_id": "ChIJfVpQRQq_woARQ5hwJsast6s"
+        },
+        {
+          "name": "Point Dume",
+          "needs_review": true,
+          "google_place_id": null
+        },
+        {
+          "name": "El Matador State Beach",
+          "needs_review": true,
+          "google_place_id": null
+        },
+        {
+          "name": "Point Mugu State Beach",
+          "needs_review": true,
+          "google_place_id": null
+        }
+      ],
+      "result": {
+        "status": "needs_review",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 1,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.1482194169657305,
+          "places_calls": 4,
+          "estimated_usd": 0.130689,
+          "llm_tokens_in": 829,
+          "llm_tokens_out": 372,
+          "places_field_masks": [
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+            "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+          ],
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 591,
+            "sha256": "b5bb516585eb91a1440efc3d03dc11bb7a378f050b89f22d63d9662db2d130b5"
+          },
+          "ocr": {
+            "characters": 37,
+            "sha256": "ec282935ea878e8c2e0874c49cf2ad84f9b2e6bba63b1acd69cbc3a5a15bf3c9"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 12.991,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.youtube.com/shorts/LvV7K_i7aDQ",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [],
+      "result": {
+        "status": "no_places_found",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.15179425000678748,
+          "places_calls": 0,
+          "estimated_usd": 0.000961,
+          "llm_tokens_in": 941,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 691,
+            "sha256": "fd366250df390e2cfb3ebecb23e848b166a7a20e7b7079b6c4f980621bbdd972"
+          },
+          "ocr": {
+            "characters": 18,
+            "sha256": "3d05dc5303009df6ba12cacfaaeb2f0631b2a0fca869c67e28259934701ea6ca"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 9.707,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/p/Da1ZOQmGtN_/",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [],
+      "result": {
+        "status": "no_places_found",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 0.0,
+          "places_calls": 0,
+          "estimated_usd": 0.000671,
+          "llm_tokens_in": 651,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 0.0
+        },
+        "signals": {
+          "caption": {
+            "characters": 119,
+            "sha256": "dc6f675e7ab990135da82642c699057d57014292ff65586c64f2a3191eb054cc"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        },
+        "unavailable_signals": {
+          "ocr": "No accessible frames",
+          "transcript": "No accessible audio track"
+        }
+      },
+      "elapsed_seconds": 3.817,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/reel/DZtN_qaIt0a/",
+      "expected": [],
+      "category": "unverified",
+      "labels_verified": false,
+      "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth.",
+      "produced": [],
+      "result": {
+        "status": "no_places_found",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 0,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 1.392274749930948,
+          "places_calls": 0,
+          "estimated_usd": 0.001167,
+          "llm_tokens_in": 1147,
+          "llm_tokens_out": 4,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 7.173028249992058
+        },
+        "signals": {
+          "caption": {
+            "characters": 1218,
+            "sha256": "363ef3e6a10866ff044f4325be6daf64f524b80f5585263256f4ab5136b84974"
+          },
+          "ocr": {
+            "characters": 343,
+            "sha256": "da1bac09f7b551a11044af4fc336468b787c9af8c14b6416a7f18322b072b049"
+          },
+          "transcript": {
+            "characters": 62,
+            "sha256": "0c1d99c831a8f76d9ed1404a7ac6563481fb5f3f17b24193ee55e19c7bd80efb"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 13.54,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    },
+    {
+      "url": "https://www.instagram.com/reel/Dbzg5DJIMzU/?igsh=NjZiM2M3MzIxNA==",
+      "expected": [
+        "Shivaji Park"
+      ],
+      "category": "caption",
+      "labels_verified": false,
+      "label_notes": "Hand-read archived caption hashtags name the park and Mumbai.",
+      "produced": [
+        {
+          "name": "Shivaji Park",
+          "needs_review": false,
+          "google_place_id": "ChIJZW2pbM7O5zsRh0qFytryWQg"
+        }
+      ],
+      "result": {
+        "status": "resolved",
+        "error_reason": null,
+        "cost": {
+          "ocr_cost": 0.0,
+          "cache_hits": 1,
+          "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+          "ocr_seconds": 3.230277333059348,
+          "places_calls": 0,
+          "estimated_usd": 0.001216,
+          "llm_tokens_in": 846,
+          "llm_tokens_out": 74,
+          "transcription_cost": 0.0,
+          "transcription_seconds": 11.005018667085096
+        },
+        "signals": {
+          "caption": {
+            "characters": 94,
+            "sha256": "71e9129833637bf609f31ab049693f4c6218230096975743cd1475c2613d5fbc"
+          },
+          "ocr": {
+            "characters": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "transcript": {
+            "characters": 586,
+            "sha256": "ad5e9394085ec037e20a1e66cf4ab8460b42540a4827be394fbfd54e21543377"
+          }
+        },
+        "unavailable_signals": {}
+      },
+      "elapsed_seconds": 20.659,
+      "pass": false,
+      "failure": "Human labeling is incomplete."
+    }
+  ]
+}

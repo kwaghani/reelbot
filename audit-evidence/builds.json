@@ -1,0 +1,49 @@
+{
+  "release": {
+    "result": "PASS",
+    "configuration": "Release",
+    "sdk": "iphonesimulator",
+    "architecture": "arm64",
+    "signing": "Apple Development",
+    "placeholder_directory_present": false,
+    "log_path": "/tmp/reelbot-containment-release-build.log",
+    "log_sha256": "116b8e0bcd53572ca35feb9c36f534fc45032b5e5b72d8b126e060816d6f1d3a"
+  },
+  "debug": {
+    "result": "PASS",
+    "configuration": "Debug",
+    "sdk": "iphonesimulator",
+    "architecture": "arm64",
+    "signing": "Apple Development",
+    "placeholder_directory_present": false,
+    "log_path": "/tmp/reelbot-final-debug-build.log",
+    "log_sha256": "e970402573d6532cbc85cd52f4a41e794fe2dafd6ed4fb8fbde4cd3c44f355e9"
+  },
+  "runtime_observations": {
+    "release_no_experimental_entry": true,
+    "debug_cost_screen_observed": true,
+    "safari_background_completion_dispatch_ms": 236.315,
+    "safari_force_quit_completion_dispatch_ms": 193.571,
+    "required_native_hosts_tested": false,
+    "testflight_tested": false,
+    "physical_device_available": false
+  },
+  "release_with_placeholder_initial": {
+    "result": "PASS",
+    "configuration": "Release",
+    "sdk": "iphonesimulator",
+    "signing": "Apple Development",
+    "placeholder_directory_present": true,
+    "log_path": "/tmp/reelbot-release-development-signed.log",
+    "log_sha256": "05be672dcb8603117ac3579ae8f145366840d1f91492c42f03803bf3f51a22f5"
+  },
+  "release_restored": {
+    "result": "PASS",
+    "configuration": "Release",
+    "sdk": "iphonesimulator",
+    "signing": "Apple Development",
+    "placeholder_directory_present": true,
+    "log_path": "/tmp/reelbot-restored-release-build.log",
+    "log_sha256": "30be80877fdd3cdf5c557ee0edd4e5cf707c23ee0882937661145faeb2d00041"
+  }
+}

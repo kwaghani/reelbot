@@ -1,0 +1,160 @@
+[
+  {
+    "url": "https://www.instagram.com/reel/DaDPI6muPFN/?igsh=NTc4MTIwNjQ2YQ==",
+    "expected": [
+      "The Bay Shack Pizzeria"
+    ],
+    "category": "spoken",
+    "labels_verified": false,
+    "label_notes": "Hand-read archived spoken transcript; absence from caption not independently verified."
+  },
+  {
+    "url": "https://vt.tiktok.com/ZSCDMwK3f/",
+    "expected": [
+      "Ornella"
+    ],
+    "category": "caption",
+    "labels_verified": false,
+    "label_notes": "Hand-read archived caption names Ornella in Munich."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DZQEbgvRroH/",
+    "expected": [],
+    "category": "no_place",
+    "labels_verified": false,
+    "label_notes": "Hand-read archived sports caption and OCR; complete video not independently viewed."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DaclEJUqSdh/",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.instagram.com/p/DJEzB4SM_o4/",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/i84Sc5uvQa8",
+    "expected": [],
+    "category": "no_place",
+    "labels_verified": false,
+    "label_notes": "Hand-read archived cooking transcript; complete video not independently viewed."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/CCMuiP18GoE",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.instagram.com/p/Cgk0_MxDBeF/",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DWt-RZQOgtC/?igsh=YzAyMDM1MGJkZA==",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://vt.tiktok.com/ZSCHKqQpV/",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://vt.tiktok.com/ZSC9GQCVS/",
+    "expected": [
+      "Peter Pan Donut & Pastry Shop"
+    ],
+    "category": "caption",
+    "labels_verified": false,
+    "label_notes": "Hand-read archived caption includes full Brooklyn street address."
+  },
+  {
+    "url": "https://www.instagram.com/p/DNQqeSYxhGq/",
+    "expected": [
+      "Yunomi Handroll",
+      "Fitoor",
+      "Ka’teen"
+    ],
+    "category": "listicle",
+    "labels_verified": false,
+    "label_notes": "Hand-read archived caption hashtags and OCR; full video not independently viewed."
+  },
+  {
+    "url": "https://vt.tiktok.com/ZSC7tbwb4/",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DW90cOkEUTu/",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/aMZGAhmDHys",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.instagram.com/p/DUpDIg1k87g/",
+    "expected": [
+      "Point Dume",
+      "Hollywood Sign",
+      "Los Leones Trail",
+      "El Matador State Beach",
+      "Point Mugu State Beach"
+    ],
+    "category": "listicle",
+    "labels_verified": false,
+    "label_notes": "Hand-read archived caption listing five destinations."
+  },
+  {
+    "url": "https://www.youtube.com/shorts/LvV7K_i7aDQ",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.instagram.com/p/Da1ZOQmGtN_/",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.instagram.com/reel/DZtN_qaIt0a/",
+    "expected": [],
+    "category": "unverified",
+    "labels_verified": false,
+    "label_notes": "Existing real URL; prior model guesses are not accepted as human ground truth."
+  },
+  {
+    "url": "https://www.instagram.com/reel/Dbzg5DJIMzU/?igsh=NjZiM2M3MzIxNA==",
+    "expected": [
+      "Shivaji Park"
+    ],
+    "category": "caption",
+    "labels_verified": false,
+    "label_notes": "Hand-read archived caption hashtags name the park and Mumbai."
+  }
+]

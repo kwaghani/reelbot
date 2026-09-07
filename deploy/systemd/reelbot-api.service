@@ -1,5 +1,5 @@
 [Unit]
-Description=Shared Reel Bot FastAPI server
+Description=ReelBot personal library FastAPI server
 After=network-online.target
 Wants=network-online.target
 
