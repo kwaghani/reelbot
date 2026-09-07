@@ -1,13 +1,13 @@
 """Repair automatic filing for one personal library."""
 import argparse
-from worker.db import connect,file_place
+from worker.db import connect,file_entry
 
 def organize(user_id):
     with connect() as conn:
-        rows=conn.execute('select * from user_places where user_id=%s',(user_id,)).fetchall()
+        rows=conn.execute('select * from entries where user_id=%s',(user_id,)).fetchall()
         for row in rows:
             place=conn.execute('select * from places where id=%s',(row['place_id'],)).fetchone() if row['place_id'] else None
-            file_place(conn,row,place)
+            file_entry(conn,row,place)
     return len(rows)
 
 if __name__=='__main__':

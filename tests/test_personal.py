@@ -12,17 +12,20 @@ os.environ['DATABASE_URL']=TEST_URL
 from fastapi.testclient import TestClient
 from api.main import app
 from worker.db import connect,claim,store_candidate
-from worker.pipeline import new_metrics,CANDIDATES
+from worker.pipeline import new_metrics
+from worker.registry import sync_registry,validate_candidates
 from worker.places import resolve,FIELD_MASK
 
 class PersonalTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        with connect() as conn: conn.execute((ROOT/'db/schema.sql').read_text())
+        with connect() as conn:
+            conn.execute((ROOT/'db/schema.sql').read_text())
+            sync_registry(conn)
         cls.client=TestClient(app)
     def setUp(self):
         with connect() as conn:
-            conn.execute('truncate events,jobs,folder_items,folders,user_places,saves,devices,users,places cascade')
+            conn.execute('truncate events,jobs,folder_items,folders,entries,saves,devices,users,places cascade')
         self.a=self.register();self.b=self.register()
     def register(self):
         token=uuid4().hex+uuid4().hex
@@ -40,7 +43,8 @@ class PersonalTests(unittest.TestCase):
             return [{'id':'verified-'+name,'displayName':{'text':name},'formattedAddress':'600 Guerrero St, '+city+', CA, USA','location':{'latitude':37.761,'longitude':-122.424},'primaryType':'bakery'}]
         with connect() as conn:
             place,confidence,reason=resolve(conn,candidate,metrics,search=search or provider)
-            row=store_candidate(conn,{'id':save['id'],'user_id':identity['user']},candidate,place,confidence,reason)
+            entry={'content_type':'place','title':name,'summary':'A bakery to visit.','attributes':{'venue_kind':'restaurant'},'venue_name':name,'city_hint':city,'confidence':.95,'evidence':'caption names the venue'}
+            row=store_candidate(conn,{'id':save['id'],'user_id':identity['user']},entry,place,confidence,reason)
         return row,metrics
     def test_url_idempotency_and_personal_isolation(self):
         first=self.save(self.a);second=self.save(self.a)
@@ -57,8 +61,8 @@ class PersonalTests(unittest.TestCase):
             row,cost=self.venue(self.save(identity,str(n)),identity)
             calls+=cost['places_calls'];hits+=cost['cache_hits']
             with connect() as conn:
-                folders=conn.execute('select kind from folders f join folder_items fi on f.id=fi.folder_id where fi.user_place_id=%s',(row['id'],)).fetchall()
-                self.assertEqual({f['kind'] for f in folders},{'auto_city','auto_category'})
+                folders=conn.execute('select kind from folders f join folder_items fi on f.id=fi.folder_id where fi.entry_id=%s',(row['id'],)).fetchall()
+                self.assertEqual({f['kind'] for f in folders},{'auto_type','auto_facet'})
         self.assertEqual((calls,hits),(1,4))
         with connect() as conn:
             self.assertEqual(conn.execute('select count(*) as n from places').fetchone()['n'],1)
@@ -70,7 +74,7 @@ class PersonalTests(unittest.TestCase):
         row,_=self.venue(saved,self.a,search=ambiguous)
         self.assertTrue(row['needs_review']);self.assertIsNone(row['place_id'])
         with connect() as conn:
-            self.assertEqual(conn.execute('select kind from folders').fetchone()['kind'],'needs_review')
+            self.assertEqual({r['kind'] for r in conn.execute('select kind from folders').fetchall()},{'auto_type','auto_facet'})
     def test_custom_delete_preserves_places_and_bulk_owner_checks(self):
         row,_=self.venue(self.save(self.a),self.a)
         folder=self.client.post('/folders',headers=self.a['headers'],json={'name':'Weekend'}).json()
@@ -86,9 +90,9 @@ class PersonalTests(unittest.TestCase):
         row,_=self.venue(self.save(self.a),self.a)
         self.client.patch('/items/'+str(row['id']),headers=self.a['headers'],json={'note':'Try the morning bun'})
         vector=[1.0]+[0.0]*383
-        with connect() as conn: conn.execute('update user_places set embedding=%s::vector where id=%s',(str(vector),row['id']))
+        with connect() as conn: conn.execute('update entries set embedding=%s::vector where id=%s',(str(vector),row['id']))
         with patch('worker.search.embed_query',return_value=vector):
-            for query in ['Tartine','San Francisco','morning bun','Restaurants','pastry']:
+            for query in ['Tartine','San Francisco','morning bun','Places','pastry']:
                 results=self.client.get('/items',params={'q':query},headers=self.a['headers']).json()['items']
                 self.assertEqual(results[0]['id'],str(row['id']))
             self.assertEqual(self.client.get('/items',params={'q':'Tartine'},headers=self.b['headers']).json()['items'],[])
@@ -107,10 +111,10 @@ class PersonalTests(unittest.TestCase):
             fail_expired(conn)
             self.assertIsNone(claim(conn))
     def test_json_contract_listicle_and_empty(self):
-        self.assertEqual(CANDIDATES.validate_python([]),[])
-        candidate={'name':'A','city_hint':None,'country_hint':None,'category_guess':None,'confidence':.4,'evidence':'OCR A'}
-        self.assertEqual(len(CANDIDATES.validate_python([{**candidate,'name':str(n)} for n in range(6)])),6)
-        with self.assertRaises(ValueError): CANDIDATES.validate_python([{**candidate,'confidence':2}])
+        self.assertEqual(validate_candidates([]),[])
+        candidate={'content_type':'workout','title':'A','summary':'A circuit.','attributes':{'muscle_group':['arms']},'venue_name':None,'city_hint':None,'confidence':.4,'evidence':'OCR A'}
+        self.assertEqual(len(validate_candidates([{**candidate,'title':str(n)} for n in range(6)])),6)
+        with self.assertRaises(ValueError): validate_candidates([{**candidate,'confidence':2}])
     def test_slow_media_retains_caption_for_extraction(self):
         from worker.pipeline import collect_signals
         with tempfile.TemporaryDirectory() as directory:
@@ -154,17 +158,17 @@ class PersonalTests(unittest.TestCase):
             process(saved['id'])
         with connect() as conn:
             final=conn.execute('select status,cost from saves where id=%s',(saved['id'],)).fetchone()
-        self.assertEqual(final['status'],'no_places_found')
+        self.assertEqual(final['status'],'no_content_found')
         self.assertEqual(final['cost']['places_calls'],1)
         self.assertEqual(final['cost']['llm_tokens_in'],150)
     def test_folder_edits_invalidate_semantic_index(self):
         row,_=self.venue(self.save(self.a),self.a)
         folder=self.client.post('/folders',headers=self.a['headers'],json={'name':'Weekend'}).json()
         self.client.post('/folders/assign',headers=self.a['headers'],json={'item_ids':[str(row['id'])],'destination_id':folder['id']})
-        with connect() as conn: conn.execute('update user_places set embedding=%s::vector where id=%s',(str([1.0]+[0.0]*383),row['id']))
+        with connect() as conn: conn.execute('update entries set embedding=%s::vector where id=%s',(str([1.0]+[0.0]*383),row['id']))
         self.assertEqual(self.client.patch('/folders/'+folder['id'],headers=self.a['headers'],json={'name':'Holiday'}).status_code,200)
         with connect() as conn:
-            self.assertIsNone(conn.execute('select embedding from user_places where id=%s',(row['id'],)).fetchone()['embedding'])
+            self.assertIsNone(conn.execute('select embedding from entries where id=%s',(row['id'],)).fetchone()['embedding'])
     def test_linked_apple_library_cannot_merge_into_a_different_account(self):
         with connect() as conn:
             conn.execute("update users set apple_user_id='existing-a' where id=%s",(self.a['user'],))

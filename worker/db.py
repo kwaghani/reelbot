@@ -61,47 +61,83 @@ def claim(conn):
     return row
 
 
-ITEMS_SQL = '''select u.id,u.user_id,u.save_id,u.place_id,u.note,u.confidence,u.needs_review,u.candidate,
-    u.created_at,coalesce(p.name,u.candidate->>'name','Unconfirmed venue') as name,
-    coalesce(p.city,u.candidate->>'city_hint','') as city,p.formatted_address,p.lat,p.lng,p.primary_type,
-    p.google_place_id,s.source_url,s.status,
-    coalesce((select jsonb_agg(jsonb_build_object('id',f.id,'name',f.name,'kind',f.kind))
+ITEMS_SQL = '''select e.*,e.title as name,coalesce(p.city,e.candidate->>'city_hint','') as city,
+    p.name as place_name,p.formatted_address,p.lat,p.lng,p.primary_type,p.google_place_id,
+    s.source_url,s.status,s.raw_signals->>'thumbnail' as thumbnail,
+    coalesce((select jsonb_agg(jsonb_build_object('id',f.id,'name',f.name,'kind',f.kind,
+        'parent_folder_id',f.parent_folder_id,'content_type',f.content_type,'facet_key',f.facet_key,'facet_value',f.facet_value))
       from folder_items fi join folders f on f.id=fi.folder_id
-      where fi.user_place_id=u.id and fi.user_id=u.user_id),'[]') as folders
-    from user_places u join saves s on s.id=u.save_id left join places p on p.id=u.place_id'''
+      where fi.entry_id=e.id and fi.user_id=e.user_id),'[]') as folders
+    from entries e join saves s on s.id=e.save_id left join places p on p.id=e.place_id'''
 
 
 def items(conn,user_id):
-    return conn.execute(ITEMS_SQL+' where u.user_id=%s order by u.created_at desc',(user_id,)).fetchall()
+    rows=conn.execute(ITEMS_SQL+' where e.user_id=%s order by e.created_at desc,e.id',(user_id,)).fetchall()
+    for row in rows: row.pop('embedding',None)
+    return rows
 
 
-def file_place(conn, row, place):
-    owner, item_id = row['user_id'],row['id']
-    conn.execute('update user_places set embedding=null,updated_at=now() where id=%s and user_id=%s',(item_id,owner))
-    # Re-resolution only replaces automatic assignments; personal organization survives retries.
+def prune_auto_folders(conn,owner):
+    conn.execute('''delete from folders f where f.user_id=%s and f.kind='auto_facet'
+        and not exists(select 1 from folder_items fi where fi.folder_id=f.id)''',(owner,))
+    conn.execute('''delete from folders f where f.user_id=%s and f.kind='auto_type'
+        and not exists(select 1 from folder_items fi where fi.folder_id=f.id)
+        and not exists(select 1 from folders c where c.parent_folder_id=f.id)''',(owner,))
+
+
+def file_entry(conn,row,place=None,data=None):
+    from worker.registry import registry
+    data=data or registry(); spec=data[row['content_type']]
+    owner,identifier=row['user_id'],row['id']
+    conn.execute('update entries set embedding=null,updated_at=now() where id=%s and user_id=%s',(identifier,owner))
     conn.execute('''delete from folder_items fi using folders f where fi.folder_id=f.id
-        and fi.user_place_id=%s and fi.user_id=%s and f.kind<>'custom' ''',(item_id,owner))
-    targets = [('needs_review','Needs Review','alert-circle')] if row['needs_review'] else []
-    if place:
-        from worker.places import category
-        if place.get('city'):
-            targets.append(('auto_city',place['city'],'location'))
-        targets.append(('auto_category',category(place.get('primary_type')),'grid'))
-    for kind,name,icon in targets:
-        folder = conn.execute('''insert into folders(user_id,name,kind,icon) values(%s,%s,%s,%s)
-            on conflict(user_id,kind,name) do update set name=excluded.name returning id''', (owner,name,kind,icon)).fetchone()
-        conn.execute('insert into folder_items(folder_id,user_place_id,user_id) values(%s,%s,%s) on conflict do nothing',
-                     (folder['id'],item_id,owner))
+        and fi.entry_id=%s and fi.user_id=%s and f.kind<>'custom' ''',(identifier,owner))
+    parent=conn.execute('''insert into folders(user_id,name,kind,content_type,icon)
+        values(%s,%s,'auto_type',%s,%s)
+        on conflict(user_id,kind,content_type,parent_folder_id,name) do update set icon=excluded.icon returning id''',
+        (owner,spec.get('plural_label',spec['label']),row['content_type'],spec['icon'])).fetchone()['id']
+    conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',(parent,identifier,owner))
+    facet=spec.get('primary_facet')
+    value=(place or {}).get('city') or row.get('candidate',{}).get('city_hint') if facet=='city' else row['attributes'].get(facet or 'topic')
+    values=value if isinstance(value,list) else [value]
+    for value in values or [None]:
+        display=str(value).strip().replace('_',' ').title() if value else 'Unsorted'
+        folder=conn.execute('''insert into folders(user_id,name,kind,content_type,facet_key,facet_value,parent_folder_id,icon)
+            values(%s,%s,'auto_facet',%s,%s,%s,%s,%s)
+            on conflict(user_id,kind,content_type,parent_folder_id,name) do update set facet_value=excluded.facet_value returning id''',
+            (owner,display[:100],row['content_type'],facet or 'topic',str(value) if value else None,parent,spec['icon'])).fetchone()['id']
+        conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',(folder,identifier,owner))
+    prune_auto_folders(conn,owner)
 
 
-def store_candidate(conn,save,candidate,place,confidence,reason):
-    from worker.places import lookup_key
-    candidate = {**candidate, 'review_reason':reason}
-    row = conn.execute('''insert into user_places(user_id,save_id,place_id,confidence,needs_review,candidate,candidate_key)
-        values(%s,%s,%s,%s,%s,%s,%s) on conflict(user_id,save_id,candidate_key) do update set
-        place_id=excluded.place_id,confidence=excluded.confidence,needs_review=excluded.needs_review,
+def entry_key(candidate):
+    from worker.places import normalized
+    return hashlib.sha256((candidate['content_type']+'|'+normalized(candidate['title'])+'|'+normalized(candidate.get('city_hint'))).encode()).hexdigest()
+
+
+def store_candidate(conn,save,candidate,place,confidence,reason=None):
+    from worker.registry import sync_registry,validate_attributes
+    data=sync_registry(conn)
+    attrs,reasons=validate_attributes(candidate['content_type'],candidate['attributes'],data=data)
+    reasons.extend(candidate.get('review_reasons',[]))
+    if reason: reasons.append(reason)
+    if data[candidate['content_type']]['geo']=='required' and not place: reasons.append('unresolved_place')
+    if confidence<.6: reasons.append('low_confidence')
+    review_reason=';'.join(dict.fromkeys(reasons)) or None
+    row=conn.execute('''insert into entries(user_id,save_id,place_id,content_type,title,summary,attributes,
+        confidence,needs_review,review_reason,candidate,candidate_key)
+        values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        on conflict(user_id,save_id,candidate_key) do update set
+        place_id=case when entries.verified_at is not null then entries.place_id else excluded.place_id end,
+        title=case when entries.verified_at is not null then entries.title else excluded.title end,
+        summary=case when entries.verified_at is not null then entries.summary else excluded.summary end,
+        attributes=case when entries.verified_at is not null then entries.attributes else excluded.attributes end,
+        confidence=excluded.confidence,
+        needs_review=case when entries.verified_at is not null then false else excluded.needs_review end,
+        review_reason=case when entries.verified_at is not null then null else excluded.review_reason end,
         candidate=excluded.candidate,updated_at=now() returning *''',
-        (save['user_id'],save['id'],place['id'] if place else None,confidence,
-         not place or confidence<0.6,Jsonb(candidate),lookup_key(candidate))).fetchone()
-    file_place(conn,row,place)
+        (save['user_id'],save['id'],place['id'] if place else None,candidate['content_type'],candidate['title'],
+         candidate['summary'],Jsonb(attrs),confidence,bool(review_reason),review_reason,Jsonb(candidate),entry_key(candidate))).fetchone()
+    effective_place=conn.execute('select * from places where id=%s',(row['place_id'],)).fetchone() if row['place_id'] else None
+    file_entry(conn,row,effective_place,data)
     return row

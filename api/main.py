@@ -8,10 +8,12 @@ from fastapi import FastAPI, Depends, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict
 from psycopg.types.json import Jsonb
-from psycopg.errors import UniqueViolation
+from psycopg.errors import UniqueViolation, CheckViolation
+from worker.registry import registry, registry_version, sync_registry, validate_attributes
+from worker.db import file_entry, prune_auto_folders
 from worker.db import connect, enqueue, items, fail_expired, save_hash, store_candidate
 
-app = FastAPI(title='ReelBot',version='2.0.0')
+app = FastAPI(title='ReelBot',version='3.0.0')
 
 class Input(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -20,8 +22,15 @@ class Device(Input):
     token: str = Field(pattern=r'^[a-f0-9]{64}$')
 class Share(Input):
     url: str = Field(min_length=10,max_length=2000)
-class Note(Input):
-    note: str = Field(max_length=5000)
+class EntryEdit(Input):
+    note: str | None = Field(default=None,max_length=5000)
+    title: str | None = Field(default=None,min_length=1,max_length=200)
+    summary: str | None = Field(default=None,max_length=140)
+    content_type: str | None = None
+    attributes: dict | None = None
+    place_id: UUID | None = None
+class Preference(Input):
+    enabled: bool
 class Folder(Input):
     id: UUID = Field(default_factory=uuid4)
     name: str = Field(min_length=1,max_length=100)
@@ -55,7 +64,7 @@ def require_user(authorization: str = Header(default='')):
 
 
 def owned(conn,table,identifier,user):
-    if table not in {'saves','user_places','folders','jobs'}: raise ValueError('Invalid relation')
+    if table not in {'saves','entries','folders','jobs'}: raise ValueError('Invalid relation')
     row = conn.execute(f'select * from {table} where id=%s and user_id=%s',(identifier,user)).fetchone()
     if not row: raise HTTPException(404,'This item is not in your library.')
     return row
@@ -64,10 +73,20 @@ def owned(conn,table,identifier,user):
 def duplicate(_request,_error):
     return JSONResponse(status_code=409,content={'detail':'That name or item already exists.'})
 
+@app.exception_handler(CheckViolation)
+def invalid_attribute(_request,_error):
+    return JSONResponse(status_code=422,content={'detail':'An entry attribute does not match its content type.'})
+
+@app.get('/content-types')
+def content_types():
+    data=registry()
+    with connect() as conn: sync_registry(conn,data)
+    return {'types':data,'version':registry_version(data)}
+
 @app.get('/healthz')
 def health():
     with connect() as conn: conn.execute('select 1')
-    return {'status':'ok','product':'personal-places'}
+    return {'status':'ok','product':'personal-reels'}
 
 @app.post('/devices')
 def register(body:Device):
@@ -101,7 +120,7 @@ def library(q:str=Query(default='',max_length=500),user=Depends(require_user)):
 def sync(user=Depends(require_user)):
     with connect() as conn:
         fail_expired(conn)
-        return {'items':items(conn,user),
+        return {'registry':registry(),'items':items(conn,user),
             'saves':conn.execute('select * from saves where user_id=%s order by created_at desc',(user,)).fetchall(),
             'folders':conn.execute('select * from folders where user_id=%s order by sort_order,name',(user,)).fetchall(),
             'apple_linked':bool(conn.execute('select apple_user_id from users where id=%s',(user,)).fetchone()['apple_user_id'])}
@@ -116,7 +135,7 @@ def job(job_id:UUID,user=Depends(require_user)):
 def retry(save_id:UUID,user=Depends(require_user)):
     with connect() as conn:
         row=owned(conn,'saves',save_id,user)
-        if row['status'] not in {'failed','needs_review','no_places_found'}: return row
+        if row['status'] not in {'failed','needs_review','no_content_found'}: return row
         conn.execute("update jobs set status='queued',error_reason=null,updated_at=now() where save_id=%s and user_id=%s",(save_id,user))
         return conn.execute("update saves set status='queued',attempts=0,error_reason=null,retry_at=null,updated_at=now() where id=%s returning *",(save_id,)).fetchone()
 
@@ -125,42 +144,103 @@ def delete_save(save_id:UUID,user=Depends(require_user)):
     with connect() as conn:
         owned(conn,'saves',save_id,user)
         conn.execute('delete from saves where id=%s and user_id=%s',(save_id,user))
+        prune_auto_folders(conn,user)
     return {'deleted':True}
 
 @app.delete('/items/{item_id}')
 def delete_item(item_id:UUID,user=Depends(require_user)):
     with connect() as conn:
         # Idempotent for an offline outbox retry; never affects another owner.
-        conn.execute('delete from user_places where id=%s and user_id=%s',(item_id,user))
+        conn.execute('delete from entries where id=%s and user_id=%s',(item_id,user))
+        prune_auto_folders(conn,user)
     return {'deleted':True}
 
+def update_save_review(conn,save_id,user):
+    conn.execute("""update saves set status=case when exists(select 1 from entries where save_id=%s and needs_review)
+        then 'needs_review' else 'resolved' end,updated_at=now() where id=%s and user_id=%s
+        and status in ('resolved','needs_review')""",(save_id,save_id,user))
+
 @app.patch('/items/{item_id}')
-def edit_note(item_id:UUID,body:Note,user=Depends(require_user)):
+def edit_entry(item_id:UUID,body:EntryEdit,user=Depends(require_user)):
+    from datetime import datetime,timezone
     with connect() as conn:
-        owned(conn,'user_places',item_id,user)
-        conn.execute('update user_places set note=%s,embedding=null,updated_at=now() where id=%s and user_id=%s',(body.note,item_id,user))
+        item=owned(conn,'entries',item_id,user)
+        data=sync_registry(conn)
+        key=body.content_type or item['content_type']
+        changing=body.content_type is not None and body.content_type!=item['content_type']
+        try: attrs,reasons=validate_attributes(key,body.attributes if body.attributes is not None else {} if changing else item['attributes'],data=data)
+        except ValueError as exc: raise HTTPException(422,str(exc)) from exc
+        place_id=body.place_id if 'place_id' in body.model_fields_set else item['place_id']
+        if place_id and not conn.execute('select id from entries where user_id=%s and place_id=%s',(user,place_id)).fetchone():
+            raise HTTPException(422,'Choose a place already in your library.')
+        if data[key]['geo']=='required' and not place_id: reasons.append('unresolved_place')
+        structural=bool({'content_type','attributes','title','summary','place_id'} & body.model_fields_set)
+        if not structural:
+            reasons=item['review_reason'].split(';') if item['needs_review'] and item['review_reason'] else []
+        row=conn.execute("""update entries set content_type=%s,title=%s,summary=%s,attributes=%s,note=%s,
+            place_id=%s,needs_review=%s,review_reason=%s,verified_at=%s,embedding=null,updated_at=now()
+            where id=%s and user_id=%s returning *""",
+            (key,(body.title or item['title']).strip(),body.summary if body.summary is not None else item['summary'],Jsonb(attrs),
+             body.note if body.note is not None else item['note'],place_id,bool(reasons),';'.join(reasons) or None,
+             None if reasons else datetime.now(timezone.utc) if structural else item['verified_at'],item_id,user)).fetchone()
+        place=conn.execute('select * from places where id=%s',(place_id,)).fetchone() if place_id else None
+        file_entry(conn,row,place,data); update_save_review(conn,item['save_id'],user)
+    row.pop('embedding',None)
+    return row
+
+@app.post('/items/{item_id}/dismiss-review')
+def dismiss_review(item_id:UUID,user=Depends(require_user)):
+    with connect() as conn:
+        item=owned(conn,'entries',item_id,user)
+        conn.execute('update entries set verified_at=now(),needs_review=false,review_reason=null,updated_at=now() where id=%s and user_id=%s',(item_id,user))
+        update_save_review(conn,item['save_id'],user)
     return {'saved':True}
 
 @app.post('/items/{item_id}/confirm')
 def confirm(item_id:UUID,body:Review,user=Depends(require_user)):
     from worker.places import resolve
     from worker.pipeline import new_metrics,price_metrics
-    from worker.db import file_place
     metrics=new_metrics()
     candidate={'name':body.name.strip(),'city_hint':body.city.strip(),'country_hint':body.country,
-               'category_guess':None,'confidence':1.0,'evidence':'Venue and city confirmed by the owner.'}
+               'confidence':1.0,'evidence':'Venue and city confirmed by the owner.'}
     with connect() as conn:
-        item=owned(conn,'user_places',item_id,user)
+        item=owned(conn,'entries',item_id,user)
+        data=sync_registry(conn)
+        if data[item['content_type']]['geo']=='never':
+            raise HTTPException(422,'This type does not use address lookup. You can link a saved place in the editor.')
         place,confidence,reason=resolve(conn,candidate,metrics)
-        row=conn.execute('''update user_places set candidate=%s,place_id=%s,confidence=%s,needs_review=%s,
-            embedding=null,updated_at=now() where id=%s and user_id=%s returning *''',
-            (Jsonb({**candidate,'review_reason':reason}),place['id'] if place else None,confidence,not place or confidence<.6,item_id,user)).fetchone()
-        file_place(conn,row,place)
-        conn.execute('''update saves set status=case when exists(select 1 from user_places where save_id=%s and needs_review)
-            then 'needs_review' else 'resolved' end,updated_at=now() where id=%s and user_id=%s''',(item['save_id'],item['save_id'],user))
+        attrs,reasons=validate_attributes(item['content_type'],item['attributes'],data=data)
+        if not place: reasons.append('unresolved_place')
+        row=conn.execute("""update entries set candidate=candidate || %s,place_id=%s,confidence=%s,needs_review=%s,
+            review_reason=%s,verified_at=case when %s then null else now() end,
+            embedding=null,updated_at=now() where id=%s and user_id=%s returning *""",
+            (Jsonb({'venue_name':body.name,'city_hint':body.city}),place['id'] if place else None,confidence,bool(reasons),
+             ';'.join(reasons) or None,bool(reasons),item_id,user)).fetchone()
+        file_entry(conn,row,place,data);update_save_review(conn,item['save_id'],user)
         conn.execute("insert into events(user_id,save_id,kind,detail) values(%s,%s,'owner_confirmation',%s)",
                      (user,item['save_id'],Jsonb(price_metrics(metrics))))
+    row.pop('embedding',None)
     return row
+
+@app.get('/export')
+def export_data(user=Depends(require_user)):
+    with connect() as conn:
+        return {'format':'reelbot.entries.v1','entries':items(conn,user),
+            'folders':conn.execute('select * from folders where user_id=%s',(user,)).fetchall(),
+            'saves':conn.execute('select id,source_url,status,created_at,error_reason from saves where user_id=%s',(user,)).fetchall()}
+
+def erase_owner(conn,user):
+    conn.execute('delete from events where user_id=%s',(user,))
+    conn.execute('delete from jobs where user_id=%s',(user,))
+    conn.execute('delete from folders where user_id=%s',(user,))
+    conn.execute('delete from saves where user_id=%s',(user,))
+    conn.execute('delete from devices where user_id=%s',(user,))
+    conn.execute('delete from users where id=%s',(user,))
+
+@app.delete('/account')
+def delete_account(user=Depends(require_user)):
+    with connect() as conn: erase_owner(conn,user)
+    return {'deleted':True}
 
 @app.post('/folders')
 def create_folder(body:Folder,user=Depends(require_user)):
@@ -176,11 +256,11 @@ def create_folder(body:Folder,user=Depends(require_user)):
 def edit_folder(folder_id:UUID,body:FolderEdit,user=Depends(require_user)):
     with connect() as conn:
         folder=owned(conn,'folders',folder_id,user)
-        if body.name is not None and folder['kind']!='custom': raise HTTPException(422,'Automatic folder names follow their places.')
+        if body.name is not None and folder['kind']!='custom': raise HTTPException(422,'Automatic folder names follow their content.')
         if body.name is not None and not body.name.strip(): raise HTTPException(422,'Enter a folder name.')
         if body.name is not None:
-            conn.execute('''update user_places set embedding=null,updated_at=now() where user_id=%s and id in
-                (select user_place_id from folder_items where folder_id=%s and user_id=%s)''',(user,folder_id,user))
+            conn.execute('''update entries set embedding=null,updated_at=now() where user_id=%s and id in
+                (select entry_id from folder_items where folder_id=%s and user_id=%s)''',(user,folder_id,user))
         return conn.execute('''update folders set name=coalesce(%s,name),sort_order=coalesce(%s,sort_order),
             hidden=coalesce(%s,hidden) where id=%s and user_id=%s returning *''',
             (body.name.strip() if body.name else None,body.sort_order,body.hidden,folder_id,user)).fetchone()
@@ -190,8 +270,8 @@ def delete_folder(folder_id:UUID,user=Depends(require_user)):
     with connect() as conn:
         row=conn.execute('select * from folders where id=%s and user_id=%s',(folder_id,user)).fetchone()
         if row and row['kind']!='custom': raise HTTPException(422,'You can hide this automatic folder.')
-        conn.execute('''update user_places set embedding=null,updated_at=now() where user_id=%s and id in
-            (select user_place_id from folder_items where folder_id=%s and user_id=%s)''',(user,folder_id,user))
+        conn.execute('''update entries set embedding=null,updated_at=now() where user_id=%s and id in
+            (select entry_id from folder_items where folder_id=%s and user_id=%s)''',(user,folder_id,user))
         conn.execute("delete from folders where id=%s and user_id=%s and kind='custom'",(folder_id,user))
     return {'deleted':True}
 
@@ -202,23 +282,36 @@ def assign(body:Assignment,user=Depends(require_user)):
         if destination['kind']!='custom': raise HTTPException(422,'Choose a custom folder. Automatic filing is kept for you.')
         source=owned(conn,'folders',body.source_id,user) if body.source_id else None
         for identifier in body.item_ids:
-            owned(conn,'user_places',identifier,user)
-            conn.execute('update user_places set embedding=null,updated_at=now() where id=%s and user_id=%s',(identifier,user))
-            conn.execute('insert into folder_items(folder_id,user_place_id,user_id) values(%s,%s,%s) on conflict do nothing',
+            owned(conn,'entries',identifier,user)
+            conn.execute('update entries set embedding=null,updated_at=now() where id=%s and user_id=%s',(identifier,user))
+            conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',
                          (body.destination_id,identifier,user))
             if body.move and source and source['kind']=='custom' and body.source_id!=body.destination_id:
-                conn.execute('delete from folder_items where folder_id=%s and user_place_id=%s and user_id=%s',
+                conn.execute('delete from folder_items where folder_id=%s and entry_id=%s and user_id=%s',
                              (body.source_id,identifier,user))
     return {'saved':True}
 
 @app.get('/debug/cost')
 def cost(user=Depends(require_user)):
     with connect() as conn:
-        rows=conn.execute('select cost from saves where user_id=%s and resolved_at is not null order by created_at desc limit 100',(user,)).fetchall()
+        rows=conn.execute('''select s.cost,coalesce((select jsonb_object_agg(content_type,n) from
+            (select content_type,count(*) n from entries where user_id=s.user_id and save_id=s.id group by content_type) counts),'{}'::jsonb) as entry_types
+            from saves s where s.user_id=%s and s.resolved_at is not null order by s.created_at desc limit 100''',(user,)).fetchall()
     costs=[row['cost'] for row in rows]; calls=sum(c.get('places_calls',0) for c in costs); hits=sum(c.get('cache_hits',0) for c in costs)
+    types={};unknown=sum(c.get('llm_usage_unavailable_requests',0) for c in costs)
+    for row in rows:
+        c=row['cost'];counts=c.get('content_types',{}) or row['entry_types'] or {'no_entries':1};total=sum(counts.values())
+        for key,n in counts.items():
+            bucket=types.setdefault(key,{'save_equivalents':0,'estimated_usd':0,'llm_usd':0,'llm_uncached_equivalent_usd':0})
+            bucket['save_equivalents']+=n/total
+            for field in ('estimated_usd','llm_usd','llm_uncached_equivalent_usd'): bucket[field]+=c.get(field,0)*n/total
+    for bucket in types.values():
+        for field in ('estimated_usd','llm_usd','llm_uncached_equivalent_usd'): bucket[field]/=max(bucket['save_equivalents'],1e-9)
     return {'saves':len(costs),'average_usd':sum(c.get('estimated_usd',0) for c in costs)/max(1,len(costs)),
-            'cache_hit_rate':hits/max(1,hits+calls),'places_calls':calls,'cache_hits':hits,
-            'basis':'Measured provider usage × configured rates; excludes local compute.'}
+            'cache_hit_rate':hits/max(1,hits+calls),'places_calls':calls,'cache_hits':hits,'by_type':types,
+            'prompt_cache_hit_rate':sum(c.get('llm_cache_hits',0) for c in costs)/max(1,sum(c.get('llm_requests',0) for c in costs)),
+            'usage_unavailable_requests':unknown,
+            'basis':('Known usage only; some request usage was unavailable. ' if unknown else '')+'Measured provider usage × configured rates; mixed saves allocated by entry count. Uncached equivalent is a counterfactual; excludes local compute.'}
 
 @app.get('/auth/apple/challenge')
 def apple_challenge(user=Depends(require_user)):
@@ -231,27 +324,34 @@ def apple_challenge(user=Depends(require_user)):
 
 
 def merge_library(conn,source,target):
-    """Copy an authenticated local library to the verified Apple account, preserving notes/folders."""
+    """Merge into a verified Apple account without losing entry edits or custom folders."""
     folder_map={}
-    for folder in conn.execute('select * from folders where user_id=%s',(source,)).fetchall():
-        row=conn.execute('''insert into folders(user_id,name,kind,icon,sort_order,hidden) values(%s,%s,%s,%s,%s,%s)
-            on conflict(user_id,kind,name) do update set name=excluded.name returning id''',
-            (target,folder['name'],folder['kind'],folder['icon'],folder['sort_order'],folder['hidden'])).fetchone()
+    for folder in conn.execute("select * from folders where user_id=%s and kind='custom'",(source,)).fetchall():
+        row=conn.execute("""insert into folders(user_id,name,kind,icon,sort_order,hidden) values(%s,%s,'custom',%s,%s,%s)
+            on conflict(user_id,kind,content_type,parent_folder_id,name) do update set name=excluded.name returning id""",
+            (target,folder['name'],folder['icon'],folder['sort_order'],folder['hidden'])).fetchone()
         folder_map[folder['id']]=row['id']
     for saved in conn.execute('select * from saves where user_id=%s',(source,)).fetchall():
         copied=enqueue(conn,target,saved['source_url'])
-        if copied['status']=='queued' and saved['status'] in {'resolved','needs_review','no_places_found','failed'}:
+        if copied['status']=='queued' and saved['status'] in {'resolved','needs_review','no_content_found','failed'}:
             conn.execute('update saves set status=%s,raw_signals=%s,cost=%s,error_reason=%s,resolved_at=%s where id=%s',
                 (saved['status'],Jsonb(saved['raw_signals']),Jsonb(saved['cost']),saved['error_reason'],saved['resolved_at'],copied['id']))
-        for item in conn.execute('select * from user_places where save_id=%s and user_id=%s',(saved['id'],source)).fetchall():
-            row=conn.execute('''insert into user_places(user_id,save_id,place_id,note,confidence,needs_review,candidate,candidate_key,embedding)
-                values(%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(user_id,save_id,candidate_key)
-                do update set note=case when user_places.note='' then excluded.note else user_places.note end returning id''',
-                (target,copied['id'],item['place_id'],item['note'],item['confidence'],item['needs_review'],Jsonb(item['candidate']),item['candidate_key'],item['embedding'])).fetchone()
-            for link in conn.execute('select folder_id from folder_items where user_place_id=%s and user_id=%s',(item['id'],source)).fetchall():
-                conn.execute('insert into folder_items(folder_id,user_place_id,user_id) values(%s,%s,%s) on conflict do nothing',
-                             (folder_map[link['folder_id']],row['id'],target))
+            conn.execute('update jobs set status=%s where save_id=%s',(saved['status'],copied['id']))
+        for item in conn.execute('select * from entries where save_id=%s and user_id=%s',(saved['id'],source)).fetchall():
+            row=conn.execute("""insert into entries(user_id,save_id,place_id,note,content_type,title,summary,attributes,
+                confidence,needs_review,review_reason,verified_at,candidate,candidate_key)
+                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(user_id,save_id,candidate_key)
+                do update set note=case when entries.note='' then excluded.note else entries.note end returning *""",
+                (target,copied['id'],item['place_id'],item['note'],item['content_type'],item['title'],item['summary'],Jsonb(item['attributes']),
+                 item['confidence'],item['needs_review'],item['review_reason'],item['verified_at'],Jsonb(item['candidate']),item['candidate_key'])).fetchone()
+            place=conn.execute('select * from places where id=%s',(row['place_id'],)).fetchone() if row['place_id'] else None
+            file_entry(conn,row,place)
+            for link in conn.execute('select folder_id from folder_items where entry_id=%s and user_id=%s',(item['id'],source)).fetchall():
+                if link['folder_id'] in folder_map:
+                    conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',
+                                 (folder_map[link['folder_id']],row['id'],target))
     conn.execute('update devices set user_id=%s where user_id=%s',(target,source))
+    erase_owner(conn,source)
 
 @app.post('/auth/apple')
 def apple(body:Apple,user=Depends(require_user)):
@@ -281,7 +381,7 @@ def apple(body:Apple,user=Depends(require_user)):
 def place_details(item_id:UUID,user=Depends(require_user)):
     from worker.places import details
     with connect() as conn:
-        item=owned(conn,'user_places',item_id,user)
+        item=owned(conn,'entries',item_id,user)
         if not item['place_id']: return {}
         place=conn.execute('select * from places where id=%s',(item['place_id'],)).fetchone()
         try: return details(conn,place)

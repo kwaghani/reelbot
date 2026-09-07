@@ -70,30 +70,52 @@ def process(save_id):
             conn.execute('update saves set source_url=%s,url_hash=%s where id=%s',
                          (url,save_hash(save['user_id'],url),save_id))
         with tempfile.TemporaryDirectory(prefix='reelbot-') as directory:
-            signals = collect_signals(url,directory,metrics)
-            checkpoint(save_id,metrics,signals)
-            candidates = extract_candidates(signals,metrics)
-            checkpoint(save_id,metrics,{**signals,'candidates':candidates})
+            from worker.registry import registry,registry_version,validate_candidates
+            data=registry();version=registry_version(data)
+            signals=save['raw_signals']
+            if signals.get('extraction_registry_version')==version and isinstance(signals.get('candidates'),list):
+                candidates=validate_candidates(signals['candidates'],data)
+                metrics['extraction_replays']=metrics.get('extraction_replays',0)+1
+            else:
+                signals = collect_signals(url,directory,metrics)
+                checkpoint(save_id,metrics,signals)
+                candidates = extract_candidates(signals,metrics)
+                checkpoint(save_id,metrics,{**signals,'candidates':candidates,'extraction_registry_version':version})
             if not candidates:
-                finish(save_id,'no_places_found',metrics)
+                finish(save_id,'no_content_found',metrics)
                 return
-            # Persist every candidate before any address lookup, so interrupted work remains reviewable.
+            from collections import Counter
+            metrics['content_types']=dict(Counter(c['content_type'] for c in candidates))
+            # Commit the entire result before optional external lookups; interruptions cannot hide candidates.
             with connect() as conn:
                 for candidate in candidates:
-                    store_candidate(conn,save,candidate,None,min(candidate['confidence'],0.5),'Address lookup is pending.')
+                    store_candidate(conn,save,candidate,None,candidate['confidence'])
             for candidate in candidates:
+                policy=data[candidate['content_type']]['geo']
+                if policy=='never' or not candidate.get('venue_name'):
+                    metrics.setdefault('geo_skipped',{}).setdefault(candidate['content_type'],0)
+                    metrics['geo_skipped'][candidate['content_type']]+=1
+                    LOG.info('geo_skipped type=%s policy=%s',candidate['content_type'],policy)
+                    continue
+                if (datetime.now(timezone.utc)-save['started_at']).total_seconds()>49:
+                    LOG.info('geo_deferred type=%s reason=processing_deadline',candidate['content_type'])
+                    break
+                calls_before=metrics['places_calls']
+                lookup={'name':candidate['venue_name'],'city_hint':candidate.get('city_hint'),
+                        'country_hint':None,'confidence':candidate['confidence']}
                 try:
                     with connect() as conn:
-                        place,confidence,reason = resolve(conn,candidate,metrics)
-                        store_candidate(conn,save,candidate,place,confidence,reason)
+                        place,confidence,reason=resolve(conn,lookup,metrics)
+                        store_candidate(conn,save,candidate,place,confidence,'unresolved_place' if not place else None)
                 except Exception as exc:
                     LOG.warning('Place lookup unavailable: %s',type(exc).__name__)
                     with connect() as conn:
-                        store_candidate(conn,save,candidate,None,min(candidate['confidence'],0.5),
-                                        'Address lookup is unavailable. Retry to confirm this venue.')
+                        store_candidate(conn,save,candidate,None,candidate['confidence'],'unresolved_place')
+                by_type=metrics.setdefault('places_calls_by_type',{})
+                by_type[candidate['content_type']]=by_type.get(candidate['content_type'],0)+metrics['places_calls']-calls_before
                 checkpoint(save_id,metrics)
             with connect() as conn:
-                review = conn.execute('select exists(select 1 from user_places where save_id=%s and needs_review) as value',(save_id,)).fetchone()['value']
+                review = conn.execute('select exists(select 1 from entries where save_id=%s and needs_review) as value',(save_id,)).fetchone()['value']
             finish(save_id,'needs_review' if review else 'resolved',metrics)
     except Exception as exc:
         LOG.exception('Save failed: %s',save_id)
@@ -133,15 +155,15 @@ def maintain_embeddings():
     while True:
         try:
             with connect() as conn:
-                missing=conn.execute('select id,user_id,updated_at from user_places where embedding is null order by created_at limit 8').fetchall()
+                missing=conn.execute('select id,user_id,updated_at from entries where embedding is null order by created_at limit 8').fetchall()
             for pending in missing:
                 with connect() as conn:
                     row=next((r for r in items(conn,pending['user_id']) if r['id']==pending['id']),None)
                 if row:
-                    text=' '.join([row['name'],row['city'],row['note'],' '.join(f['name'] for f in row['folders'])])
+                    text=' '.join([row['title'],row['summary'],json.dumps(row['attributes']),row.get('place_name') or '',row['city'],row['note'],' '.join(f['name'] for f in row['folders'])])
                     vector=vector_literal(embed_document(text))
                     with connect() as conn:
-                        conn.execute('update user_places set embedding=%s::vector where id=%s and updated_at=%s',(vector,row['id'],pending['updated_at']))
+                        conn.execute('update entries set embedding=%s::vector where id=%s and updated_at=%s',(vector,row['id'],pending['updated_at']))
             time.sleep(3)
         except Exception:
             LOG.exception('Search indexing will retry')

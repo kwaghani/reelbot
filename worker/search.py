@@ -1,6 +1,7 @@
 """Personal lexical + cosine-vector search, extracted from the former retrieval core."""
 from __future__ import annotations
 import logging
+import json
 from worker.db import connect, items, vector_literal
 from worker.embed import embed_query
 LOG = logging.getLogger(__name__)
@@ -15,14 +16,14 @@ def search(user_id: str, query: str):
         tokens = query.casefold().split()
         ranked = {}
         for row in rows:
-            text = ' '.join([row['name'],row['city'],row['note'],
+            text = ' '.join([row['title'],row['summary'],json.dumps(row['attributes']),row.get('place_name') or '',row['city'],row['note'],
                 ' '.join(folder['name'] for folder in row['folders'])]).casefold()
             score = sum(token in text for token in tokens)/len(tokens)
             if score:
                 ranked[row['id']] = score * 2
         try:
             vector = vector_literal(embed_query(query))
-            vectors = conn.execute('''select id,1-(embedding <=> %s::vector) as score from user_places
+            vectors = conn.execute('''select id,1-(embedding <=> %s::vector) as score from entries
                 where user_id=%s and embedding is not null order by embedding <=> %s::vector limit 50''',
                 (vector,user_id,vector)).fetchall()
             for row in vectors:

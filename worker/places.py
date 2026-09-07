@@ -109,7 +109,7 @@ def details(conn,place):
         return current['details']
     request=Request('https://places.googleapis.com/v1/places/'+quote(place['google_place_id'],safe=''),
         headers={'X-Goog-Api-Key':os.environ['GOOGLE_MAPS_API_KEY'],
-                 'X-Goog-FieldMask':'rating,reviews,photos,regularOpeningHours'})
+                 'X-Goog-FieldMask':'rating,regularOpeningHours'})
     with urlopen(request,timeout=10) as response: result=json.load(response)
     conn.execute('update places set details=%s,details_refreshed_at=now() where id=%s',(Jsonb(result),place['id']))
     return result

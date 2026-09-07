@@ -9,6 +9,28 @@ from psycopg.rows import dict_row
 from db.migrate import run,foreign_column
 
 class MigrationTests(unittest.TestCase):
+    def test_existing_personal_library_retains_ids_notes_custom_folders_and_owners(self):
+        source=os.environ['TEST_DATABASE_URL'];parts=urlsplit(source)
+        self.assertIn(parts.hostname,{'localhost','127.0.0.1'})
+        url=urlunsplit(parts._replace(path='/reelbot_migration_test'))
+        previous=subprocess.check_output(['git','show','9ef2c0b0085f297d521ef6201c7bde01d2b7d4da:db/schema.sql'],text=True)
+        with psycopg.connect(url,row_factory=dict_row) as conn:
+            conn.execute('drop schema public cascade; create schema public;');conn.execute(previous,prepare=False)
+            owner=conn.execute("insert into users(device_id) values('existing-library') returning id").fetchone()['id']
+            save=conn.execute("insert into saves(user_id,source_url,url_hash,platform,status) values(%s,'https://www.youtube.com/watch?v=abcdefghijk','fixture','youtube','resolved') returning id",(owner,)).fetchone()['id']
+            place=conn.execute("insert into places(google_place_id,name,formatted_address,lat,lng,primary_type,city) values('fixture','Old Cafe','1 Test Street',1,1,'cafe','Test City') returning id").fetchone()['id']
+            item=conn.execute("insert into user_places(user_id,save_id,place_id,note,confidence,needs_review,candidate_key) values(%s,%s,%s,'Keep this note',.95,false,'fixture') returning id",(owner,save,place)).fetchone()['id']
+            folder=conn.execute("insert into folders(user_id,name,kind) values(%s,'Weekend','custom') returning id",(owner,)).fetchone()['id']
+            conn.execute('insert into folder_items(folder_id,user_place_id,user_id) values(%s,%s,%s)',(folder,item,owner))
+        report=run(url);self.assertTrue(report['owners_preserved']);self.assertEqual(report['entries_after'],1)
+        with psycopg.connect(url,row_factory=dict_row) as conn:
+            row=conn.execute('select * from entries where id=%s',(item,)).fetchone()
+            self.assertEqual((row['user_id'],row['save_id'],row['place_id'],row['note']),(owner,save,place,'Keep this note'))
+            self.assertEqual((row['content_type'],row['title'],row['attributes']['venue_kind']),('place','Old Cafe','cafe'))
+            self.assertEqual(conn.execute('select count(*) as n from folder_items where folder_id=%s and entry_id=%s',(folder,item)).fetchone()['n'],1)
+            self.assertEqual(conn.execute('select count(*) as n from folders where kind in (\'auto_type\',\'auto_facet\')').fetchone()['n'],2)
+        self.assertTrue(run(url)['already_migrated'])
+
     def test_all_buckets_dry_run_and_replay(self):
         source=os.environ['TEST_DATABASE_URL'];parts=urlsplit(source)
         self.assertIn(parts.hostname,{'localhost','127.0.0.1'})
@@ -41,5 +63,5 @@ class MigrationTests(unittest.TestCase):
         self.assertEqual((report['personal_rows'],report['orphan_rows'],report['accounted_items']),(3,1,3))
         self.assertTrue(run(url)['already_migrated'])
         with psycopg.connect(url) as conn:
-            self.assertEqual(conn.execute('select count(distinct place_id) from user_places where legacy_item_id=%s',(originals[1],)).fetchone()[0],1)
+            self.assertEqual(conn.execute('select count(distinct place_id) from entries where legacy_item_id=%s',(originals[1],)).fetchone()[0],1)
             self.assertEqual(conn.execute('select payload->>\'place_name\' from orphaned_items').fetchone()[0],'Venue 2')

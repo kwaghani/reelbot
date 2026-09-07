@@ -1,0 +1,111 @@
+place:
+  label: Place
+  description: Any named physical venue, landmark, park, beach or trail. Each individually named stop is a separate place, even in a travel list.
+  plural_label: Places
+  icon: map-pin
+  geo: required
+  primary_facet: city
+  attributes:
+    venue_kind: {type: enum, required: true, values: [restaurant, cafe, bar, hotel, shop, activity, other]}
+    cuisine: {type: string}
+    price_level: {type: enum, values: ['$', '$$', '$$$', '$$$$']}
+workout:
+  label: Workout
+  plural_label: Workouts
+  icon: barbell
+  geo: never
+  primary_facet: muscle_group
+  attributes:
+    muscle_group: {type: enum, multi: true, required: true, values: [chest, back, legs, shoulders, arms, core, full_body, cardio]}
+    modality: {type: enum, values: [strength, hiit, mobility, yoga, running, cycling, other]}
+    equipment: {type: enum, multi: true, values: [bodyweight, dumbbells, barbell, machine, bands, kettlebell]}
+    duration_minutes: {type: integer}
+    difficulty: {type: enum, values: [beginner, intermediate, advanced]}
+recipe:
+  label: Recipe
+  plural_label: Recipes
+  icon: chef-hat
+  geo: never
+  primary_facet: cuisine
+  attributes:
+    cuisine: {type: string, required: true}
+    meal_type: {type: enum, values: [breakfast, lunch, dinner, snack, dessert, drink]}
+    prep_minutes: {type: integer}
+    key_ingredients: {type: string, multi: true}
+    dietary: {type: enum, multi: true, values: [vegetarian, vegan, gluten_free, dairy_free, high_protein]}
+product:
+  label: Product
+  plural_label: Products
+  icon: shopping-bag
+  geo: optional
+  primary_facet: product_category
+  attributes:
+    product_category: {type: enum, required: true, values: [electronics, beauty, kitchen, fitness, home, clothing, accessories, other]}
+    brand: {type: string}
+    model: {type: string}
+    price: {type: string}
+    use_case: {type: string}
+travel:
+  label: Travel
+  description: General destination advice or an itinerary without individually named venues. A named park, trail, beach, restaurant, landmark or hotel is a place instead.
+  plural_label: Travel
+  icon: compass
+  geo: optional
+  primary_facet: destination
+  attributes:
+    destination: {type: string, required: true}
+    trip_style: {type: enum, values: [city, beach, nature, road_trip, adventure, cultural, other]}
+    duration_days: {type: integer}
+    season: {type: enum, values: [spring, summer, autumn, winter, year_round]}
+home:
+  label: Home
+  plural_label: Home
+  icon: home
+  geo: never
+  primary_facet: room
+  attributes:
+    room: {type: enum, required: true, values: [kitchen, bedroom, living_room, bathroom, office, garden, whole_home, other]}
+    project_kind: {type: enum, values: [decor, organization, cleaning, diy, renovation, gardening]}
+    materials: {type: string, multi: true}
+    style: {type: string}
+style:
+  label: Style
+  plural_label: Style
+  icon: shirt
+  geo: never
+  primary_facet: garment_type
+  attributes:
+    garment_type: {type: enum, required: true, multi: true, values: [tops, trousers, shorts, dresses, skirts, outerwear, shoes, accessories, outfit]}
+    occasion: {type: enum, values: [casual, work, formal, active, travel, other]}
+    colors: {type: string, multi: true}
+    season: {type: enum, values: [spring, summer, autumn, winter, year_round]}
+media:
+  label: Media
+  plural_label: Media
+  icon: film
+  geo: never
+  primary_facet: media_kind
+  attributes:
+    media_kind: {type: enum, required: true, values: [book, film, series, music, podcast, game, other]}
+    creator: {type: string}
+    genre: {type: string}
+    release_year: {type: integer}
+learning:
+  label: Learning
+  plural_label: Learning
+  icon: book-open
+  geo: never
+  primary_facet: subject
+  attributes:
+    subject: {type: string, required: true}
+    format: {type: enum, values: [tutorial, explanation, tip, demonstration, course, other]}
+    level: {type: enum, values: [beginner, intermediate, advanced]}
+    key_takeaways: {type: string, multi: true}
+other:
+  label: Other
+  plural_label: Other
+  icon: bookmark
+  geo: optional
+  primary_facet: null
+  attributes:
+    topic: {type: string, required: true}
