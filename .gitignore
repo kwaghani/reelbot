@@ -5,7 +5,6 @@ __pycache__/
 .venv*
 node_modules/
 app/node_modules/
-app/
 ios/
 android/
 listener/auth_info/
