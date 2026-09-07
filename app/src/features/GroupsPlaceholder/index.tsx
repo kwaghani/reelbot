@@ -10,5 +10,5 @@ export default function GroupsPlaceholder() {
     setConfirmed(true);
     console.info('groups_placeholder_interest_tapped');
   }
-  return <View style={{ padding: 24, gap: 16 }}><Text style={{ fontSize: 36 }}>◌</Text><Text style={{ fontSize: 28, fontWeight: '700' }}>Groups</Text><Text>A future way to discover places together.</Text><Pressable accessibilityRole="button" disabled={confirmed} onPress={tap}><Text>{confirmed ? 'Interest noted — thank you' : 'Notify me when this ships'}</Text></Pressable></View>;
+  return <View style={{ padding: 24, gap: 16 }}><Text style={{ fontSize: 36 }}>◌</Text><Text style={{ fontSize: 28, fontWeight: '700' }}>Groups</Text><Text>An idea for a future ReelBot experience.</Text><Pressable accessibilityRole="button" disabled={confirmed} onPress={tap}><Text>{confirmed ? 'Interest noted — thank you' : 'Notify me when this ships'}</Text></Pressable></View>;
 }

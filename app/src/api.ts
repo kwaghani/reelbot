@@ -2,7 +2,7 @@ import { appConfig } from './config';
 import { getIdentity } from './identity';
 export class ApiError extends Error { constructor(message: string, public status: number) { super(message); } }
 export async function request<T>(path: string, method = 'GET', body?: unknown): Promise<T> {
-  if (!appConfig.apiUrl) throw new Error('Saved on this device. Connect a sync service in the build to process reels.');
+  if (!appConfig.apiUrl) throw new Error('Saved on this device. Processing is temporarily unavailable.');
   const identity = await getIdentity();
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);

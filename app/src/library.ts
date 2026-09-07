@@ -2,7 +2,8 @@ import * as SQLite from 'expo-sqlite';
 import * as Crypto from 'expo-crypto';
 import { canonicalReelUrl } from './reelUrls';
 import { request, connectDevice, ApiError } from './api';
-import { emptyLibrary, applyOperation, type Library, type Operation, type Save } from './libraryModel';
+import { emptyLibrary, upgradeLibrary, applyOperation, type Library, type Operation, type Save } from './libraryModel';
+import { resetIdentity } from './identity';
 import { readSharedQueue, acknowledgeSharedEntry } from './sharedGroup';
 let database: Promise<SQLite.SQLiteDatabase> | null = null;
 const listeners = new Set<() => void>();
@@ -18,12 +19,12 @@ async function db() {
 }
 export async function loadLibrary(): Promise<Library> {
   const row = await (await db()).getFirstAsync<{ value: string }>('SELECT value FROM library WHERE id=1');
-  return row ? JSON.parse(row.value) : emptyLibrary();
+  return row ? upgradeLibrary(JSON.parse(row.value)) : emptyLibrary();
 }
 async function update(mutator: (state: Library) => void) {
   await (await db()).withExclusiveTransactionAsync(async txn => {
     const row = await txn.getFirstAsync<{ value: string }>('SELECT value FROM library WHERE id=1');
-    const state = row ? JSON.parse(row.value) as Library : emptyLibrary();
+    const state = row ? upgradeLibrary(JSON.parse(row.value)) : emptyLibrary();
     mutator(state);
     await txn.runAsync('UPDATE library SET value=? WHERE id=1', JSON.stringify(state));
   });
@@ -56,6 +57,17 @@ async function performSync() {
   try {
     await drainContainer();
     await connectDevice();
+    // Complete a pending reset before sending reels saved into the new library.
+    // Otherwise those new reels would be accepted by the account about to be erased.
+    for (const operation of (await loadLibrary()).outbox.filter(o => o.kind === 'delete_all')) {
+      if (!operation.body?.serverDeleted) {
+        await request(operation.path, operation.method);
+        await update(state => { const pending = state.outbox.find(o => o.id === operation.id); if (pending) pending.body = { serverDeleted: true }; });
+      }
+      await resetIdentity();
+      await connectDevice();
+      await update(state => { state.outbox = state.outbox.filter(o => o.id !== operation.id); });
+    }
     for (const save of (await loadLibrary()).saves.filter(s => s.local)) {
       const accepted = await request<Save>('/share', 'POST', { url: save.source_url });
       if (!accepted.id || !accepted.status) throw new Error('The server did not confirm the save. It remains queued here.');
@@ -70,13 +82,23 @@ async function performSync() {
         await update(state => { const pending = state.outbox.find(o => o.id === operation.id); if (pending) pending.error = error.message; });
       }
     }
-    const remote = await request<Pick<Library, 'saves' | 'items' | 'folders' | 'apple_linked'>>('/sync');
+    const remote = await request<Pick<Library, 'saves' | 'items' | 'folders' | 'apple_linked' | 'registry'>>('/sync');
     if (!Array.isArray(remote.saves) || !Array.isArray(remote.items) || !Array.isArray(remote.folders)) throw new Error('Sync returned incomplete data. Your local library is safe.');
+    const previous = await loadLibrary();
     await update(state => {
+      if (state.outbox.some(o => o.kind === 'delete_all')) return;
+      if (remote.registry) state.registry = remote.registry;
       state.saves = [...state.saves.filter(s => s.local), ...remote.saves]; state.items = remote.items; state.folders = remote.folders; state.apple_linked = remote.apple_linked;
       state.outbox.forEach(operation => applyOperation(state, operation));
-      state.sync_error = null; state.last_synced = new Date().toISOString();
+      state.sync_error = state.outbox.find(o => o.error)?.error || null; state.last_synced = new Date().toISOString();
     });
+    const completed = remote.saves.filter(save => ['resolved', 'needs_review'].includes(save.status) && previous.saves.some(old => old.id === save.id && ['queued', 'processing'].includes(old.status)));
+    if (previous.preferences.notifications && completed.length) {
+      try {
+        const notifications = await import('expo-notifications');
+        await notifications.scheduleNotificationAsync({ content: { title: 'Your reel is saved', body: 'Open ReelBot to see what you found.' }, trigger: null });
+      } catch { /* Notification delivery never blocks saving or syncing. */ }
+    }
   } catch (error) {
     await update(state => { state.sync_error = error instanceof Error ? error.message : 'Waiting for a connection. Your saves are on this device.'; });
   }
@@ -86,3 +108,19 @@ export async function retrySave(save: Save) {
   await syncLibrary();
 }
 export async function discardOperation(id: string) { await update(state => { state.outbox = state.outbox.filter(o => o.id !== id); }); await syncLibrary(); }
+
+export async function setPreference(key: keyof Library['preferences'], value: boolean) {
+  await update(state => { state.preferences[key] = value; });
+}
+export async function deleteAllData() {
+  if (syncing) await syncing;
+  await queueOperation({ kind: 'delete_all', method: 'DELETE', path: '/account' });
+  for (const entry of await readSharedQueue()) await acknowledgeSharedEntry(entry.id);
+  await syncLibrary();
+}
+export async function storageBytes() {
+  const connection = await db();
+  const pages = await connection.getFirstAsync<{ page_count: number }>('PRAGMA page_count');
+  const size = await connection.getFirstAsync<{ page_size: number }>('PRAGMA page_size');
+  return (pages?.page_count || 0) * (size?.page_size || 0);
+}

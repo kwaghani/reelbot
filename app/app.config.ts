@@ -1,5 +1,10 @@
 import type { ExpoConfig } from "expo/config";
 
+const fs = require('node:fs');
+const path = require('node:path');
+const yaml = require('js-yaml');
+const contentTypes = yaml.load(fs.readFileSync(path.resolve(__dirname, '../config/content_types.yaml'), 'utf8'));
+
 const bundleIdentifier =
   process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER || "com.krishwaghani.reelbot";
 const appGroupIdentifier =
@@ -22,11 +27,19 @@ const config: ExpoConfig = {
     supportsTablet: false,
     usesAppleSignIn: true,
     bundleIdentifier,
-    buildNumber: "19",
+    buildNumber: "20",
     ...(appleTeamId ? { appleTeamId } : {}),
     infoPlist: {
       AppGroupIdentifier: appGroupIdentifier,
-      ITSAppUsesNonExemptEncryption: false
+      ITSAppUsesNonExemptEncryption: false,
+      NSLocationWhenInUseUsageDescription: "Show how far your saved places are from you.",
+      NSLocalNetworkUsageDescription: "Connect to the ReelBot test service on your Mac.",
+      ...(process.env.EXPO_PUBLIC_API_URL?.startsWith('http://') ? {
+        NSAppTransportSecurity: {
+          NSAllowsLocalNetworking: true,
+          NSExceptionDomains: { [new URL(process.env.EXPO_PUBLIC_API_URL).hostname]: { NSExceptionAllowsInsecureHTTPLoads: true } }
+        }
+      } : {})
     },
     entitlements: {
       "com.apple.security.application-groups": [appGroupIdentifier]
@@ -72,6 +85,7 @@ const config: ExpoConfig = {
     "./plugins/withPersonalQueue"
   ],
   extra: {
+    contentTypes,
     apiUrl: process.env.EXPO_PUBLIC_API_URL || "",
     appGroupIdentifier,
     appleTeamId,

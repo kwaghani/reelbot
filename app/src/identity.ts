@@ -14,3 +14,5 @@ export function getIdentity(): Promise<Identity> {
   })().catch(error => { pending = null; throw error; });
   return pending;
 }
+
+export async function resetIdentity() { await SecureStore.deleteItemAsync(KEY); pending = null; }
