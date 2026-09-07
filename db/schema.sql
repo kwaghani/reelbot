@@ -1,6 +1,21 @@
 create extension if not exists vector;
 create extension if not exists pgcrypto;
 
+-- App device sessions are issued by the server. A public device ID is never
+-- sufficient authorization. Tokens are stored only as SHA-256 digests.
+create table if not exists app_devices (
+  id uuid primary key default gen_random_uuid(),
+  token_hash text unique not null,
+  display_name text not null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists app_join_attempts (
+  device_id uuid references app_devices(id) on delete cascade not null,
+  attempted_at timestamptz not null default now()
+);
+create index if not exists app_join_attempts_device_time on app_join_attempts(device_id, attempted_at);
+
 create table if not exists groups (
   id uuid primary key default gen_random_uuid(),
   wa_chat_id text unique not null,
@@ -58,6 +73,12 @@ create table if not exists jobs (
   updated_at timestamptz default now()
 );
 
+-- Nullable for older jobs. Transport IDs prevent WhatsApp redelivery and
+-- request IDs let app retries resume the same work.
+alter table jobs add column if not exists request_id text;
+alter table jobs add column if not exists item_id uuid;
+create unique index if not exists jobs_request_id on jobs(chat_id, sender_id, request_id) where request_id is not null;
+
 create table if not exists outbound_messages (
   id uuid primary key default gen_random_uuid(),
   group_id uuid references groups(id) not null,
@@ -75,6 +96,8 @@ create table if not exists nudges (
   body text not null,
   created_at timestamptz default now()
 );
+
+alter table nudges add column if not exists outbound_message_id uuid references outbound_messages(id);
 
 create table if not exists events (
   id uuid primary key default gen_random_uuid(),
@@ -101,3 +124,23 @@ alter table jobs enable row level security;
 alter table outbound_messages enable row level security;
 alter table nudges enable row level security;
 alter table events enable row level security;
+alter table app_devices enable row level security;
+alter table app_join_attempts enable row level security;
+
+-- Additive upgrades for databases created from the original Phase 1 schema.
+alter table groups add column if not exists join_code text unique;
+alter table items add column if not exists subfolder text;
+create index if not exists items_group_source on items(group_id, source_url);
+create index if not exists members_identity on members(wa_user_id, group_id);
+
+-- These tables are accessed only through trusted server connections, never
+-- through the Supabase Data API. Revoke inherited legacy client grants too.
+do $$
+declare client_role text;
+begin
+  foreach client_role in array array['anon', 'authenticated'] loop
+    if exists(select 1 from pg_roles where rolname = client_role) then
+      execute format('revoke all on app_devices, app_join_attempts, groups, members, items, item_saves, jobs, events, outbound_messages, nudges from %I', client_role);
+    end if;
+  end loop;
+end $$;

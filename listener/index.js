@@ -1,3 +1,4 @@
+import { ownText, reelUrls, deliverPending } from './transport.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -85,7 +86,9 @@ function reelUrlFromText(text) {
 
 function isQuestion(text) {
   if (text.endsWith('?')) return true;
-  return /^(what|where|which|should|find|plan)\b/i.test(text);
+  return /^(what|where|which|who|when|why|how|do|does|did|can|could|would|will|is|are|should|give|show|tell|help|find|plan|recommend|suggest)\b/i.test(
+    text.trim()
+  );
 }
 
 function rememberBotReply(text) {
@@ -152,13 +155,14 @@ async function upsertMember(groupId, senderId, displayName) {
   );
 }
 
-async function enqueueJob({ groupId, chatId, senderId, type, payload }) {
+async function enqueueJob({ groupId, chatId, senderId, type, payload, requestId }) {
   await pool.query(
     `
-    insert into jobs (group_id, chat_id, sender_id, type, payload, status)
-    values ($1, $2, $3, $4, $5, 'queued')
+    insert into jobs (group_id, chat_id, sender_id, type, payload, status, request_id)
+    values ($1, $2, $3, $4, $5, 'queued', $6)
+    on conflict (chat_id, sender_id, request_id) where request_id is not null do nothing
     `,
-    [groupId, chatId, senderId, type, payload]
+    [groupId, chatId, senderId, type, payload, requestId]
   );
 }
 
@@ -208,7 +212,8 @@ async function handleIncomingMessage(sock, msg) {
     console.log(`IGNORED_GROUP_JID=${chatId} target=${TARGET_GROUP_JID}`);
     return;
   }
-  if (isOwnMessage(sock, msg)) return;
+  if (msg.key?.id?.startsWith('RB')) return;
+  if (isOwnMessage(sock, msg) && !/^(1|true|yes)$/i.test(process.env.PROCESS_OWN_MESSAGES || 'false')) return;
 
   const text = extractMessageText(msg);
   if (!text) return;
@@ -218,8 +223,10 @@ async function handleIncomingMessage(sock, msg) {
   if (isRecentlySentBotReply(text)) return;
 
   const preview = text.length > 160 ? `${text.slice(0, 157)}...` : text;
-  const reelUrl = reelUrlFromText(text);
-  const question = isQuestion(text);
+  const directText = ownText(msg.message);
+  const urls = reelUrls(directText);
+  const reelUrl = urls[0];
+  const question = isQuestion(directText);
   console.log(
     `MESSAGE_CLASSIFICATION fromMe=${Boolean(msg.key.fromMe)} hasReelUrl=${Boolean(reelUrl)} isQuestion=${question} text="${preview}"`
   );
@@ -229,71 +236,25 @@ async function handleIncomingMessage(sock, msg) {
   await upsertMember(groupId, senderId, msg.pushName || null);
 
   if (reelUrl) {
-    await enqueueJob({ groupId, chatId, senderId, type: 'ingest', payload: reelUrl });
+    for (const [index, url] of urls.entries()) await enqueueJob({ groupId, chatId, senderId, type: 'ingest', payload: url, requestId: `${msg.key.id}:ingest:${index}` });
     console.log(`QUEUED_JOB type=ingest payload=${reelUrl}`);
     logger.info({ chatId, senderId, reelUrl }, 'queued ingest job');
     return;
   }
 
   if (question) {
-    await enqueueJob({ groupId, chatId, senderId, type: 'query', payload: text });
+    await enqueueJob({ groupId, chatId, senderId, type: 'query', payload: text, requestId: `${msg.key.id}:query` });
     console.log(`QUEUED_JOB type=query payload="${preview}"`);
     logger.info({ chatId, senderId }, 'queued query job');
   }
 }
 
 async function pollReplies(sock) {
-  try {
-    const result = await pool.query(
-      `
-      select id, chat_id, reply
-        from jobs
-       where sent_at is null
-         and reply is not null
-         and status in ('done', 'error')
-       order by updated_at
-       limit 10
-      `
-    );
-
-    for (const row of result.rows) {
-      await sock.sendMessage(row.chat_id, { text: row.reply });
-      rememberBotReply(row.reply);
-      await pool.query('update jobs set sent_at = now(), updated_at = now() where id = $1', [row.id]);
-      logger.info({ jobId: row.id, chatId: row.chat_id }, 'sent job reply');
-    }
-  } catch (error) {
-    if (!warnedReplyPollFailure) {
-      warnedReplyPollFailure = true;
-      logger.error({ error }, 'reply poll failed');
-    }
-  }
+  await deliverPending(pool, sock, 'reply', TARGET_GROUP_JID, rememberBotReply);
 }
 
 async function pollOutboundMessages(sock) {
-  try {
-    const result = await pool.query(
-      `
-      select id, chat_id, body
-        from outbound_messages
-       where sent_at is null
-       order by created_at
-       limit 10
-      `
-    );
-
-    for (const row of result.rows) {
-      await sock.sendMessage(row.chat_id, { text: row.body });
-      rememberBotReply(row.body);
-      await pool.query('update outbound_messages set sent_at = now() where id = $1', [row.id]);
-      logger.info({ outboundMessageId: row.id, chatId: row.chat_id }, 'sent outbound message');
-    }
-  } catch (error) {
-    if (!warnedOutboundPollFailure) {
-      warnedOutboundPollFailure = true;
-      logger.error({ error }, 'outbound message poll failed');
-    }
-  }
+  await deliverPending(pool, sock, 'nudge', TARGET_GROUP_JID, rememberBotReply);
 }
 
 async function clearAuthState() {
@@ -338,6 +299,8 @@ async function startSocket() {
     }
 
     if (connection === 'close') {
+      if (replyPollTimer) clearInterval(replyPollTimer);
+      if (outboundPollTimer) clearInterval(outboundPollTimer);
       const statusCode = lastDisconnect?.error?.output?.statusCode;
       logger.warn({ statusCode }, 'WhatsApp connection closed');
       if (statusCode === DisconnectReason.loggedOut) {
@@ -350,7 +313,8 @@ async function startSocket() {
     }
   });
 
-  sock.ev.on('messages.upsert', async ({ messages }) => {
+  sock.ev.on('messages.upsert', async ({ messages, type }) => {
+    if (type !== 'notify') return;
     for (const msg of messages || []) {
       try {
         await handleIncomingMessage(sock, msg);

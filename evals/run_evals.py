@@ -113,6 +113,19 @@ def outcome_passed(case: dict[str, Any], result: Any, answer: str) -> bool:
             and "We don't have any saved places" in answer
         )
 
+    if "filter-empty" in expect:
+        return result.empty_reason == "filter_empty" and not result.items
+
+    if "funny content surfaced" in expect:
+        return any(
+            token in item_blob(item)
+            for item in result.items
+            for token in ("humor", "funny", "comedy", "relatable", "relationship")
+        )
+
+    if "chest workout surfaced" in expect:
+        return any("chest" in item_blob(item) and "workout" in item_blob(item) for item in result.items)
+
     if case.get("target_place"):
         target = str(case["target_place"]).lower()
         return (
@@ -134,9 +147,8 @@ def outcome_passed(case: dict[str, Any], result: Any, answer: str) -> bool:
 
     if "italian place surfaced" in expect:
         return (
-            result.defaulted_location == "Los Angeles"
-            and any("sugo social" in name or "italian" in item_blob(item) for name, item in zip(result_names, result.items))
-            and answer.startswith("Assuming LA")
+            bool(result.items)
+            and any("italian" in item_blob(item) for item in result.items)
         )
 
     if expected_location:

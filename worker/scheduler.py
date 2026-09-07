@@ -23,7 +23,8 @@ from db import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
-ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
+load_dotenv(ROOT / ".env")
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_FAST_MODEL", "claude-sonnet-5").strip() or "claude-sonnet-5"
 
 DINING_TERMS = {
     "bakery",
@@ -369,11 +370,10 @@ def generate_nudge_body(candidate: ClusterCandidate) -> str:
         return fallback_body(candidate)
 
     try:
-        client = anthropic.Anthropic(api_key=api_key)
+        client = anthropic.Anthropic(api_key=api_key, timeout=45, max_retries=1)
         response = client.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=120,
-            temperature=0.4,
             system="You write grounded, concise WhatsApp copy. Never invent saved places.",
             messages=[{"role": "user", "content": nudge_prompt(candidate)}],
         )
@@ -390,6 +390,8 @@ def generate_nudge_body(candidate: ClusterCandidate) -> str:
 def process_group(conn: Any, group: dict[str, Any], config: NudgeConfig) -> bool:
     group_id = str(group["id"])
     chat_id = str(group["wa_chat_id"])
+    if not chat_id.endswith("@g.us"):
+        return False
 
     if has_recent_nudge(conn, group_id, config.cooldown_days):
         LOG.info("Skipping group %s: nudge cooldown active", group_id)

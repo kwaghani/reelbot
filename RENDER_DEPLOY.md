@@ -1,3 +1,5 @@
+> Reliability update (2026-09-06): See [VERIFICATION.md](VERIFICATION.md) before deployment. Data routes now require a server-issued device bearer token plus the build API key. Old API-key-only curl examples below describe the legacy client. A queued confirmation is not a completed save.
+
 # ReelBot Render Deployment
 
 This is the recommended backend deployment path for TestFlight. Render gives the iOS app a public HTTPS API URL and also runs the long-lived reel worker.

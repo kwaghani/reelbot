@@ -1,0 +1,25 @@
+ReelBot native audit — 2026-09-06
+Device: isolated iPhone 17 simulator, iOS 26.5; no physical iPhone tested.
+Build: Xcode Release simulator; signing enabled with existing App Group entitlements.
+Backend: loopback API and disposable Postgres only; paid keys disabled.
+
+Observed through native UI/accessibility snapshots:
+- Long-name onboarding, persisted device session, explicit default shared-library label.
+- Create Audit Friends; correct invite sheet; no external invite sent.
+- Actual native copy: two labelled fixture records; recipient HTTP 200 with both, unrelated HTTP 403.
+- Topic Recipes/Pasta and location California/San Diego navigation with correct counts.
+- Original card opened the expected YouTube page/title; no hosted playback claimed.
+- Real query-worker Hello answer, matching persisted done job, retained after reinstall.
+- New chat cleared only the local test conversation.
+- Corrected filter picker uses compact 44-point rows.
+- Source/delete are separate accessibility controls; native delete leaves one private record while original library retains two.
+- Group count changed automatically from two to three after an external test-session join.
+- Native preferences bug reproduced, fixed to decode JSON strings, then successfully retested.
+- Actual Safari share of unavailable YouTube URL returned 202 to Audit Friends.
+- Main app displayed Processing, then clear failure after real worker extraction; item_id null and zero items created for the unavailable source.
+- Stopping local API produced connection error; restart/refresh recovered.
+- Revoked test session hid private records. Reset created default-only session; rejoin via existing code restored group and its remaining record.
+
+Blocked: physical platform share sheets/distribution, valid Instagram/TikTok full extraction,
+paid AI/Places/vision/transcription sandbox, real WhatsApp sandbox delivery,
+full VoiceOver/hardware-keyboard/larger-text verification and production load/deployment.

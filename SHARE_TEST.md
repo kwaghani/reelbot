@@ -1,3 +1,5 @@
+> Reliability update (2026-09-06): See [VERIFICATION.md](VERIFICATION.md) before deployment. Data routes now require a server-issued device bearer token plus the build API key. Old API-key-only curl examples below describe the legacy client. A queued confirmation is not a completed save.
+
 # ReelBot Share Sheet Test
 
 Run this after installing a fresh development, preview, or TestFlight build on a real iPhone.

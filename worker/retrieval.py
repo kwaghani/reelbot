@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import difflib
 import json
+import math
 import os
 import re
 from dataclasses import dataclass
@@ -9,6 +10,8 @@ from typing import Any
 
 import anthropic
 from dotenv import load_dotenv
+
+from content_quality import answerable_content
 
 from db import (
     connect,
@@ -19,12 +22,13 @@ from db import (
     saved_items_for_summary,
     search_items,
 )
-from embed import embed
+from embed import embed_query
 
 load_dotenv()
 
-ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
-MAX_REPLY_CHARS = 520
+QUALITY_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-fable-5").strip() or "claude-fable-5"
+FAST_MODEL = os.getenv("ANTHROPIC_FAST_MODEL", "claude-sonnet-5").strip() or "claude-sonnet-5"
+MAX_REPLY_CHARS = 900
 VALID_INTENTS = {"discovery", "lookup", "meta"}
 VALID_CATEGORIES = {"dining", "attraction"}
 
@@ -65,6 +69,18 @@ KNOWN_TAGS = {
     "date night",
 }
 
+TAG_ALIASES = {
+    "funny": ["humor", "funny", "comedy", "meme"],
+    "joke": ["humor", "funny", "comedy", "joke"],
+    "meme": ["humor", "funny", "comedy", "meme"],
+    "pickup line": ["pickup lines", "flirting", "dating", "relationships"],
+    "pick up line": ["pickup lines", "flirting", "dating", "relationships"],
+    "relationship": ["relationships", "dating", "couples"],
+    "couple": ["couples", "relationships", "dating"],
+    "football": ["football", "soccer", "fifa"],
+    "soccer": ["football", "soccer", "fifa"],
+}
+
 
 @dataclass
 class QuerySlots:
@@ -78,6 +94,12 @@ class QuerySlots:
     def from_raw(cls, raw: dict[str, Any], text: str) -> "QuerySlots":
         fallback = deterministic_query_slots(text)
         intent = normalize_intent(raw.get("intent")) or fallback.intent
+        if fallback.intent == "lookup" and fallback.target_place:
+            intent = "lookup"
+        if intent == "meta" and not is_library_overview_query(text):
+            # "Do you have a pickup line?" asks for content; it is not an
+            # overview of the entire library.
+            intent = fallback.intent if fallback.intent != "meta" else "discovery"
         location = normalize_location(raw.get("location")) or fallback.location
         category = normalize_category(raw.get("category")) or fallback.category
 
@@ -108,6 +130,7 @@ class RetrievalResult:
     retrieval_location: str | None = None
     empty_reason: str | None = None
     target_item: dict[str, Any] | None = None
+    broad_plan: bool = False
 
 
 def response_text(response: Any) -> str:
@@ -132,6 +155,51 @@ def compact_answer(text: str) -> str:
     if cutoff < 180:
         cutoff = MAX_REPLY_CHARS - 1
     return text[: cutoff + 1].rstrip() + "…"
+
+
+def polish_answer_presentation(text: str) -> str:
+    """Keep chat copy readable even when a model returns casual lowercase text."""
+    substitutions = [
+        # Keep title-cased names such as "La Brea" intact while normalizing
+        # the common lowercase city abbreviation.
+        (r"\bla\b", "LA", 0),
+        (r"\bnyc\b", "NYC", re.IGNORECASE),
+        (r"\bsf\b", "SF", re.IGNORECASE),
+        (r"\blos angeles\b", "Los Angeles", re.IGNORECASE),
+        (r"\bnew york city\b", "New York City", re.IGNORECASE),
+        (r"\bnew york\b", "New York", re.IGNORECASE),
+        (r"\bpoint dume\b", "Point Dume", re.IGNORECASE),
+        (r"\bhollywood sign\b", "Hollywood Sign", re.IGNORECASE),
+        (r"\bmalibu\b", "Malibu", re.IGNORECASE),
+        (r"\bcalifornia\b", "California", re.IGNORECASE),
+        (r"\bmanhattan\b", "Manhattan", re.IGNORECASE),
+        (r"\bbrooklyn\b", "Brooklyn", re.IGNORECASE),
+        (r"\bmumbai\b", "Mumbai", re.IGNORECASE),
+        (r"\bmunich\b", "Munich", re.IGNORECASE),
+    ]
+    polished = text.strip()
+    for pattern, replacement, flags in substitutions:
+        polished = re.sub(pattern, replacement, polished, flags=flags)
+
+    lines: list[str] = []
+    for line in polished.splitlines():
+        clean = line.rstrip()
+        clean = re.sub(r"^\s*-\s+", "• ", clean)
+        first_letter = re.search(r"[A-Za-z]", clean)
+        if first_letter:
+            index = first_letter.start()
+            clean = clean[:index] + clean[index].upper() + clean[index + 1 :]
+        clean = re.sub(
+            r"([.!?][\"'”’)]*\s+)([a-z])",
+            lambda match: match.group(1) + match.group(2).upper(),
+            clean,
+        )
+        lines.append(clean)
+    return "\n".join(lines)
+
+
+def answer_payload(answer: str, sources: list[dict[str, str]]) -> dict[str, Any]:
+    return {"answer": polish_answer_presentation(answer), "sources": sources}
 
 
 def extract_json_object(text: str) -> dict[str, Any] | None:
@@ -218,6 +286,52 @@ def clean_target_place(value: Any) -> str | None:
     return text[:80].title()
 
 
+def is_library_overview_query(text: str) -> bool:
+    lowered = re.sub(r"\s+", " ", text.strip().lower())
+    patterns = [
+        r"\bwhat (?:else )?do you (?:know|have)(?: saved)?\b\s*[?.!]*$",
+        r"\bwhat(?:'s| is) (?:in|inside) (?:my|our|the) (?:saved |reel )?(?:library|folders?|collection|list)\b\s*[?.!]*$",
+        r"\bwhat do (?:i|we) have saved\b\s*[?.!]*$",
+        r"\bshow (?:me|us) (?:everything|all) (?:i|we|you)(?:'ve| have)? saved\b\s*[?.!]*$",
+        r"\blist (?:my|our|the) (?:saved )?(?:items|reels|folders|collection)\b\s*[?.!]*$",
+    ]
+    return any(re.search(pattern, lowered) for pattern in patterns)
+
+
+def explicitly_uses_saved_content(text: str) -> bool:
+    """Catch requests that must use the library even if model routing drifts."""
+    lowered = re.sub(r"\s+", " ", text.strip().lower())
+    patterns = [
+        r"\b(?:saved|saves|folders?|library)\b",
+        r"\b(?:my|our|the group's|the group) reels?\b",
+        r"\bbased on (?:what|anything|everything|things?|stuff).{0,35}\b(?:sent|shared)\b",
+        r"\b(?:what|anything|everything|things?|stuff) (?:i|we)(?:'ve| have)? (?:sent|shared) (?:you|with you)\b",
+        r"\b(?:i|we)(?:'ve| have)? (?:sent|shared) (?:you|with you) (?:anything|everything|things?|stuff)\b",
+        r"\b(?:use|using|reference|referencing|look at|looking at).{0,30}\b(?:what i sent|what we sent|them|those)\b",
+    ]
+    return any(re.search(pattern, lowered) for pattern in patterns)
+
+
+def is_broad_plan_query(text: str) -> bool:
+    """A plan can span food, outdoors, and activities; it is not one category."""
+    lowered = re.sub(r"\s+", " ", text.strip().lower())
+    broad_patterns = [
+        r"\bthings? to do\b",
+        r"\bwhat should (?:i|we) do\b",
+        r"\b(?:plan|build|make|put together) (?:me |us |my |our |a )?(?:weekend|day|trip|date|itinerary)\b",
+        r"\b(?:weekend|day trip|day out|itinerary)\b",
+    ]
+    if not any(re.search(pattern, lowered) for pattern in broad_patterns):
+        return False
+    # "Dinner this weekend" and similar narrow requests should keep their
+    # explicit dining filter. Generic "things to do" remains cross-category.
+    has_generic_plan_language = bool(
+        re.search(r"\bthings? to do\b|\bwhat should (?:i|we) do\b|\b(?:plan|itinerary)\b", lowered)
+    )
+    has_dining_request = bool(set(re.findall(r"[a-z]+", lowered)) & DINING_TERMS)
+    return has_generic_plan_language or not has_dining_request
+
+
 def extract_location_from_text(text: str) -> str | None:
     normalized = normalize_location(text)
     if normalized in {"Los Angeles", "Mumbai"}:
@@ -247,9 +361,7 @@ def deterministic_query_slots(text: str) -> QuerySlots:
     if lookup_match:
         intent = "lookup"
         target_place = clean_target_place(lookup_match.group(1))
-    elif re.search(r"\bwhat\s+(?:else\s+)?do\s+you\s+(?:know|have)\b", lowered):
-        intent = "meta"
-    elif re.search(r"\b(?:what'?s|what is|show|list)\s+(?:saved|in the list|on the list)\b", lowered):
+    elif is_library_overview_query(text):
         intent = "meta"
 
     category = None
@@ -264,6 +376,9 @@ def deterministic_query_slots(text: str) -> QuerySlots:
         category = "attraction"
 
     tags = [tag for tag in KNOWN_TAGS if re.search(rf"\b{re.escape(tag)}\b", lowered)]
+    for phrase, aliases in TAG_ALIASES.items():
+        if phrase in lowered:
+            tags.extend(alias for alias in aliases if alias not in tags)
     return QuerySlots(
         intent=intent,
         location=extract_location_from_text(text),
@@ -326,6 +441,26 @@ def query_understanding_prompt(text: str) -> str:
             },
         },
         {
+            "q": "Do you have any pickup lines for me?",
+            "json": {
+                "intent": "discovery",
+                "location": None,
+                "category": None,
+                "cuisine_or_tags": ["pickup lines", "flirting", "dating"],
+                "target_place": None,
+            },
+        },
+        {
+            "q": "show me something funny",
+            "json": {
+                "intent": "discovery",
+                "location": None,
+                "category": None,
+                "cuisine_or_tags": ["humor", "comedy", "meme"],
+                "target_place": None,
+            },
+        },
+        {
             "q": "any pasta recipes?",
             "json": {
                 "intent": "discovery",
@@ -374,10 +509,16 @@ def query_understanding_prompt(text: str) -> str:
 Parse this query for a bot that stores saved items from reels: places, recipes,
 workouts, products, memes, and more.
 Return only one JSON object with exactly these keys:
-intent: discovery, lookup, or meta. Asking for a kind of saved thing (recipes, workouts, spots) is discovery; meta is only for "what do you have/know" style overview questions.
+intent: discovery, lookup, or meta. Asking for a kind of thing, an answer, or
+examples (recipes, workouts, pickup lines, jokes, captions, spots) is discovery.
+meta is ONLY a whole-library overview such as "what do I have saved?" or the
+exact broad follow-up "what else do you know?". "Do you have any X?" is
+discovery whenever X is named.
 location: canonical city string or null. Normalize "la" to "Los Angeles" and "munbai"/"mumbai" to "Mumbai". Use null when no location is given.
 category: dining, attraction, or null. eat/food/restaurant/dinner means dining. things to do/activities/do/see/visit means attraction. Use null for non-place queries.
-cuisine_or_tags: optional finer filters like ["italian"] or ["pasta", "recipe"] or ["workout"].
+cuisine_or_tags: useful search concepts and synonyms, not just cuisine. For
+example ["italian"], ["pasta", "recipe"], ["workout"], ["pickup lines",
+"flirting", "dating"], or ["humor", "comedy", "meme"].
 target_place: place name for lookup intent, otherwise null.
 
 Examples:
@@ -394,11 +535,10 @@ def parse_query_slots(text: str) -> QuerySlots:
         return deterministic_query_slots(text)
 
     try:
-        client = anthropic.Anthropic(api_key=api_key)
+        client = anthropic.Anthropic(api_key=api_key, timeout=45, max_retries=1)
         response = client.messages.create(
-            model=ANTHROPIC_MODEL,
+            model=FAST_MODEL,
             max_tokens=220,
-            temperature=0,
             system="Return JSON only. No markdown, no prose.",
             messages=[{"role": "user", "content": query_understanding_prompt(text)}],
         )
@@ -451,12 +591,111 @@ def dominant_city(conn: Any, group_id: str) -> str | None:
     return dominant_city_from_stats(group_location_stats(conn, group_id))
 
 
-def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
-    slots = parse_query_slots(text)
+def should_default_location(slots: QuerySlots) -> bool:
+    """Only place searches should inherit the group's dominant city."""
+    return slots.category in VALID_CATEGORIES
+
+
+SEARCH_STOPWORDS = {
+    "a", "about", "any", "are", "can", "could", "do", "for", "from", "give",
+    "good", "have", "i", "in", "is", "me", "my", "of", "on", "please", "saved",
+    "show", "some", "that", "the", "to", "we", "what", "where", "which", "with",
+    "you", "your",
+}
+
+
+def search_tokens(text: str) -> set[str]:
+    tokens: set[str] = set()
+    for token in re.findall(r"[a-z0-9]+", text.lower()):
+        if len(token) < 2 or token in SEARCH_STOPWORDS:
+            continue
+        tokens.add(token)
+        if token.endswith("ies") and len(token) > 4:
+            tokens.add(token[:-3] + "y")
+        elif token.endswith("s") and len(token) > 3:
+            tokens.add(token[:-1])
+    return tokens
+
+
+def item_search_text(item: dict[str, Any]) -> str:
+    values = [
+        item.get("place_name"),
+        item.get("category"),
+        item.get("list_name"),
+        item.get("location_text"),
+        " ".join(str(tag) for tag in item.get("tags") or []),
+        answerable_content(item.get("transcript"))[:1200],
+    ]
+    return re.sub(r"\s+", " ", " ".join(str(value) for value in values if value)).lower()
+
+
+def hybrid_rank_items(question: str, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Rerank vector candidates with lexical evidence and a tiny social tie-breaker."""
+    query_tokens = search_tokens(question)
+    normalized_query = re.sub(r"\s+", " ", question.strip().lower())
+    ranked: list[dict[str, Any]] = []
+    for original in items:
+        item = dict(original)
+        blob = item_search_text(item)
+        item_tokens = search_tokens(blob)
+        overlap = len(query_tokens & item_tokens) / max(len(query_tokens), 1)
+        distance = float(item.get("distance") if item.get("distance") is not None else 1.0)
+        semantic = max(0.0, min(1.0, 1.0 - distance))
+        phrase = 1.0 if len(normalized_query) >= 4 and normalized_query in blob else 0.0
+        saves = max(0, int(item.get("save_count") or 0))
+        social = min(1.0, math.log2(saves + 1) / 4.0)
+        score = (0.70 * semantic) + (0.24 * overlap) + (0.04 * phrase) + (0.02 * social)
+        item["semantic_score"] = semantic
+        item["lexical_score"] = overlap
+        item["relevance_score"] = score
+        ranked.append(item)
+    return sorted(
+        ranked,
+        key=lambda item: (
+            float(item.get("relevance_score") or 0.0),
+            int(item.get("save_count") or 0),
+        ),
+        reverse=True,
+    )
+
+
+def keep_relevant_items(items: list[dict[str, Any]], *, filtered: bool) -> list[dict[str, Any]]:
+    if not items:
+        return []
+    kept = [
+        item
+        for item in items
+        if float(item.get("lexical_score") or 0.0) >= 0.12
+        or float(item.get("semantic_score") or 0.0) >= (0.50 if filtered else 0.47)
+    ]
+    if not kept:
+        return []
+    best = float(kept[0].get("relevance_score") or 0.0)
+    return [item for item in kept if float(item.get("relevance_score") or 0.0) >= best - 0.18][:8]
+
+
+def rank_search_results(
+    question: str,
+    items: list[dict[str, Any]],
+    *,
+    filtered: bool,
+) -> list[dict[str, Any]]:
+    return keep_relevant_items(hybrid_rank_items(question, items), filtered=filtered)
+
+
+def retrieve_for_query(
+    group_id: str,
+    text: str,
+    slots: QuerySlots | None = None,
+) -> RetrievalResult:
+    slots = slots or parse_query_slots(text)
+    broad_plan = is_broad_plan_query(text)
 
     with connect() as conn:
         if count_group_items(conn, group_id) == 0:
-            return RetrievalResult(text, slots, [], empty_reason="no_group_items")
+            return RetrievalResult(
+                text, slots, [], empty_reason="no_group_items", broad_plan=broad_plan
+            )
 
         top_city = dominant_city(conn, group_id)
 
@@ -466,6 +705,7 @@ def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
                 slots,
                 saved_items_for_summary(conn, group_id, limit=40),
                 dominant_city=top_city,
+                broad_plan=broad_plan,
             )
 
         if slots.intent == "lookup":
@@ -485,14 +725,23 @@ def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
                     dominant_city=top_city,
                     retrieval_location=slots.location,
                     target_item=target_item,
+                    broad_plan=broad_plan,
                 )
-            # Name lookup missed (paraphrased titles etc.); fall through to
-            # semantic discovery over the full question instead of giving up.
-            slots.intent = "discovery"
+            # A confident named lookup must not degrade into unrelated semantic
+            # recommendations. Say the item is not saved in this group.
+            return RetrievalResult(
+                text,
+                slots,
+                [],
+                dominant_city=top_city,
+                retrieval_location=slots.location,
+                empty_reason="lookup_empty",
+                broad_plan=broad_plan,
+            )
 
         retrieval_location = slots.location
         defaulted_location = None
-        if retrieval_location is None and top_city is not None:
+        if retrieval_location is None and top_city is not None and should_default_location(slots):
             retrieval_location = top_city
             defaulted_location = top_city
 
@@ -515,51 +764,48 @@ def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
                         defaulted_location=defaulted_location,
                         retrieval_location=retrieval_location,
                         empty_reason="location_empty",
+                        broad_plan=broad_plan,
                     )
 
-        question_vector = embed(text)
+        question_vector = embed_query(text)
+        # A weekend/day/trip plan should consider every matching saved category.
+        # Keeping `category=attraction` here used to hide restaurants before the
+        # answer model ever saw them.
+        search_category = None if broad_plan else slots.category
+        search_tags = slots.cuisine_or_tags or []
+        has_topic_filters = bool(search_category or search_tags)
         items = search_items(
             conn,
             group_id=group_id,
             embedding=question_vector,
-            limit=8,
+            limit=16,
             location=retrieval_location,
-            category=slots.category,
-            cuisine_or_tags=slots.cuisine_or_tags or [],
+            category=search_category,
+            cuisine_or_tags=search_tags,
         )
+        if broad_plan:
+            # Location and any explicit interests already bound the candidate
+            # set. Keep the cross-category candidates instead of discarding a
+            # cafe just because its embedding is less similar to "things to do".
+            items = hybrid_rank_items(text, items)[:8]
+        else:
+            items = rank_search_results(
+                text, items, filtered=bool(retrieval_location or has_topic_filters)
+            )
         if not items and defaulted_location is not None:
             items = search_items(
                 conn,
                 group_id=group_id,
                 embedding=question_vector,
-                limit=8,
+                limit=16,
                 location=None,
-                category=slots.category,
-                cuisine_or_tags=slots.cuisine_or_tags or [],
+                category=search_category,
+                cuisine_or_tags=search_tags,
             )
-            if items:
-                defaulted_location = None
-                retrieval_location = None
-        if not items and retrieval_location and (slots.category or slots.cuisine_or_tags):
-            # The category/tag guess matched nothing, but the location has
-            # saves — answer from everything saved there, ranked semantically.
-            items = search_items(
-                conn,
-                group_id=group_id,
-                embedding=question_vector,
-                limit=8,
-                location=retrieval_location,
-            )
-        if not items and not slots.location:
-            # The parsed filters matched nothing the user didn't explicitly ask
-            # for; fall back to pure semantic similarity over everything saved.
-            items = search_items(
-                conn,
-                group_id=group_id,
-                embedding=question_vector,
-                limit=8,
-            )
-            items = sorted(items, key=lambda item: float(item.get("distance") or 1.0))[:3]
+            if broad_plan:
+                items = hybrid_rank_items(text, items)[:8]
+            else:
+                items = rank_search_results(text, items, filtered=has_topic_filters)
             if items:
                 defaulted_location = None
                 retrieval_location = None
@@ -571,6 +817,7 @@ def retrieve_for_query(group_id: str, text: str) -> RetrievalResult:
             defaulted_location=defaulted_location,
             retrieval_location=retrieval_location,
             empty_reason=None if items else "filter_empty",
+            broad_plan=broad_plan,
         )
 
 
@@ -618,10 +865,12 @@ def compose_discovery_answer(result: RetrievalResult) -> str:
 
     picks = result.items[:4]
     if not picks:
-        return "I don't have enough saved places to answer that yet."
+        return "I don't have enough relevant saved items to answer that yet."
 
     labels = [f"{place_label(item)}{social_proof(item)}" for item in picks]
-    if result.slots.category == "dining":
+    if result.broad_plan:
+        body = f"Based on your saves, I'd start with {join_natural(labels)}."
+    elif result.slots.category == "dining":
         body = f"For food, I'd pick {join_natural(labels)}."
     elif result.slots.category == "attraction":
         body = f"I'd start with {join_natural(labels)}."
@@ -655,24 +904,21 @@ def compose_lookup_answer(result: RetrievalResult) -> str:
 
 def compose_meta_answer(result: RetrievalResult) -> str:
     if not result.items:
-        return "No saved places yet for this group."
+        return "Nothing saved yet for this group."
 
-    grouped: dict[str, dict[str, list[str]]] = {}
+    grouped: dict[str, list[str]] = {}
     for item in result.items:
-        city = city_short_name(item_city(item) or str(item.get("location_text") or "General"))
-        list_name = str(item.get("list_name") or item.get("category") or "Saved places").strip()
-        grouped.setdefault(city, {}).setdefault(list_name, [])
-        if len(grouped[city][list_name]) < 3:
-            grouped[city][list_name].append(place_label(item))
+        folder = str(item.get("list_name") or item.get("category") or "Other").strip()
+        grouped.setdefault(folder, [])
+        if len(grouped[folder]) < 3:
+            label = place_label(item)
+            location = item.get("location_text")
+            if location and folder in {"Restaurants", "Cafes & Desserts", "Bars & Nightlife", "Travel", "Things To Do", "Outdoors"}:
+                label += f" ({city_short_name(item_city(item) or str(location))})"
+            grouped[folder].append(label)
 
-    city_chunks: list[str] = []
-    for city, lists in list(grouped.items())[:4]:
-        list_chunks = []
-        for list_name, places in list(lists.items())[:3]:
-            list_chunks.append(f"{list_name}: {join_natural(places)}")
-        city_chunks.append(f"{city} — {'; '.join(list_chunks)}")
-
-    return "Saved so far: " + " | ".join(city_chunks) + "."
+    chunks = [f"{folder} — {join_natural(items)}" for folder, items in list(grouped.items())[:8]]
+    return "Saved so far: " + " | ".join(chunks) + "."
 
 
 def compose_answer(result: RetrievalResult) -> str:
@@ -692,13 +938,15 @@ MAX_SOURCES = 4
 PERSONA = (
     "You are ReelBot, the group's friend who remembers every reel they've saved. "
     "You text like a real person: casual, warm, brief, contractions, no corporate "
-    "phrasing. Never mention being an AI, assistant, bot, or model. Never promise "
-    "future actions (no 'I'll keep an eye out'). Plain text, no markdown."
+    "phrasing. Always use normal sentence capitalization and preserve the correct "
+    "capitalization of cities, venues, people, and other proper nouns. Never write "
+    "an all-lowercase answer. Never mention being an AI, assistant, bot, or model. "
+    "Never promise future actions (no 'I'll keep an eye out'). Plain text, no markdown."
 )
 
 GREETING_RE = re.compile(
     r"^\s*(hi+|hello+|hey+|yo|sup|what'?s up|good (morning|afternoon|evening)|"
-    r"thanks?( you| u)?|ty|thx|ok(ay)?|cool|nice|lol|haha+)\s*[!.?]*\s*$",
+    r"thanks?( you| u| man| bro)?|ty|thx|ok(ay)?|cool|nice|lol|haha+)\s*[!.?]*\s*$",
     re.IGNORECASE,
 )
 
@@ -716,8 +964,7 @@ def history_block(history: list[dict[str, Any]] | None) -> str:
 
 
 def folder_overview(group_id: str) -> tuple[list[str], list[str]]:
-    """Top folders plus saved item names, so the router can recognize
-    questions about specific saves ("Ornella is in Munich?")."""
+    """Compact library catalog so routing sees topics, not only titles."""
     with connect() as conn:
         rows = conn.execute(
             """
@@ -726,22 +973,35 @@ def folder_overview(group_id: str) -> tuple[list[str], list[str]]:
              where group_id = %s
              group by 1
              order by count(*) desc
-             limit 6
+             limit 12
             """,
             (group_id,),
         ).fetchall()
         names = conn.execute(
             """
-            select place_name
+            select place_name, list_name, subfolder, category,
+                   coalesce(tags, array[]::text[]) as tags
               from items
              where group_id = %s and nullif(btrim(place_name), '') is not null
              order by created_at desc
-             limit 30
+             limit 40
             """,
             (group_id,),
         ).fetchall()
     folders = [f"{row['folder']} ({row['count']})" for row in rows]
-    return folders, [str(row["place_name"]) for row in names]
+    catalog = []
+    for row in names:
+        folder = str(row.get("list_name") or "Other")
+        if row.get("subfolder"):
+            folder += f" > {row['subfolder']}"
+        details = [folder]
+        if row.get("category"):
+            details.append(str(row["category"]))
+        tags = [str(tag) for tag in row.get("tags") or []][:5]
+        if tags:
+            details.append(", ".join(tags))
+        catalog.append(f"{row['place_name']} [{'; '.join(details)}]")
+    return folders, catalog
 
 
 def route_message(
@@ -750,8 +1010,7 @@ def route_message(
     folders: list[str],
     item_names: list[str] | None = None,
 ) -> dict[str, Any] | None:
-    """Decide chat vs library search; for searches, rewrite follow-ups into a
-    self-contained question. Returns None when the LLM is unavailable."""
+    """Choose social, saved-library, or general knowledge behavior."""
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
         return None
@@ -761,46 +1020,113 @@ def route_message(
 
 Their saved folders: {", ".join(folders) or "nothing saved yet"}
 Their saved items include: {", ".join(item_names or []) or "none"}
-If the message mentions any of those items (even loosely), it's a question
-about their saves — use search.
+If the message mentions any of those items (even loosely), it is about their
+saved library.
 
 Conversation so far:
 {history_block(history) or "(new conversation)"}
 
 They just sent: {text}
 
-Return ONLY JSON: {{"mode": "chat"|"search", "reply": str|null, "question": str|null}}
+Return ONLY JSON:
+{{"mode": "social"|"library"|"general", "reply": str|null,
+  "question": str|null, "slots": object|null}}
 
-Use "search" whenever they ask anything about saved content — recommendations,
-recipes, workouts, places, plans, or follow-ups like "what about Munich?", "which
-one is cheapest?", "does it need equipment?". Even if the conversation seems to
-already contain the answer, still use search so the reply stays grounded and
-linked to its reels. Set question to a fully self-contained version of what
-they're asking, resolving pronouns and references from the conversation. Write it
-as a plain topic query ("best pizza spots in Manhattan"), never mentioning saves,
-reels, folders, or the library. Leave reply null.
+Use "library" when the request likely has a useful match in their saved folders
+or items, explicitly mentions saves/reels/folders, or follows up on an answer
+that used saved content. This includes requests that omit the word "saved" when
+the library clearly has the topic: "give me a chest workout" with a Workouts
+folder, "show me something funny" with Comedy & Memes, or "best pizza?" with
+Restaurants. Follow-ups such as "does it need equipment?" stay library. Set
+question to a self-contained topic query that resolves pronouns from history.
+Never include words like saved, reels, folders, or library in the rewritten
+question. Leave reply null.
+For library mode, also fill slots with exactly these keys so retrieval does not
+need another model call: intent (discovery|lookup|meta), location (city or null),
+category (dining|attraction|null), cuisine_or_tags (specific search concepts),
+and target_place (named saved item for lookup or null). "Do you have X saved?"
+is discovery, not meta. Meta is only a whole-library overview.
 
-Use "chat" ONLY for pure greetings, thanks, or chit-chat with no content question
-at all. Write reply yourself: 1-2 short sentences, like texting a friend,
-optionally nudging toward what they could ask given their folders. Leave
-question null.
+Use "general" for a real question or creative/help request that does not depend
+on their saved content: factual explanations, writing help, brainstorming, or
+"Do you have any pickup lines for me?" when no pickup-line item/folder exists.
+Do NOT confuse "do you have X?" with a library overview unless they explicitly
+say saved/reels/library. Keep question as a self-contained version of the request
+and leave reply null.
+Set slots null.
+
+Use "social" ONLY for greetings, thanks, acknowledgements, or casual chit-chat
+with no request for information, advice, or generated content. Write reply as
+1-2 short sentences and leave question and slots null.
+
+Examples:
+- "Do you have any pickup lines for me?" -> general
+- "Do I have any pickup-line reels saved?" -> library
+- "Give me a chest workout" with a Workouts folder -> library
+- "What is the capital of France?" -> general
+- "Help me write a birthday caption" -> general
+- "Does it need equipment?" after discussing a saved workout -> library
+- "thanks bro" -> social
 """.strip()
 
     try:
-        client = anthropic.Anthropic(api_key=api_key)
+        client = anthropic.Anthropic(api_key=api_key, timeout=45, max_retries=1)
         response = client.messages.create(
-            model=ANTHROPIC_MODEL,
-            max_tokens=250,
-            temperature=0.4,
+            model=FAST_MODEL,
+            max_tokens=350,
             system="Return JSON only. No markdown, no prose.",
             messages=[{"role": "user", "content": prompt}],
         )
         parsed = extract_json_object(response_text(response))
-        if parsed and parsed.get("mode") in {"chat", "search"}:
+        if parsed and parsed.get("mode") in {"social", "library", "general"}:
             return parsed
     except Exception:
         pass
     return None
+
+
+def compose_general_answer(
+    text: str,
+    history: list[dict[str, Any]] | None = None,
+) -> str | None:
+    """Answer useful non-library questions without pretending saves support it."""
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return None
+
+    prompt = f"""
+{PERSONA}
+
+Conversation so far:
+{history_block(history) or "(new conversation)"}
+
+They just asked: {text}
+
+Answer the request directly and use your general knowledge. This answer is not
+grounded in their saved reels, so never claim that it came from their saves and
+never invent a reel or source. Be accurate and practical. If the question is
+ambiguous, make the smallest reasonable assumption and mention it briefly. If
+you are genuinely unsure or the answer depends on live/current information you
+do not have, say so plainly. For medical, legal, or financial topics, be careful
+about uncertainty and avoid overconfident personalized directives.
+
+For creative requests such as pickup lines, captions, replies, or ideas, give
+several genuinely usable options in distinct tones. For factual questions, give
+the answer first, then only the context needed. Keep it conversational and under
+180 words. Plain text, no URLs, and no fake citations.
+""".strip()
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key, timeout=45, max_retries=1)
+        response = client.messages.create(
+            model=QUALITY_MODEL,
+            max_tokens=600,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        answer = response_text(response).strip()
+    except Exception:
+        return None
+    return answer[:MAX_LLM_ANSWER_CHARS] if answer else None
 
 
 def item_context_block(index: int, item: dict[str, Any]) -> str:
@@ -817,13 +1143,102 @@ def item_context_block(index: int, item: dict[str, Any]) -> str:
     tags = item.get("tags") or []
     if tags:
         lines.append(f"  tags: {', '.join(str(tag) for tag in tags[:8])}")
-    content = re.sub(r"\s+", " ", str(item.get("transcript") or "")).strip()
+    content = re.sub(r"\s+", " ", answerable_content(item.get("transcript"))).strip()
     if content:
         lines.append(f"  content: {content[:800]}")
     save_count = int(item.get("save_count") or 0)
     if save_count > 1:
         lines.append(f"  saved by {save_count} people")
     return "\n".join(lines)
+
+
+def verify_grounded_answer(
+    *,
+    question: str,
+    draft: str,
+    context: str,
+    source_count: int,
+) -> dict[str, Any] | None:
+    """Remove unsupported claims and produce an auditable source selection."""
+    api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
+    if not api_key:
+        return None
+    prompt = f"""
+Audit this draft answer against the supplied saved-reel evidence.
+Return ONLY JSON: {{"answer": str, "sources": [int], "supported": bool}}
+
+Question: {question}
+
+Draft answer:
+{draft}
+
+Evidence:
+{context}
+
+Rules:
+- Keep only claims directly stated or unambiguously supported by the evidence.
+- Remove plausible-sounding general knowledge, assumptions, extrapolations,
+  recommendations, quantities, timings, prices, or details that are not there.
+- Do not add new factual claims while correcting the draft.
+- Preserve a useful, natural answer when evidence supports one.
+- Preserve useful section breaks and bullet lines from the draft.
+- Correct sentence capitalization and proper-noun capitalization. Never return
+  an all-lowercase answer.
+- sources contains only evidence numbers actually used, from 1 to {source_count}.
+- Evidence is present here. Never claim that the group has no saves, no reels,
+  or nothing to work with when any supplied item helps answer the question.
+- Set supported=false only when no useful part of the question can be answered
+  from this evidence; then explain the specific missing information briefly.
+- Plain text answer, under 130 words, no URLs or citation markers.
+""".strip()
+    try:
+        client = anthropic.Anthropic(api_key=api_key, timeout=45, max_retries=1)
+        response = client.messages.create(
+            model=FAST_MODEL,
+            max_tokens=500,
+            system="Return JSON only. No markdown, no prose.",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        parsed = extract_json_object(response_text(response))
+    except Exception:
+        return None
+    if not parsed:
+        return None
+    answer = str(parsed.get("answer") or "").strip()
+    raw_sources = parsed.get("sources")
+    sources = []
+    if isinstance(raw_sources, list):
+        for value in raw_sources:
+            try:
+                index = int(value)
+            except (TypeError, ValueError):
+                continue
+            if 1 <= index <= source_count and index not in sources:
+                sources.append(index)
+    if not answer:
+        return None
+    return {
+        "answer": answer[:MAX_LLM_ANSWER_CHARS],
+        "used": sources,
+        "supported": bool(parsed.get("supported", True)),
+    }
+
+
+EMPTY_LIBRARY_CLAIM_RE = re.compile(
+    r"\b(?:"
+    r"(?:do not|don't|dont|did not|didn't|cannot|can't|cant) (?:actually )?(?:have|see|find) (?:any|anything)|"
+    r"(?:not|aren't|isn't) (?:actually )?(?:seeing|finding) (?:any|anything)|"
+    r"nothing (?:is )?saved|nothing (?:here|to work with)|"
+    r"no saved (?:items?|reels?|places?)|working with nothing"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def answer_denies_available_evidence(answer: str) -> bool:
+    """Reject the exact contradiction shown in the app screenshots."""
+    normalized = re.sub(r"\s+", " ", answer).strip()
+    return bool(EMPTY_LIBRARY_CLAIM_RE.search(normalized))
 
 
 def compose_llm_answer(
@@ -853,11 +1268,28 @@ Reply the way a knowledgeable friend texts back:
   incline press, ..."), never meta-talk like "I found a saved item titled...".
 - Pull concrete details out of the content field: exercises, ingredients,
   steps, dishes, prices, neighborhoods, vibes.
+- Reel content can contain background-song lyrics, hashtags, sponsor copy, OCR
+  mistakes, and unrelated audio. Ignore those unless they are clearly part of
+  the reel's subject. Never turn a lyric fragment into an instruction or fact.
 - For broad asks (a trip, a day out, a holiday), organize across items:
   food spots together, activities together, one short line each.
-- Short lines or a compact list, not long paragraphs.
+- For city or recommendation requests, never return one large paragraph. Start
+  with one short sentence, then use 2-4 useful category headings such as
+  "Outdoors", "Food", "Things to Do", or "Nightlife". Under each heading,
+  format each recommendation on its own line as "• Name — concise reason".
+  Omit empty categories and do not create categories unsupported by the saves.
+- For all other multi-item answers, use short lines or a compact bulleted list.
+- Use normal sentence capitalization. Capitalize proper nouns exactly as they
+  appear in the saved evidence, including LA, venue names, and neighborhoods.
+  Never write the answer in an all-lowercase texting style.
 - Only use facts from the items; never invent details. If an item's content
   is thin, give what is known in one clause and move on — no apologizing.
+- Treat missing information as missing. Never fill gaps with standard advice
+  or likely details from general knowledge. Do not add sets, reps, frequency,
+  ingredients, prices, exercise names, or place facts unless they are explicitly
+  present. For example, "targets lower chest" does not justify inventing a
+  decline exercise. Silently verify every concrete claim against the supplied
+  item before writing it.
 - If this is a follow-up, answer just the follow-up; don't repeat everything.
 - Under 130 words, plain text, no URLs, no bracketed citations (tappable
   sources are shown separately below your reply).
@@ -870,11 +1302,10 @@ Saved items:
 """.strip()
 
     try:
-        client = anthropic.Anthropic(api_key=api_key)
+        client = anthropic.Anthropic(api_key=api_key, timeout=45, max_retries=1)
         response = client.messages.create(
-            model=ANTHROPIC_MODEL,
+            model=QUALITY_MODEL,
             max_tokens=450,
-            temperature=0.3,
             messages=[{"role": "user", "content": prompt}],
         )
         answer = response_text(response).strip()
@@ -891,15 +1322,31 @@ Saved items:
         used = [int(part) for part in re.findall(r"\d+", match.group(1))]
     if not answer:
         return None
-    return {"answer": answer[:MAX_LLM_ANSWER_CHARS], "used": used}
+    verified = verify_grounded_answer(
+        question=user_message or result.question,
+        draft=answer,
+        context=context,
+        source_count=len(picks),
+    )
+    if verified:
+        verified_answer = str(verified["answer"])
+        if (
+            not verified.get("supported")
+            or not verified.get("used")
+            or answer_denies_available_evidence(verified_answer)
+        ):
+            return None
+        verified["answer"] = polish_answer_presentation(verified_answer)
+        return verified
+    # If evidence verification fails, use the deterministic source-only answer.
+    return None
 
 
 def answer_sources(result: RetrievalResult, used: list[int] | None = None) -> list[dict[str, str]]:
     picks = result.items[:MAX_SOURCES]
-    if used:
+    if used is not None:
         chosen = [picks[index - 1] for index in used if 1 <= index <= len(picks)]
-        if chosen:
-            picks = chosen
+        picks = chosen
     sources: list[dict[str, str]] = []
     seen: set[str] = set()
     for item in picks:
@@ -916,31 +1363,56 @@ def answer_question_structured(
     text: str,
     history: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
+    if GREETING_RE.match(text):
+        return answer_payload("Hey! Ask me about your saved reels or anything else you need.", [])
+
     folders, item_names = folder_overview(group_id)
     routed = route_message(text, history, folders, item_names)
+    force_library = explicitly_uses_saved_content(text)
 
-    if routed and routed.get("mode") == "chat" and str(routed.get("reply") or "").strip():
-        return {"answer": compact_answer(str(routed["reply"]).strip()), "sources": []}
+    if (
+        routed
+        and not force_library
+        and routed.get("mode") == "social"
+        and str(routed.get("reply") or "").strip()
+    ):
+        return answer_payload(compact_answer(str(routed["reply"]).strip()), [])
 
-    if routed is None and GREETING_RE.match(text):
-        return {
-            "answer": "Hey! Ask me about anything you've saved — food spots, recipes, workouts, you name it.",
-            "sources": [],
-        }
+    routed_mode = str((routed or {}).get("mode") or "")
+    question = (
+        str((routed or {}).get("question") or "").strip()
+        if routed_mode == "library" or not force_library
+        else ""
+    ) or text
+    if is_library_overview_query(text):
+        # Preserve overview wording so query parsing returns meta instead of
+        # semantically ranking only a few arbitrary items.
+        question = text
+    if routed and not force_library and routed.get("mode") == "general":
+        answer = compose_general_answer(question, history=history)
+        if answer:
+            return answer_payload(compact_answer(answer), [])
+        return answer_payload(
+            "I couldn't get a reliable answer to that just now. Try asking it one more way.", []
+        )
 
-    question = str((routed or {}).get("question") or "").strip() or text
-    result = retrieve_for_query(group_id, question)
+    routed_slots = None
+    if routed and routed.get("mode") == "library" and isinstance(routed.get("slots"), dict):
+        routed_slots = QuerySlots.from_raw(routed["slots"], question)
+    result = retrieve_for_query(group_id, question, slots=routed_slots)
 
     if result.empty_reason or not result.items:
-        return {"answer": compose_answer(result), "sources": []}
+        return answer_payload(compose_answer(result), [])
 
     if result.slots.intent == "meta":
-        return {"answer": compose_meta_answer(result), "sources": []}
+        return answer_payload(compose_meta_answer(result), [])
 
     composed = compose_llm_answer(result, history=history, user_message=text)
     if composed:
-        return {"answer": composed["answer"], "sources": answer_sources(result, composed.get("used"))}
-    return {"answer": compact_answer(compose_answer(result)), "sources": answer_sources(result)}
+        return answer_payload(
+            str(composed["answer"]), answer_sources(result, composed.get("used"))
+        )
+    return answer_payload(compact_answer(compose_answer(result)), answer_sources(result))
 
 
 def plain_answer_with_sources(structured: dict[str, Any]) -> str:

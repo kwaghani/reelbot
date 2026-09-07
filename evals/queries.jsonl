@@ -2,11 +2,15 @@
 {"q": "what should i do in la", "intent": "discovery", "location": "Los Angeles", "category": "attraction", "expect": "LA attractions surfaced"}
 {"q": "where should i eat in la", "intent": "discovery", "location": "Los Angeles", "category": "dining", "expect": "LA dining surfaced (e.g. Sugo Social)"}
 {"q": "What are good food recommendations in la?", "intent": "discovery", "location": "Los Angeles", "category": "dining", "expect": "LA dining surfaced"}
-{"q": "any good italian food ?", "intent": "discovery", "location": null, "category": "dining", "cuisine": "italian", "expect": "Italian place surfaced (Sugo Social); defaults to LA as dominant city"}
+{"q": "any good italian food ?", "intent": "discovery", "location": null, "category": "dining", "cuisine": "italian", "expect": "Italian place surfaced; may search beyond the dominant city when no local Italian save matches"}
 {"q": "Which restaurant can I go to", "intent": "discovery", "location": null, "category": "dining", "expect": "defaults to dominant city (LA), recommends dining, states the assumption"}
 {"q": "What else do you know", "intent": "meta", "location": null, "category": null, "expect": "summary of saved items grouped by city/list"}
-{"q": "Sugo social is in la?", "intent": "lookup", "location": "Los Angeles", "target_place": "Sugo Social", "expect": "confirms Sugo Social location from stored item"}
+{"q": "Ornella is in Munich?", "intent": "lookup", "location": "Munich", "target_place": "Ornella", "expect": "confirms Ornella location from the stored item"}
 {"q": "Things to do in Mumbai?", "intent": "discovery", "location": "Mumbai", "category": "attraction", "expect": "grounded-empty: no Mumbai saves"}
 {"q": "any activities to do in mumbai?", "intent": "discovery", "location": "Mumbai", "category": "attraction", "expect": "grounded-empty"}
 {"q": "Where should I eat in Mumbai", "intent": "discovery", "location": "Mumbai", "category": "dining", "expect": "grounded-empty"}
 {"q": "Any good places I saved to visit in munbai?", "intent": "discovery", "location": "Mumbai", "category": "attraction", "expect": "grounded-empty; tests typo normalization munbai->Mumbai"}
+{"q": "show me something funny", "intent": "discovery", "location": null, "category": null, "expect": "funny content surfaced"}
+{"q": "give me a chest workout", "intent": "discovery", "location": null, "category": null, "expect": "chest workout surfaced"}
+{"q": "do I have pickup lines saved?", "intent": "discovery", "location": null, "category": null, "expect": "filter-empty: no pickup line reel saved"}
+{"q": "show me quantum physics reels", "intent": "discovery", "location": null, "category": null, "expect": "filter-empty: unrelated saves must not surface"}

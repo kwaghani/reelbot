@@ -18,6 +18,10 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-fable-5
+      - key: ANTHROPIC_FAST_MODEL
+        value: claude-sonnet-5
       - key: GOOGLE_MAPS_API_KEY
         sync: false
       - key: IG_COOKIES_PATH
@@ -59,6 +63,12 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-fable-5
+      - key: ANTHROPIC_FAST_MODEL
+        value: claude-sonnet-5
+      - key: EMBEDDING_MODEL
+        value: BAAI/bge-small-en-v1.5
       - key: GOOGLE_MAPS_API_KEY
         sync: false
       - key: IG_COOKIES_PATH
@@ -69,6 +79,8 @@ services:
       - key: REELBOT_ENABLE_VIDEO_DOWNLOAD
         value: "true"
       - key: REELBOT_ENABLE_TRANSCRIPTION
+        value: "true"
+      - key: REELBOT_ENABLE_VISION
         value: "true"
       - key: NUDGE_INTERVAL_HOURS
         value: "3"
@@ -101,6 +113,8 @@ services:
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: ANTHROPIC_FAST_MODEL
+        value: claude-sonnet-5
       - key: GOOGLE_MAPS_API_KEY
         sync: false
       - key: IG_COOKIES_PATH

@@ -17,7 +17,7 @@ def connect() -> psycopg.Connection:
     database_url = os.getenv("DATABASE_URL", "").strip()
     if not database_url:
         raise RuntimeError("DATABASE_URL is missing")
-    return psycopg.connect(database_url, row_factory=dict_row)
+    return psycopg.connect(database_url, row_factory=dict_row, connect_timeout=10)
 
 
 def vector_literal(values: list[float]) -> str:
@@ -105,7 +105,6 @@ def mark_job_done(conn: psycopg.Connection, job_id: str, reply: str) -> None:
         """,
         (reply, job_id),
     )
-    conn.commit()
 
 
 def mark_job_error(conn: psycopg.Connection, job_id: str, reply: str) -> None:
@@ -119,7 +118,6 @@ def mark_job_error(conn: psycopg.Connection, job_id: str, reply: str) -> None:
         """,
         (reply, job_id),
     )
-    conn.commit()
 
 
 def log_event(conn: psycopg.Connection, group_id: str | None, kind: str, detail: str | None = None) -> None:
@@ -127,7 +125,6 @@ def log_event(conn: psycopg.Connection, group_id: str | None, kind: str, detail:
         "insert into events (group_id, kind, detail) values (%s, %s, %s)",
         (group_id, kind, detail),
     )
-    conn.commit()
 
 
 def list_groups(conn: psycopg.Connection) -> list[dict[str, Any]]:
@@ -135,9 +132,11 @@ def list_groups(conn: psycopg.Connection) -> list[dict[str, Any]]:
         """
         select id, wa_chat_id, name, created_at
           from groups
-         where wa_chat_id is not null
+         where wa_chat_id like '%%@g.us'
+           and (%s = '' or wa_chat_id = %s)
          order by created_at
-        """
+        """,
+        (os.getenv("TARGET_GROUP_JID", "").strip(), os.getenv("TARGET_GROUP_JID", "").strip()),
     ).fetchall()
     return list(rows)
 
@@ -202,6 +201,9 @@ def enqueue_nudge(
     cooldown_days: int,
     cluster_cooldown_days: int,
 ) -> bool:
+    if not chat_id.endswith("@g.us"):
+        return False
+    conn.execute("select id from groups where id = %s for update", (group_id,))
     if has_recent_nudge(conn, group_id, cooldown_days):
         conn.commit()
         return False
@@ -210,22 +212,23 @@ def enqueue_nudge(
         return False
 
     try:
-        conn.execute(
+        outbound = conn.execute(
             """
             insert into outbound_messages (group_id, chat_id, body, kind)
             values (%s, %s, %s, 'nudge')
+            returning id
             """,
             (group_id, chat_id, body),
-        )
+        ).fetchone()
         conn.execute(
             """
-            insert into nudges (group_id, cluster_key, body)
-            values (%s, %s, %s)
+            insert into nudges (group_id, cluster_key, body, outbound_message_id)
+            values (%s, %s, %s, %s)
             """,
-            (group_id, cluster_key, body),
+            (group_id, cluster_key, body, outbound["id"]),
         )
         conn.execute(
-            "insert into events (group_id, kind, detail) values (%s, 'nudge', %s)",
+            "insert into events (group_id, kind, detail) values (%s, 'nudge_queued', %s)",
             (group_id, cluster_key),
         )
         conn.commit()
@@ -251,7 +254,6 @@ def get_or_create_member(
         """,
         (group_id, wa_user_id, display_name),
     ).fetchone()
-    conn.commit()
     if row is None:
         raise RuntimeError("Could not upsert member")
     return row
@@ -318,7 +320,6 @@ def upsert_item(
             embedding_value,
         ),
     ).fetchone()
-    conn.commit()
     if row is None:
         raise RuntimeError("Could not upsert item")
     return row
@@ -351,7 +352,6 @@ def add_item_save(conn: psycopg.Connection, item_id: str, member_id: str) -> Non
         """,
         (item_id, member_id),
     )
-    conn.commit()
 
 
 def count_group_items(conn: psycopg.Connection, group_id: str) -> int:
@@ -502,7 +502,12 @@ def _filter_clauses(
         patterns = [f"%{tag}%" for tag in clean_tags]
         tag_clauses: list[str] = []
         tag_params: list[Any] = []
-        _add_pattern_clause(tag_clauses, tag_params, ["i.category", "i.list_name", "i.place_name"], patterns)
+        _add_pattern_clause(
+            tag_clauses,
+            tag_params,
+            ["i.category", "i.list_name", "i.place_name", "i.transcript"],
+            patterns,
+        )
         _add_tag_clause(tag_clauses, tag_params, patterns)
         clauses.append("(" + " or ".join(tag_clauses) + ")")
         params.extend(tag_params)
@@ -584,9 +589,9 @@ def search_items(
          group by r.id, r.place_name, r.category, r.location_text, r.price_tier, r.tags,
                   r.list_name, r.transcript, r.source_url, r.lat, r.lng, r.created_at,
                   r.distance
-         order by count(distinct s.member_id) desc,
-                  max(s.created_at) desc nulls last,
-                  r.distance asc
+         order by r.distance asc,
+                  count(distinct s.member_id) desc,
+                  max(s.created_at) desc nulls last
          limit %s
         """,
         [embedding_value, group_id, *filter_params, embedding_value, vector_limit, limit],

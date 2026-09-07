@@ -1,0 +1,82 @@
+Local audit — 2026-09-06
+test_answers_prefer_structured_facts_over_raw_content (test_ai_logic.ContentQualityTests.test_answers_prefer_structured_facts_over_raw_content) ... ok
+test_repeated_background_lyrics_are_removed (test_ai_logic.ContentQualityTests.test_repeated_background_lyrics_are_removed) ... ok
+test_useful_speech_survives_lyrics_in_a_single_line (test_ai_logic.ContentQualityTests.test_useful_speech_survives_lyrics_in_a_single_line) ... ok
+test_couple_content_is_relationships_not_comedy (test_ai_logic.FolderDecisionTests.test_couple_content_is_relationships_not_comedy) ... ok
+test_folder_keywords_do_not_match_inside_unrelated_words (test_ai_logic.FolderDecisionTests.test_folder_keywords_do_not_match_inside_unrelated_words) ... ok
+test_hikes_are_outdoors_not_generic_travel (test_ai_logic.FolderDecisionTests.test_hikes_are_outdoors_not_generic_travel) ... ok
+test_pickup_lines_get_a_relational_subfolder (test_ai_logic.FolderDecisionTests.test_pickup_lines_get_a_relational_subfolder) ... ok
+test_structured_details_are_stored_before_raw_content (test_ai_logic.FolderDecisionTests.test_structured_details_are_stored_before_raw_content) ... ok
+test_chat_answers_restore_basic_capitalization (test_ai_logic.QueryDecisionTests.test_chat_answers_restore_basic_capitalization) ... ok
+test_explicit_saved_overview_is_meta (test_ai_logic.QueryDecisionTests.test_explicit_saved_overview_is_meta) ... ok
+test_explicit_saved_request_cannot_be_routed_to_general_knowledge (test_ai_logic.QueryDecisionTests.test_explicit_saved_request_cannot_be_routed_to_general_knowledge) ... ok
+test_funny_query_expands_search_synonyms (test_ai_logic.QueryDecisionTests.test_funny_query_expands_search_synonyms) ... ok
+test_general_questions_do_not_force_irrelevant_retrieval (test_ai_logic.QueryDecisionTests.test_general_questions_do_not_force_irrelevant_retrieval) ... ok
+test_named_lookup_wins_over_model_discovery_guess (test_ai_logic.QueryDecisionTests.test_named_lookup_wins_over_model_discovery_guess) ... ok
+test_only_place_queries_default_to_a_city (test_ai_logic.QueryDecisionTests.test_only_place_queries_default_to_a_city) ... ok
+test_pickup_line_request_is_not_library_meta (test_ai_logic.QueryDecisionTests.test_pickup_line_request_is_not_library_meta) ... ok
+test_source_backed_answer_cannot_claim_there_are_no_saves (test_ai_logic.QueryDecisionTests.test_source_backed_answer_cannot_claim_there_are_no_saves) ... ok
+test_sports_folder_uses_specific_sport_as_subfolder (test_ai_logic.QueryDecisionTests.test_sports_folder_uses_specific_sport_as_subfolder) ... ok
+test_topic_filtered_saved_request_is_not_meta (test_ai_logic.QueryDecisionTests.test_topic_filtered_saved_request_is_not_meta) ... ok
+test_weekend_plan_is_cross_category (test_ai_logic.QueryDecisionTests.test_weekend_plan_is_cross_category) ... ok
+test_weekend_plan_retrieves_food_and_activities (test_ai_logic.QueryDecisionTests.test_weekend_plan_retrieves_food_and_activities) ... ok
+test_hybrid_ranking_beats_popular_but_unrelated_item (test_ai_logic.RetrievalQualityTests.test_hybrid_ranking_beats_popular_but_unrelated_item) ... ok
+test_relevance_gate_rejects_unrelated_semantic_fallback (test_ai_logic.RetrievalQualityTests.test_relevance_gate_rejects_unrelated_semantic_fallback) ... ok
+test_structure_message_adds_visual_evidence (test_ai_logic.RetrievalQualityTests.test_structure_message_adds_visual_evidence) ... ok
+test_concurrent_copy_with_null_place_id_is_idempotent (test_reliability.DatabaseJourneyTests.test_concurrent_copy_with_null_place_id_is_idempotent) ... 18:36:55 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_concurrent_share_debounce_and_job_privacy (test_reliability.DatabaseJourneyTests.test_concurrent_share_debounce_and_job_privacy) ... 18:36:55 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_direct_database_client_roles_cannot_read_private_tables (test_reliability.DatabaseJourneyTests.test_direct_database_client_roles_cannot_read_private_tables) ... 18:36:56 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_invalid_unavailable_and_empty_imports_are_recoverable (test_reliability.DatabaseJourneyTests.test_invalid_unavailable_and_empty_imports_are_recoverable) ... 18:36:56 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_join_code_failure_and_rate_limit (test_reliability.DatabaseJourneyTests.test_join_code_failure_and_rate_limit) ... 18:36:56 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_missing_copy_is_atomic (test_reliability.DatabaseJourneyTests.test_missing_copy_is_atomic) ... 18:36:56 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_nudges_ignore_app_groups_and_concurrent_cooldown (test_reliability.DatabaseJourneyTests.test_nudges_ignore_app_groups_and_concurrent_cooldown) ... 18:36:56 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_private_group_denies_unrelated_spoof_and_missing_session (test_reliability.DatabaseJourneyTests.test_private_group_denies_unrelated_spoof_and_missing_session) ... 18:36:56 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_query_job_timeout_polling_retry_and_revoked_membership (test_reliability.DatabaseJourneyTests.test_query_job_timeout_polling_retry_and_revoked_membership) ... 18:36:57 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_queue_claim_and_recovery_and_transaction_rollback (test_reliability.DatabaseJourneyTests.test_queue_claim_and_recovery_and_transaction_rollback) ... 18:36:57 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_save_recipient_persistence_counts_copy_and_delete (test_reliability.DatabaseJourneyTests.test_save_recipient_persistence_counts_copy_and_delete) ... 18:36:57 INFO HTTP Request: POST http://testserver/devices "HTTP/1.1 201 Created"
+test_content_identity_is_platform_scoped_and_tracking_independent (test_reliability.SourceValidationTests.test_content_identity_is_platform_scoped_and_tracking_independent) ... ok
+test_login_and_removed_page_never_create_content (test_reliability.SourceValidationTests.test_login_and_removed_page_never_create_content) ... ok
+test_metadata_preserves_apostrophes_and_attribute_order (test_reliability.SourceValidationTests.test_metadata_preserves_apostrophes_and_attribute_order) ... ok
+test_supported_sources_are_canonical (test_reliability.SourceValidationTests.test_supported_sources_are_canonical) ... ok
+test_unavailable_youtube_placeholder_is_not_content (test_reliability.SourceValidationTests.test_unavailable_youtube_placeholder_is_not_content) ... ok
+test_unsupported_and_impersonating_hosts_are_rejected (test_reliability.SourceValidationTests.test_unsupported_and_impersonating_hosts_are_rejected) ... ok
+Ran 41 tests in 2.652s
+OK
+API smoke test passed
+> reelbot-listener@0.1.0 test
+> node --test tests/*.test.js
+✔ canonical source links reject spoof hosts, profiles and preserve video IDs (2.077708ms)
+✔ questions quoting a reel do not become imports (0.165125ms)
+✔ delivery IDs are stable across retry and distinct across jobs (0.347084ms)
+✔ database delivery selects only target WhatsApp group and prevents overlapping polls (69.700959ms)
+✔ failed nudge delivery remains pending, other messages proceed, and retry records one sent event (23.166375ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 200.648333
+> reelbot-ios@1.0.0 test
+> node --test tests/*.test.cjs
+✔ share carries authenticated identity and selected destination, even across later context changes (47.7845ms)
+✔ queued questions poll their original job and return its actual answer (11.832833ms)
+✔ server failures and malformed success responses are errors, not success (21.514375ms)
+✔ pre-aborted share never becomes a successful submission (6.126958ms)
+✔ incomplete submission and answer payloads never report success (6.612292ms)
+✔ query retries reuse uncertain requests but replace confirmed failed jobs (5.323125ms)
+✔ concurrent identity initialization registers once and restores the saved session (6.27475ms)
+✔ storage failure cannot report completed identity setup (1.757375ms)
+✔ native shared preferences decode JSON strings as well as objects for settings and receipts (6.463ms)
+✔ permission failures are distinguishable from temporary outages so private cached views can be cleared (17.817625ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 310.54225
+> reelbot-ios@1.0.0 typecheck
+> tsc --noEmit

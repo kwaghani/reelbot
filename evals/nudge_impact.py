@@ -42,17 +42,19 @@ def main() -> int:
                      coalesce(g.name, g.wa_chat_id) as group_name,
                      n.cluster_key,
                      n.body,
-                     n.created_at as nudged_at,
+                     delivery.sent_at as nudged_at,
                      count(e.id) filter (where e.kind in ('query', 'save')) as engagement_events,
                      min(e.created_at) filter (where e.kind in ('query', 'save')) as first_engaged_at
                 from nudges n
                 join groups g on g.id = n.group_id
+                join outbound_messages delivery on delivery.id = n.outbound_message_id
+                 and delivery.sent_at is not null
                 left join events e
                   on e.group_id = n.group_id
                  and e.kind in ('query', 'save')
-                 and e.created_at > n.created_at
-                 and e.created_at <= n.created_at + make_interval(hours => %s)
-               group by n.id, n.group_id, g.name, g.wa_chat_id, n.cluster_key, n.body, n.created_at
+                 and e.created_at > delivery.sent_at
+                 and e.created_at <= delivery.sent_at + make_interval(hours => %s)
+               group by n.id, n.group_id, g.name, g.wa_chat_id, n.cluster_key, n.body, delivery.sent_at
             )
             select *,
                    engagement_events > 0 as engaged

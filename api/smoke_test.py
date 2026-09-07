@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import sys
 import types
@@ -17,6 +18,9 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 os.environ["API_KEY"] = "smoke-test-key"
+os.environ["REELBOT_API_DRAIN_JOBS"] = "1"
+SMOKE_TOKEN = "smoke-device-token-for-contract-test-only"
+SMOKE_DEVICE = "00000000-0000-0000-0000-000000000003"
 os.environ["TEST_GROUP_ID"] = "00000000-0000-0000-0000-000000000001"
 
 import api.main as api_main
@@ -46,6 +50,8 @@ class FakeConnection:
 
     def execute(self, sql: str, params: tuple[Any, ...] | list[Any] | None = None) -> FakeResult:
         normalized = " ".join(sql.lower().split())
+        if "from app_devices where token_hash" in normalized:
+            return FakeResult([{"id": SMOKE_DEVICE}]) if params and params[0] == hashlib.sha256(SMOKE_TOKEN.encode()).hexdigest() else FakeResult()
         if "insert into jobs" in normalized:
             params = list(params or [])
             job_type = "query" if "'query'" in normalized else "ingest"
@@ -121,7 +127,7 @@ api_main.log_event = fake_log_event
 api_main.drain_queued_jobs = lambda: None
 
 client = TestClient(api_main.app)
-headers = {"x-api-key": "smoke-test-key"}
+headers = {"x-api-key": "smoke-test-key", "Authorization": f"Bearer {SMOKE_TOKEN}"}
 
 
 def assert_response(condition: bool, message: str) -> None:
@@ -145,9 +151,10 @@ def main() -> int:
         json={"url": "https://www.instagram.com/reel/ABC123/", "user_name": "Krish"},
     )
     assert_response(share.status_code == 202, f"share returned {share.status_code}")
-    assert_response(share.json() == {"status": "queued"}, "share response should be queued")
+    assert_response(share.json() == {"status": "queued", "job_id": "job-1"}, "share response should be queued")
     assert_response(fake_conn.jobs[-1]["type"] == "ingest", "share should enqueue ingest job")
     assert_response(fake_conn.jobs[-1]["chat_id"] == "app", "share job chat_id should be app")
+    assert_response(fake_conn.jobs[-1]["sender_id"] == SMOKE_DEVICE, "share must use authenticated identity")
 
     query = client.post("/query", headers=headers, json={"text": "what is saved?", "user_name": "Krish"})
     assert_response(query.status_code == 200, f"query returned {query.status_code}")

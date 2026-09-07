@@ -1,6 +1,21 @@
-# Shared Reel Bot Phase 1
+# ReelBot
 
-This is the thinnest end-to-end shared reel organizer: a WhatsApp group bot that silently ingests Instagram/TikTok reel links, answers questions from the group's saved places, and can send rare proactive saved-place nudges. There is no web app, mobile app, auth, voting, planning engine, or admin UI.
+ReelBot is a private-test shared reel organizer: an Expo iOS app with a share
+extension, a WhatsApp group bot, and a Python API/worker backed by Postgres.
+It stores structured information and source links for Instagram posts/reels,
+TikTok videos, and YouTube videos/Shorts. Playback opens the original platform;
+there is no hosted video player or offline video library.
+
+The iOS app supports a stored display name and device session, a shared default
+library, invite-code groups, copying reels between groups, automatic topic and
+location folders, group-wide deletion, and persistent local chat with saved-reel
+sources. All group members can add or delete records. Copies in other groups
+are independent. Verified venues merge by place ID within a group; non-place
+content merges by canonical platform URL. There are no email/password accounts,
+public reel pages, comments, reactions, manual folder editing, or email/push alerts.
+
+See [AUDIT.md](AUDIT.md) for verified behavior and remaining limits, and
+[VERIFICATION.md](VERIFICATION.md) for repeatable local checks and rollout steps.
 
 Phase 0 extraction still exists in `extract.py`. The worker reuses that pipeline logic through `worker/pipeline.py`, with per-reel media written only to a temporary directory that is deleted after each job.
 
@@ -51,9 +66,13 @@ DATABASE_URL=postgres://...
 API_KEY=shared-test-secret
 TEST_GROUP_ID=00000000-0000-0000-0000-000000000000
 ANTHROPIC_API_KEY=...
+ANTHROPIC_MODEL=claude-fable-5
+ANTHROPIC_FAST_MODEL=claude-sonnet-5
+EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
 GOOGLE_MAPS_API_KEY=...
 IG_COOKIES_PATH=
 REELBOT_ENABLE_VIDEO_DOWNLOAD=false
+REELBOT_ENABLE_VISION=true
 TARGET_GROUP_JID=
 NUDGE_INTERVAL_HOURS=3
 NUDGE_COOLDOWN_DAYS=3
@@ -63,13 +82,40 @@ NUDGE_RECENCY_DAYS=7
 NUDGE_IMPACT_WINDOW_HOURS=24
 ```
 
-ReelBot stores extracted place data plus the original reel URL. It does not store reel videos offline. By default `REELBOT_ENABLE_VIDEO_DOWNLOAD=false`, so ingest uses public page metadata, captions, thumbnails, OCR, and the source link instead of downloading media.
+ReelBot stores structured reel data plus the original reel URL. The extractor preserves a concise summary, concrete details, tags, and available caption/transcript/OCR text so chat can answer questions about recipes, workouts, sports, relationships, jokes, products, and other saved content—not only places. It does not store reel videos offline. By default `REELBOT_ENABLE_VIDEO_DOWNLOAD=false`, so ingest uses public page metadata, captions, thumbnails, OCR, and the source link instead of downloading media.
+
+`ANTHROPIC_MODEL` defaults to `claude-fable-5`, the project's configured quality model, for final answers. The faster
+`ANTHROPIC_FAST_MODEL` defaults to `claude-sonnet-5` for extraction, routing,
+folder assignment, and grounded-answer verification. This split puts the most
+capable model on user-visible reasoning without paying Fable latency for every
+classification call.
+
+`EMBEDDING_MODEL` defaults to `BAAI/bge-small-en-v1.5`. It keeps the existing
+384-dimensional pgvector schema while improving semantic retrieval. If this
+value changes for an existing database, rebuild every stored vector before
+serving queries:
+
+```bash
+source .venv/bin/activate
+python worker/reindex_embeddings.py --all-groups --apply
+```
+
+`REELBOT_ENABLE_VISION=true` lets extraction send up to three compressed,
+representative reel frames (or the thumbnail) alongside the caption,
+transcript, and OCR. Set it to `false` to use text-only extraction.
 
 `IG_COOKIES_PATH` is optional and only matters if you later set `REELBOT_ENABLE_VIDEO_DOWNLOAD=true`. Instagram video downloads often need authenticated cookies. It can be an exported Netscape cookies file path or a yt-dlp browser source such as `browser:chrome`.
 
 `TARGET_GROUP_JID` is optional. If set, the listener ignores all WhatsApp groups except that JID.
 
-`API_KEY` and `TEST_GROUP_ID` are used by the test iOS API. `TEST_GROUP_ID` must be a UUID. The API creates a matching `groups` row if absent. `API_KEY` is only lightweight test-grade protection and should not be exposed as a long-term public auth scheme.
+`API_KEY` and `TEST_GROUP_ID` configure the private-test iOS API. The default
+library is visible to every tester with a valid device session. `POST /devices`
+issues a random device ID and bearer token; all data routes require that token
+in addition to the build key. Device IDs and display names alone confer no
+access. Private groups require an invite and membership. Apply the schema and
+rebuild the client together; legacy device IDs cannot securely claim sessions.
+Existing group records are retained, but users must rejoin with an invite code.
+This remains device-based test access, not recoverable multi-device accounts.
 
 ## Run
 
@@ -93,6 +139,17 @@ Start the listener in another terminal:
 cd listener
 npm start
 ```
+
+To review how the latest classifier would reorganize an existing group's
+library without changing data:
+
+```bash
+source .venv/bin/activate
+python worker/organize_library.py
+```
+
+After reviewing the proposed moves, rerun it with `--apply` to persist the new
+folders and rebuild embeddings for changed items.
 
 On first run, Baileys prints a QR code. Scan it with the WhatsApp account that is already in your private test group. Baileys is an unofficial linked-device library; use this only for a private test group.
 
@@ -127,13 +184,13 @@ See `app/README.md` for the Expo custom dev-client build and App Group setup.
 - Group message with an Instagram or TikTok URL: queues an `ingest` job.
 - Group question ending in `?` or starting with `what`, `where`, `which`, `should`, `find`, or `plan`: queues a `query` job.
 - iOS `POST /share`: queues the same `ingest` job shape with `chat_id='app'`.
-- iOS `POST /query`: returns `retrieval.answer_question(TEST_GROUP_ID, text)` directly.
-- iOS `GET /items`: lists the test group's saved places with distinct saver counts.
+- iOS `POST /query`: answers within the authenticated selected group; queued queries return a job ID for polling when still processing.
+- iOS `GET /items`: lists the authorized selected library, including queued imports and readable failures, with distinct device saver counts and timestamps.
 - The scheduler periodically scans each group for one worthwhile saved-item cluster, respects per-group and per-cluster cooldowns, and queues a single `outbound_messages` row when a nudge is warranted.
 - The listener does not call LLMs, extract video, embed text, or do retrieval.
 - The listener also polls unsent `outbound_messages`, sends them through Baileys, then marks `sent_at`.
 - The worker extracts reel page metadata, verifies places through Google Places, stores the original source URL, dedupes by `(group_id, place_id)`, records each saver in `item_saves`, stores a 384-dim embedding, and writes `save`, `query`, and `error` events.
-- The scheduler records each sent nudge in `nudges` and writes a `nudge` event with the cluster key.
+- The scheduler records queued nudges and links them to an outbox row; the listener records transport acceptance. Impact reports count only messages accepted by the transport, not unsent queues.
 
 ## Nudge Impact
 
@@ -148,7 +205,7 @@ python evals/nudge_impact.py
 
 - Sharing a reel with a clear place replies `Saved → <name> (<list>)`; `items.place_id` and `items.embedding` are populated.
 - Sharing the same place again from another member adds an `item_saves` row without duplicating `items`.
-- Sharing a no-place reel replies `Couldn't find a place in that one 🤔` and creates no item.
+- Understandable non-place reels are saved with a title and topic folder. Unavailable or unreadable reels fail visibly and create no item.
 - Asking `what should we do in <place>?` returns a short answer grounded only in saved items.
 - With 3+ recently active saved items in a group and no cooldown conflict, `python worker/scheduler.py --once` creates exactly one grounded nudge in `outbound_messages`, records it in `nudges`, and logs a `nudge` event.
 - A group nudged within `NUDGE_COOLDOWN_DAYS`, or a cluster nudged within `NUDGE_CLUSTER_COOLDOWN_DAYS`, gets skipped.

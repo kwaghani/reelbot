@@ -34,13 +34,14 @@ except ImportError as exc:
 
 
 ROOT = Path(__file__).resolve().parent
+load_dotenv(ROOT / ".env")
 REELS_PATH = ROOT / "reels.txt"
 OUT_DIR = ROOT / "out"
 RESULTS_PATH = ROOT / "results.json"
 URL_INDEX_PATH = OUT_DIR / "url_index.json"
 TRANSCRIPT_SAVE_CHARS = 500
 OCR_SAVE_CHARS = 500
-ANTHROPIC_MODEL = "claude-haiku-4-5-20251001"
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_FAST_MODEL", "claude-sonnet-5").strip() or "claude-sonnet-5"
 
 SYSTEM_PROMPT = (
     "You are extracting a real-world place/activity from social content; "
@@ -613,7 +614,6 @@ ocr_text:
         response = client.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=800,
-            temperature=0,
             system=SYSTEM_PROMPT,
             messages=[{"role": "user", "content": user_message}],
         )
