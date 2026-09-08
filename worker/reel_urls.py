@@ -23,13 +23,16 @@ def canonical_reel_url(value: str) -> str:
     path = parsed.path.rstrip("/")
     if re.search(r"[\s<>\\\"']", value):
         raise ValueError(URL_ERROR)
-    if host in {"instagram.com", "www.instagram.com", "m.instagram.com"}:
-        match = re.fullmatch(r"/(?:reel|reels|p)/([A-Za-z0-9_-]+)", path)
+    if host in {"instagram.com", "www.instagram.com", "m.instagram.com", "instagr.am", "www.instagr.am"}:
+        match = re.fullmatch(r"/(?:reel|reels|p|tv)/([A-Za-z0-9_-]+)", path)
         if match:
-            kind = "p" if path.startswith("/p/") else "reel"
-            return f"https://www.instagram.com/{kind}/{match[1]}/"
+            return f"https://www.instagram.com/reel/{match[1]}/"
+        if re.fullmatch(r"/share/(?:(?:reel|p)/)?[A-Za-z0-9_-]+", path):
+            return f"https://www.instagram.com{path}/"
+        if host in {'instagr.am','www.instagr.am'} and re.fullmatch(r'/[A-Za-z0-9_/-]+',path):
+            return f'https://instagr.am{path}/'
     if host in {"tiktok.com", "www.tiktok.com", "m.tiktok.com"}:
-        match = re.fullmatch(r"/@([\w.-]+)/video/(\d+)", path)
+        match = re.fullmatch(r"/@([\w.-]*)/video/(\d+)", path)
         if match:
             return f"https://www.tiktok.com/@{match[1]}/video/{match[2]}"
         match = re.fullmatch(r"/t/([A-Za-z0-9]+)", path)

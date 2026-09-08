@@ -1,4 +1,4 @@
-"""Durable personal ingestion with an enforced process deadline and one automatic retry."""
+"""Durable personal ingestion, bounded work and explicit platform retry states."""
 from __future__ import annotations
 import json
 import logging
@@ -12,139 +12,134 @@ from datetime import datetime, timezone
 from pathlib import Path
 from psycopg.types.json import Jsonb
 from worker.db import connect, claim, store_candidate, save_hash
-from worker.pipeline import collect_signals, extract_candidates, new_metrics, price_metrics
+from worker.pipeline import collect_signals, new_metrics, price_metrics
 from worker.places import resolve
 from worker.reel_urls import canonical_reel_url
 LOG = logging.getLogger('reelbot.worker')
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def canonical_source(url):
-    # Redirects are resolved only by the main service, never by the extension.
-    from urllib.parse import urlsplit
-    host = urlsplit(url).hostname
-    if host in {'vm.tiktok.com','vt.tiktok.com'} or '/t/' in url:
-        from worker.media import public_urlopen, request_headers
-        from urllib.request import Request
-        with public_urlopen(Request(url,headers=request_headers()),timeout=8) as response:
-            return canonical_reel_url(response.geturl())
-    return canonical_reel_url(url)
-
-
-def checkpoint(save_id,metrics,signals=None):
+def checkpoint(save_id,metrics,signals=None,diagnostics=None):
     with connect() as conn:
-        conn.execute('''update saves set cost=%s,raw_signals=coalesce(%s,raw_signals),updated_at=now()
-            where id=%s and status='processing' ''',(Jsonb(price_metrics(metrics)),Jsonb(signals) if signals else None,save_id))
+        conn.execute("""update saves set cost=%s,raw_signals=coalesce(%s,raw_signals),
+            diagnostics=diagnostics || %s,updated_at=now() where id=%s and status='processing' """,
+            (Jsonb(price_metrics(metrics)),Jsonb(signals) if signals else None,Jsonb(diagnostics or {}),save_id))
 
 
 def finish(save_id,status,metrics,error=None):
+    from worker.ingestion_states import message
+    from worker.fetch.http import settings
     with connect() as conn:
-        conn.execute('''update saves set status=%s,error_reason=%s,resolved_at=now(),updated_at=now(),cost=%s,
-            retry_at=case when %s='failed' and attempts<2 then now()+interval '15 seconds' else null end
-            where id=%s and status='processing' ''',(status,error,Jsonb(price_metrics(metrics)),status,save_id))
-        conn.execute('''update jobs set status=s.status,error_reason=s.error_reason,updated_at=now()
-            from saves s where jobs.save_id=s.id and s.id=%s''',(save_id,))
-        conn.execute('insert into events(user_id,save_id,kind,detail) select user_id,id,\'save_finished\',%s from saves where id=%s',
+        saved=conn.execute("select * from saves where id=%s and status='processing' for update",(save_id,)).fetchone()
+        if not saved:return
+        blocked=saved['blocked_attempts']+(status=='fetch_blocked');delay=None
+        if status=='fetch_blocked':
+            delays=settings()['retry_seconds']
+            if blocked<=len(delays):delay=delays[blocked-1]
+        elif status=='failed' and saved['attempts']<2:delay=15
+        if status not in ('resolved','needs_review') and not error:error=message(status,saved['platform'],retrying=delay is not None)
+        conn.execute("""update saves set status=%s,error_reason=%s,resolved_at=now(),updated_at=now(),cost=%s,
+            blocked_attempts=%s,retry_at=case when %s::int is null then null else now()+(%s * interval '1 second') end
+            where id=%s""",(status,error,Jsonb(price_metrics(metrics)),blocked,delay,delay,save_id))
+        conn.execute("""update jobs set status=s.status,error_reason=s.error_reason,updated_at=now()
+            from saves s where jobs.save_id=s.id and s.id=%s""",(save_id,))
+        conn.execute("insert into events(user_id,save_id,kind,detail) select user_id,id,'save_finished',%s from saves where id=%s",
                      (Jsonb({'status':status,'cost':metrics}),save_id))
     LOG.info('save_result %s',json.dumps({'save_id':str(save_id),'status':status,'cost':metrics}))
 
 
 def process(save_id):
-    metrics = new_metrics()
+    from worker.url_resolve import resolve_url
+    from worker.save_identity import bind_identity
+    from worker.fetch.http import FetchError
+    from worker.fetch.ladder import FETCH_VERSION
+    from worker.pipeline import candidates_for
+    from worker.registry import registry,registry_version,validate_candidates
+    metrics=new_metrics();diagnostics={}
     try:
+        with connect() as conn:save=conn.execute('select * from saves where id=%s',(save_id,)).fetchone()
+        if not save or save['status']!='processing':return
+        # Accumulate retries honestly; this attempt's tier logs remain in raw_signals.
+        metrics={**metrics,**save['cost']}
+        resolved=resolve_url(save['source_url'])
         with connect() as conn:
-            save = conn.execute('select * from saves where id=%s',(save_id,)).fetchone()
-        if not save or save['status']!='processing':
-            return
-        metrics={**new_metrics(),**save['cost']}
-        remaining=max(1,58-(datetime.now(timezone.utc)-save['started_at']).total_seconds())
-        signal.alarm(min(56,int(remaining)))
-        url = canonical_source(save['source_url'])
-        with connect() as conn:
-            duplicate = conn.execute('select id from saves where url_hash=%s and id<>%s',
-                (save_hash(save['user_id'],url),save_id)).fetchone()
-            if duplicate:
-                # The canonical reel already has durable work. Remove this redundant shortlink row.
-                conn.execute('delete from saves where id=%s',(save_id,))
+            save,merged=bind_identity(conn,save,resolved)
+            if merged:
+                if save['status'] not in ('resolved','needs_review','queued','processing'):
+                    conn.execute("update saves set status='queued',attempts=0,retry_at=null,updated_at=now() where id=%s",(save['id'],))
                 return
-            conn.execute('update saves set source_url=%s,url_hash=%s where id=%s',
-                         (url,save_hash(save['user_id'],url),save_id))
         with tempfile.TemporaryDirectory(prefix='reelbot-') as directory:
-            from worker.registry import registry,registry_version,validate_candidates
-            data=registry();version=registry_version(data)
-            signals=save['raw_signals']
-            if signals.get('extraction_registry_version')==version and isinstance(signals.get('candidates'),list):
-                candidates=validate_candidates(signals['candidates'],data)
+            existing=save['raw_signals']
+            if existing.get('extraction_registry_version')==registry_version() and isinstance(existing.get('candidates'),list) and (existing.get('fetch_version')==FETCH_VERSION or 'fetch_state' not in existing):
+                signals=existing;candidates=validate_candidates(existing['candidates'])
                 metrics['extraction_replays']=metrics.get('extraction_replays',0)+1
+                diagnostics['extraction_path']='durable_replay'
             else:
-                signals = collect_signals(url,directory,metrics)
+                signals=collect_signals(resolved,directory,metrics)
                 checkpoint(save_id,metrics,signals)
-                candidates = extract_candidates(signals,metrics)
-                checkpoint(save_id,metrics,{**signals,'candidates':candidates,'extraction_registry_version':version})
-            if not candidates:
-                finish(save_id,'no_content_found',metrics)
-                return
+                state=signals.get('fetch_state','needs_source_info')
+                if state!='fetched':
+                    if state=='fetch_ok_no_content':
+                        assert not any(signals.get(k,'').strip() for k in ('caption','ocr','transcript'))
+                        assert signals.get('fetch_cache_hit') or {1,2,3}<={t['tier'] for t in signals['tier_log']}
+                    finish(save_id,state,metrics);return
+                candidates=candidates_for(resolved,signals,metrics,diagnostics)
+                signals['extraction_registry_version']=registry_version()
+            signals['candidates']=candidates
+            checkpoint(save_id,metrics,signals,diagnostics)
+            if not candidates:finish(save_id,'extraction_empty',metrics);return
             from collections import Counter
             metrics['content_types']=dict(Counter(c['content_type'] for c in candidates))
-            # Commit the entire result before optional external lookups; interruptions cannot hide candidates.
+            data=registry()
             with connect() as conn:
-                for candidate in candidates:
-                    store_candidate(conn,save,candidate,None,candidate['confidence'])
+                for candidate in candidates:store_candidate(conn,save,candidate,None,candidate['confidence'])
             for candidate in candidates:
                 policy=data[candidate['content_type']]['geo']
                 if policy=='never' or not candidate.get('venue_name'):
-                    metrics.setdefault('geo_skipped',{}).setdefault(candidate['content_type'],0)
-                    metrics['geo_skipped'][candidate['content_type']]+=1
-                    LOG.info('geo_skipped type=%s policy=%s',candidate['content_type'],policy)
+                    counts=metrics.setdefault('geo_skipped',{});kind=candidate['content_type'];counts[kind]=counts.get(kind,0)+1
                     continue
-                if (datetime.now(timezone.utc)-save['started_at']).total_seconds()>49:
-                    LOG.info('geo_deferred type=%s reason=processing_deadline',candidate['content_type'])
-                    break
-                calls_before=metrics['places_calls']
-                lookup={'name':candidate['venue_name'],'city_hint':candidate.get('city_hint'),
-                        'country_hint':None,'confidence':candidate['confidence']}
+                if (datetime.now(timezone.utc)-save['started_at']).total_seconds()>133:break
+                before=metrics['places_calls']
+                lookup={'name':candidate['venue_name'],'city_hint':candidate.get('city_hint') or signals.get('city_hint'),
+                        'country_hint':None,'confidence':candidate['confidence'],'poi':candidate.get('poi') or {},
+                        'address':candidate.get('address_hint') or (candidate.get('poi') or {}).get('address')}
                 try:
                     with connect() as conn:
                         place,confidence,reason=resolve(conn,lookup,metrics)
-                        store_candidate(conn,save,candidate,place,confidence,'unresolved_place' if not place else None)
+                        if lookup.get('place_candidates'):candidate['place_candidates']=lookup['place_candidates']
+                        store_candidate(conn,save,candidate,place,confidence,reason)
                 except Exception as exc:
                     LOG.warning('Place lookup unavailable: %s',type(exc).__name__)
-                    with connect() as conn:
-                        store_candidate(conn,save,candidate,None,candidate['confidence'],'unresolved_place')
-                by_type=metrics.setdefault('places_calls_by_type',{})
-                by_type[candidate['content_type']]=by_type.get(candidate['content_type'],0)+metrics['places_calls']-calls_before
-                checkpoint(save_id,metrics)
+                    with connect() as conn:store_candidate(conn,save,candidate,None,candidate['confidence'],'unresolved_place')
+                counts=metrics.setdefault('places_calls_by_type',{});kind=candidate['content_type'];counts[kind]=counts.get(kind,0)+metrics['places_calls']-before
+                diagnostics['places_queries']=metrics.get('places_queries',[])
+                checkpoint(save_id,metrics,signals,diagnostics)
             with connect() as conn:
-                review = conn.execute('select exists(select 1 from entries where save_id=%s and needs_review) as value',(save_id,)).fetchone()['value']
+                review=conn.execute('select exists(select 1 from entries where save_id=%s and needs_review) as value',(save_id,)).fetchone()['value']
             finish(save_id,'needs_review' if review else 'resolved',metrics)
-    except Exception as exc:
-        LOG.exception('Save failed: %s',save_id)
-        # Avoid exposing provider response bodies, credentials or infrastructure addresses.
-        reason = 'The source could not be processed. Check that it is public, then retry.'
-        if isinstance(exc, RuntimeError) and str(exc).startswith(('The source provided','Extraction did not finish')):
-            reason = str(exc)
-        finish(save_id,'failed',metrics,reason)
+    except FetchError as exc:
+        checkpoint(save_id,metrics,diagnostics={'resolution_error':{'state':exc.state,'detail':exc.detail,'hops':getattr(exc,'trace',[])}})
+        finish(save_id,exc.state,metrics)
+    except Exception:
+        LOG.exception('Save interrupted: %s',save_id)
+        checkpoint(save_id,metrics,diagnostics=diagnostics)
+        finish(save_id,'failed',metrics,'Processing was interrupted. Your save is kept; you can retry.')
 
 
 def run_one():
-    with connect() as conn:
-        save = claim(conn)
-    if not save:
-        return False
-    started = time.monotonic()
-    deadline=max(1,min(55,57-(datetime.now(timezone.utc)-save['started_at']).total_seconds()))
-    child = subprocess.Popen([sys.executable,'-m','worker.worker','--save',str(save['id'])],cwd=ROOT,start_new_session=True)
-    try:
-        code = child.wait(timeout=deadline)
+    with connect() as conn:save=claim(conn)
+    if not save:return False
+    started=time.monotonic()
+    child=subprocess.Popen([sys.executable,'-m','worker.worker','--save',str(save['id'])],cwd=ROOT,start_new_session=True)
+    try:code=child.wait(timeout=145)
     except subprocess.TimeoutExpired:
-        os.killpg(child.pid,signal.SIGKILL)
-        child.wait()
-        code = -1
+        os.killpg(child.pid,signal.SIGKILL);child.wait();code=-1
     if code:
-        with connect() as conn:
-            current = conn.execute('select cost from saves where id=%s',(save['id'],)).fetchone()
-        metrics = {**new_metrics(),**(current['cost'] if current else {})}
-        finish(save['id'],'failed',metrics,'Processing timed out. You can retry.' if code==-1 else 'Processing was interrupted. You can retry.')
+        with connect() as conn:current=conn.execute('select cost,raw_signals from saves where id=%s',(save['id'],)).fetchone()
+        metrics={**new_metrics(),**(current['cost'] if current else {})}
+        # A killed request has unknown provider usage. Never label its cost complete.
+        metrics['llm_usage_unavailable_requests']=metrics.get('llm_usage_unavailable_requests',0)+1
+        finish(save['id'],'failed',metrics,'Processing timed out. Your save is kept; you can retry.' if code==-1 else 'Processing was interrupted. Your save is kept; you can retry.')
     LOG.info('worker_elapsed save=%s seconds=%.3f',save['id'],time.monotonic()-started)
     return True
 
@@ -177,7 +172,7 @@ def main():
     if len(sys.argv)==3 and sys.argv[1]=='--save':
         # A child still expires if its supervising worker is killed.
         signal.signal(signal.SIGALRM,lambda *_: os._exit(124))
-        signal.alarm(56)
+        signal.alarm(144)
         process(sys.argv[2]); return
     indexer=subprocess.Popen([sys.executable,'-m','worker.worker','--index'],cwd=ROOT)
     def stop(*_):

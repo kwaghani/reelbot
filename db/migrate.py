@@ -98,6 +98,10 @@ def migrate_legacy(database_url, dry_run=False):
 
 
 def harden_registry(conn):
+    ingestion_version='20260908014221_ingestion_ladder'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(ingestion_version,)).fetchone():
+        conn.execute((ROOT/'db/migrations/20260908014221_ingestion_ladder.sql').read_text(),prepare=False)
+        conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(ingestion_version,Jsonb({'ingestion_ladder':True})))
     version='003_registry_function_path'
     if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
         conn.execute((ROOT/'db/migrations/003_registry_function_path.sql').read_text(),prepare=False)

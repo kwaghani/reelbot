@@ -27,7 +27,7 @@ const config: ExpoConfig = {
     supportsTablet: false,
     usesAppleSignIn: true,
     bundleIdentifier,
-    buildNumber: "20",
+    buildNumber: "21",
     ...(appleTeamId ? { appleTeamId } : {}),
     infoPlist: {
       AppGroupIdentifier: appGroupIdentifier,

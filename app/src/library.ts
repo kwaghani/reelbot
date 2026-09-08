@@ -34,7 +34,7 @@ export async function saveUrl(value: string, timestamp = Date.now()) {
   const url = canonicalReelUrl(value);
   if (!url) throw new Error('Paste an Instagram, TikTok, or YouTube video link.');
   await update(state => {
-    if (!state.saves.some(s => canonicalReelUrl(s.source_url) === url)) state.saves.unshift({ id: Crypto.randomUUID(), source_url: url, status: 'queued', created_at: new Date(timestamp).toISOString(), local: true });
+    if (!state.saves.some(s => canonicalReelUrl(s.source_url) === url)) state.saves.unshift({ id: Crypto.randomUUID(), source_url: value.trim(), status: 'queued', created_at: new Date(timestamp).toISOString(), local: true });
   });
 }
 export async function queueOperation(input: Omit<Operation, 'id'>) {
@@ -73,9 +73,15 @@ async function performSync() {
       if (!accepted.id || !accepted.status) throw new Error('The server did not confirm the save. It remains queued here.');
       await update(state => { state.saves = state.saves.filter(s => s.id !== save.id && s.id !== accepted.id); state.saves.unshift({ ...accepted, local: false }); });
     }
-    for (const operation of (await loadLibrary()).outbox) {
+    for (const pending of (await loadLibrary()).outbox) {
+      const operation = (await loadLibrary()).outbox.find(o => o.id === pending.id);
+      if (!operation) continue;
       try {
-        await request(operation.path, operation.method, operation.body);
+        const result = await request<{ id?: string }>(operation.path, operation.method, operation.body);
+        if (operation.kind === 'source_info' && result?.id && result.id !== operation.body.entry_id) {
+          const previousId = operation.body.entry_id, serverId = result.id;
+          await update(state => { state.outbox.forEach(pending => { if (pending.target === previousId) { pending.target = serverId; pending.path = pending.path.replace('/items/' + previousId, '/items/' + serverId); } }); });
+        }
         await update(state => { state.outbox = state.outbox.filter(o => o.id !== operation.id); });
       } catch (error) {
         if (!(error instanceof ApiError) || error.status >= 500) throw error;

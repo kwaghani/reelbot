@@ -1,0 +1,39 @@
+header_profile:
+  User-Agent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36'
+  Accept: 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8'
+  Accept-Language: 'en-US,en;q=0.9'
+  Sec-Fetch-Dest: document
+  Sec-Fetch-Mode: navigate
+  Sec-Fetch-Site: none
+  Sec-Fetch-User: '?1'
+cache_days: 30
+retry_seconds: [60, 900, 7200, 43200]
+request_interval_seconds: {tiktok: 0.7, instagram: 1.0, youtube: 0.4}
+city_hashtags:
+  la: Los Angeles
+  losangeles: Los Angeles
+  laeats: Los Angeles
+  venicebeach: Venice Beach
+  veniceca: Venice Beach
+  nyc: New York
+  newyork: New York
+  nyceats: New York
+  sfeats: San Francisco
+  sanfrancisco: San Francisco
+  sffood: San Francisco
+  londoneats: London
+  london: London
+  mumbai: Mumbai
+  mumbaifood: Mumbai
+  tokyo: Tokyo
+  tokyocafe: Tokyo
+city_centroids:
+  Los Angeles: [34.0522, -118.2437]
+  Venice Beach: [33.9850, -118.4695]
+  Santa Monica: [34.0195, -118.4912]
+  San Francisco: [37.7749, -122.4194]
+  New York: [40.7128, -74.0060]
+  London: [51.5074, -0.1278]
+  Mumbai: [19.0760, 72.8777]
+  Tokyo: [35.6762, 139.6503]
+  Kyoto: [35.0116, 135.7681]

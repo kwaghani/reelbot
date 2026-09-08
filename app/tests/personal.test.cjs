@@ -68,3 +68,19 @@ test('registry additions support local search and multi-facet values without cat
  for(const q of ['crane','Fold','paper','Crafts','Studio'])assert.equal(model.searchLocal([entry],q).length,1);
  assert.equal(model.facetValues(entry,{craft:{primary_facet:'material'}}).join(','),'Paper,Card');
 });
+test('shared URL is preserved while local variants remain idempotent',async()=>{
+ const env=environment(),lib=env.load(),original='https://instagram.com/p/ABC/?igsh=original';await lib.saveUrl(original);await lib.saveUrl('https://instagram.com/reel/ABC/');const state=await lib.loadLibrary();assert.equal(state.saves.length,1);assert.equal(state.saves[0].source_url,original);env.close();
+ for(const link of ['https://instagram.com/share/reel/token','https://instagram.com/share/p/token','https://instagr.am/ABC/'])assert.ok(urls.canonicalReelUrl(link));
+});
+test('blocked and deleted saves never offer inappropriate retry or no-content copy',()=>{
+ assert.equal(model.canRetrySave({status:'fetch_blocked',retry_at:'2099-01-01'}),false);assert.equal(model.canRetrySave({status:'fetch_not_found'}),false);
+ assert.equal(model.canAddSourceInfo({status:'fetch_blocked',retry_at:'2099-01-01'}),false);assert.equal(model.canAddSourceInfo({status:'fetch_blocked',retry_at:null}),true);
+ assert.equal(model.canAddSourceInfo({status:'needs_source_info'}),true);assert.equal(model.reviewQuestion({review_reason:'ambiguous_place'}),'Is this the right place?');
+ assert.equal(model.canAddSourceInfo({status:'needs_source_info'}),true);assert.equal(model.reviewQuestion({review_reason:'low_confidence;ambiguous_place'}),'Is this the right place?');
+});
+test('manual source entry and later note survive offline restart and server ID reconciliation',async()=>{
+ const env=environment(),lib=env.load();await lib.queueOperation({kind:'source_info',target:'saved',method:'POST',path:'/saves/saved/source-info',body:{entry_id:'local-entry',title:'Noodles',content_type:'recipe'}});
+ await lib.queueOperation({kind:'note',target:'local-entry',method:'PATCH',path:'/items/local-entry',body:{note:'Try this weekend'}});await lib.syncLibrary();let state=await env.load().loadLibrary();assert.equal(state.items[0].note,'Try this weekend');assert.equal(state.outbox.length,2);
+ const paths=[];env.mocks['./api'].connectDevice=async()=>{};env.mocks['./api'].request=async(path)=>{paths.push(path);if(path.endsWith('/source-info'))return{id:'server-entry'};if(path==='/sync')return{items:[],saves:[],folders:[],registry:{},apple_linked:false};return{ok:true}};
+ await env.load().syncLibrary();assert.ok(paths.includes('/items/server-entry'));assert.equal((await lib.loadLibrary()).outbox.length,0);env.close();
+});

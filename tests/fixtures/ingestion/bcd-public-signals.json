@@ -1,0 +1,50 @@
+{
+  "source_url": "https://vt.tiktok.com/ZSqr2rqry/",
+  "canonical_url": "https://www.tiktok.com/@exploringwithjoy/video/7511087612157873450",
+  "observed_at": "2026-09-08T01:42:00Z",
+  "oembed": {
+    "title": "A hug in a bowl 🍲💛 BCD Tofu House  #bcd #la #losangeles #tofusoup #koreanfood #comfortfood #cravings #laeats ",
+    "author_url": "https://www.tiktok.com/@exploringwithjoy",
+    "author_name": "Joy | Foodie",
+    "thumbnail_url": "https://p16-common-sign.tiktokcdn-us.com/tos-useast5-p-0068-tx/oAdhggFgOAHg9jGkMQeQ8SRAyzGMeWeuXIEfdR~tplv-tiktokx-origin.image?dr=9636&x-expires=1789002000&x-signature=QDPPaTjqBiGZF2shlWf8hKVNE%2Bs%3D&t=4d5b0474&ps=13740610&shp=81f88b70&shcp=43f4a2f9&idc=useast5"
+  },
+  "platform_state": {
+    "id": "7511087612157873450",
+    "desc": "A hug in a bowl 🍲💛 BCD Tofu House  #bcd #la #losangeles #tofusoup #koreanfood #comfortfood #cravings #laeats ",
+    "poi": {
+      "id": "22535865247226828",
+      "name": "BCD Tofu House",
+      "address": "3575 Wilshire Blvd, Los Angeles, California 90010-2303, USA",
+      "city": "East Los Angeles",
+      "category": "Korean Restaurant",
+      "lat": null,
+      "lng": null
+    },
+    "textExtra": [
+      {
+        "hashtagName": "bcd"
+      },
+      {
+        "hashtagName": "la"
+      },
+      {
+        "hashtagName": "losangeles"
+      },
+      {
+        "hashtagName": "tofusoup"
+      },
+      {
+        "hashtagName": "koreanfood"
+      },
+      {
+        "hashtagName": "comfortfood"
+      },
+      {
+        "hashtagName": "cravings"
+      },
+      {
+        "hashtagName": "laeats"
+      }
+    ]
+  }
+}

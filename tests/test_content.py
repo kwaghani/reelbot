@@ -70,7 +70,7 @@ class ContentTests(unittest.TestCase):
         with connect() as conn: claim(conn)
         candidates=[{'content_type':kind,'title':title,'summary':'Save this routine.','attributes':attrs,'venue_name':'A named gym','city_hint':'London','confidence':.95,'evidence':'caption'} for kind,title,attrs in [
             ('recipe','Thai breakfast',{'cuisine':'Thai'}),('workout','Chest circuit',{'muscle_group':['chest']})]]
-        with patch('worker.worker.collect_signals',return_value={'caption':'Breakfast and workout'}),patch('worker.worker.extract_candidates',return_value=candidates),patch('worker.worker.resolve') as resolver,patch('worker.worker.signal.alarm'):
+        with patch('worker.worker.collect_signals',return_value={'caption':'Breakfast and workout','fetch_state':'fetched'}),patch('worker.pipeline.candidates_for',return_value=candidates),patch('worker.worker.resolve') as resolver,patch('worker.worker.signal.alarm'):
             process(saved['id']);resolver.assert_not_called()
         with connect() as conn:
             rows=items(conn,self.a['user']);self.assertEqual({r['content_type'] for r in rows},{'workout','recipe'})
@@ -132,7 +132,7 @@ class ContentTests(unittest.TestCase):
         saved=self.save(self.a,'Resume');candidate={'content_type':'workout','title':'Chest circuit','summary':'A chest circuit.','attributes':{'muscle_group':['chest']},'venue_name':None,'city_hint':None,'confidence':.9,'evidence':'caption'}
         with connect() as conn:
             claim(conn);conn.execute('update saves set raw_signals=%s where id=%s',(Jsonb({'candidates':[candidate],'extraction_registry_version':registry_version()}),saved['id']))
-        with patch('worker.worker.collect_signals') as media,patch('worker.worker.extract_candidates') as llm,patch('worker.worker.signal.alarm'):
+        with patch('worker.worker.collect_signals') as media,patch('worker.pipeline.candidates_for') as llm,patch('worker.worker.signal.alarm'):
             process(saved['id']);media.assert_not_called();llm.assert_not_called()
         with connect() as conn:
             self.assertEqual(len(items(conn,self.a['user'])),1)

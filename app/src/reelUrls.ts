@@ -4,12 +4,15 @@ export function canonicalReelUrl(value: string): string | null {
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.port || /[\s<>\\"']/.test(value)) return null;
     const host = url.hostname.toLowerCase();
     const path = url.pathname.replace(/\/+$/, '');
-    if (['instagram.com', 'www.instagram.com', 'm.instagram.com'].includes(host)) {
-      const match = path.match(/^\/(reel|reels|p)\/([A-Za-z0-9_-]+)$/);
-      return match ? `https://www.instagram.com/${match[1] === 'p' ? 'p' : 'reel'}/${match[2]}/` : null;
+    if (['instagram.com', 'www.instagram.com', 'm.instagram.com', 'instagr.am', 'www.instagr.am'].includes(host)) {
+      const match = path.match(/^\/(reel|reels|p|tv)\/([A-Za-z0-9_-]+)$/);
+      if (match) return `https://www.instagram.com/reel/${match[2]}/`;
+      if (/^\/share\/(?:(?:reel|p)\/)?[A-Za-z0-9_-]+$/.test(path)) return `https://www.instagram.com${path}/`;
+      if (host.endsWith('instagr.am') && /^\/[A-Za-z0-9_/-]+$/.test(path)) return `https://${host}${path}/`;
+      return null;
     }
     if (['tiktok.com', 'www.tiktok.com', 'm.tiktok.com'].includes(host)) {
-      const match = path.match(/^\/@([\w.-]+)\/video\/(\d+)$/);
+      const match = path.match(/^\/@([\w.-]*)\/video\/(\d+)$/);
       if (match) return `https://www.tiktok.com/@${match[1]}/video/${match[2]}`;
       if (/^\/t\/[A-Za-z0-9]+$/.test(path)) return `https://www.tiktok.com${path}/`;
     }

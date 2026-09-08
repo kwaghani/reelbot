@@ -624,7 +624,7 @@ def stage_transcript(video_path: Path, workdir: Path) -> str:
 
     try:
         model = get_whisper_model()
-        segments, _info = model.transcribe(str(audio_path))
+        segments, _info = model.transcribe(str(audio_path), vad_filter=True)
         # Preserve Whisper's segment boundaries so downstream quality filters
         # can remove noisy music without throwing away nearby useful speech.
         lines = []

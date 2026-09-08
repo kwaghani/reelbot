@@ -100,7 +100,7 @@ def candidate_schema(data=None):
         variants.append({'$ref':'#/$defs/'+name})
     properties={'content_type':{'type':'string','enum':list(data)},'title':{'type':'string'},'summary':{'type':'string'},
         'attributes':{'anyOf':variants},'venue_name':{'$ref':'#/$defs/nullableString'},
-        'city_hint':{'$ref':'#/$defs/nullableString'},'confidence':{'type':'number'},'evidence':{'type':'string'}}
+        'city_hint':{'$ref':'#/$defs/nullableString'},'address_hint':{'$ref':'#/$defs/nullableString'},'confidence':{'type':'number'},'evidence':{'type':'string'}}
     return {'type':'array','items':{'type':'object','properties':properties,'required':list(properties),'additionalProperties':False},'$defs':definitions}
 
 def validate_candidates(rows, data=None):
@@ -122,13 +122,13 @@ def validate_candidates(rows, data=None):
         confidence = row.get('confidence')
         if type(confidence) not in {float, int} or not 0 <= confidence <= 1:
             raise ValueError('Confidence must be between zero and one')
-        for key in ('venue_name', 'city_hint'):
+        for key in ('venue_name', 'city_hint', 'address_hint'):
             if row.get(key) is not None and (not isinstance(row[key], str) or len(row[key]) > 200):
                 raise ValueError('Invalid ' + key)
         attributes, reasons = validate_attributes(row.get('content_type'), row.get('attributes'), drop_unknown=True, data=data)
         if confidence < .6: reasons.append('low_confidence')
         if row['content_type'] == 'other' and confidence > .7:
             LOG.warning('registry_gap confidence=%s topic=%s', confidence, attributes.get('topic'))
-        result.append({key: row.get(key) for key in ('content_type','title','summary','venue_name','city_hint','confidence','evidence')} |
+        result.append({key: row.get(key) for key in ('content_type','title','summary','venue_name','city_hint','address_hint','confidence','evidence')} |
                       {'attributes': attributes, 'review_reasons': reasons})
     return result

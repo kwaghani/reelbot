@@ -46,6 +46,13 @@ class Assignment(Input):
 class Apple(Input):
     identity_token: str = Field(min_length=20,max_length=20000)
     nonce: str = Field(min_length=32,max_length=200)
+class SourceInfo(Input):
+    entry_id: UUID
+    title: str = Field(min_length=1,max_length=200)
+    content_type: str
+    city: str | None = Field(default=None,max_length=200)
+class PlaceChoice(Input):
+    place_id: str = Field(min_length=1,max_length=300)
 class Review(Input):
     name: str = Field(min_length=1,max_length=200)
     city: str = Field(min_length=1,max_length=200)
@@ -121,7 +128,8 @@ def sync(user=Depends(require_user)):
     with connect() as conn:
         fail_expired(conn)
         return {'registry':registry(),'items':items(conn,user),
-            'saves':conn.execute('select * from saves where user_id=%s order by created_at desc',(user,)).fetchall(),
+            'saves':conn.execute('''select id,source_url,canonical_url,platform,platform_video_id,status,created_at,error_reason,retry_at,
+                coalesce(raw_signals->'deterministic_candidates'->0->>'name','') as source_info_hint from saves where user_id=%s order by created_at desc''',(user,)).fetchall(),
             'folders':conn.execute('select * from folders where user_id=%s order by sort_order,name',(user,)).fetchall(),
             'apple_linked':bool(conn.execute('select apple_user_id from users where id=%s',(user,)).fetchone()['apple_user_id'])}
 
@@ -135,9 +143,51 @@ def job(job_id:UUID,user=Depends(require_user)):
 def retry(save_id:UUID,user=Depends(require_user)):
     with connect() as conn:
         row=owned(conn,'saves',save_id,user)
-        if row['status'] not in {'failed','needs_review','no_content_found'}: return row
+        from worker.ingestion_states import MANUAL_RETRY
+        if row['status'] not in MANUAL_RETRY | {'needs_review'}: return row
         conn.execute("update jobs set status='queued',error_reason=null,updated_at=now() where save_id=%s and user_id=%s",(save_id,user))
-        return conn.execute("update saves set status='queued',attempts=0,error_reason=null,retry_at=null,updated_at=now() where id=%s returning *",(save_id,)).fetchone()
+        return conn.execute("update saves set status='queued',attempts=0,blocked_attempts=0,error_reason=null,retry_at=null,updated_at=now() where id=%s returning *",(save_id,)).fetchone()
+
+@app.get('/debug/saves/{save_id}')
+def save_diagnostics(save_id:UUID,user=Depends(require_user)):
+    with connect() as conn:
+        saved=owned(conn,'saves',save_id,user)
+        saved['shared_urls']=conn.execute('select source_url from save_source_urls where save_id=%s and user_id=%s',(save_id,user)).fetchall()
+        return saved
+
+@app.post('/saves/{save_id}/source-info')
+def source_info(save_id:UUID,body:SourceInfo,user=Depends(require_user)):
+    with connect() as conn:
+        saved=owned(conn,'saves',save_id,user);data=sync_registry(conn)
+        if saved['status'] in ('queued','processing'):raise HTTPException(409,'This reel is still being processed.')
+        if body.content_type not in data:raise HTTPException(422,'Choose a content type.')
+        title=body.title.strip()
+        if not title:raise HTTPException(422,'Enter a venue or topic name.')
+        attrs={'venue_kind':'other'} if body.content_type=='place' else {}
+        candidate={'content_type':body.content_type,'title':title,'summary':'Saved from your description.',
+            'attributes':attrs,'venue_name':title if body.content_type=='place' else None,'city_hint':body.city or None,
+            'confidence':1.0,'evidence':'Owner supplied this venue or topic.','review_reasons':[]}
+        row=store_candidate(conn,saved,candidate,None,1.0,entry_id=body.entry_id)
+        conn.execute("update saves set raw_signals=raw_signals || %s,status=%s,error_reason=null,retry_at=null,updated_at=now() where id=%s",
+            (Jsonb({'user_source_info':body.model_dump(mode='json')}),'needs_review' if row['needs_review'] else 'resolved',save_id))
+        conn.execute('update jobs set status=(select status from saves where id=%s),error_reason=null,updated_at=now() where save_id=%s',(save_id,save_id))
+        row.pop('embedding',None);return row
+
+@app.post('/items/{item_id}/choose-place')
+def choose_place(item_id:UUID,body:PlaceChoice,user=Depends(require_user)):
+    from worker.places import persist_google
+    with connect() as conn:
+        item=owned(conn,'entries',item_id,user)
+        options=item['candidate'].get('place_candidates',[])
+        selected=next((v['place'] for v in options if v.get('place',{}).get('id')==body.place_id),None)
+        if not selected:raise HTTPException(422,'Choose one of the places offered for this entry.')
+        place=persist_google(conn,selected,{'name':item['candidate'].get('venue_name') or item['title'],'city_hint':item['candidate'].get('city_hint')},manual=True)
+        attrs,reasons=validate_attributes(item['content_type'],item['attributes'])
+        row=conn.execute("""update entries set place_id=%s,confidence=1,needs_review=%s,review_reason=%s,
+            verified_at=case when %s then null else now() end,embedding=null,updated_at=now() where id=%s returning *""",
+            (place['id'],bool(reasons),';'.join(reasons) or None,bool(reasons),item_id)).fetchone()
+        file_entry(conn,row,place);update_save_review(conn,item['save_id'],user)
+        row.pop('embedding',None);return row
 
 @app.delete('/saves/{save_id}')
 def delete_save(save_id:UUID,user=Depends(require_user)):
@@ -210,11 +260,11 @@ def confirm(item_id:UUID,body:Review,user=Depends(require_user)):
             raise HTTPException(422,'This type does not use address lookup. You can link a saved place in the editor.')
         place,confidence,reason=resolve(conn,candidate,metrics)
         attrs,reasons=validate_attributes(item['content_type'],item['attributes'],data=data)
-        if not place: reasons.append('unresolved_place')
+        if not place: reasons.append(reason or 'unresolved_place')
         row=conn.execute("""update entries set candidate=candidate || %s,place_id=%s,confidence=%s,needs_review=%s,
             review_reason=%s,verified_at=case when %s then null else now() end,
             embedding=null,updated_at=now() where id=%s and user_id=%s returning *""",
-            (Jsonb({'venue_name':body.name,'city_hint':body.city}),place['id'] if place else None,confidence,bool(reasons),
+            (Jsonb({'venue_name':body.name,'city_hint':body.city,'place_candidates':candidate.get('place_candidates',[])}),place['id'] if place else None,confidence,bool(reasons),
              ';'.join(reasons) or None,bool(reasons),item_id,user)).fetchone()
         file_entry(conn,row,place,data);update_save_review(conn,item['save_id'],user)
         conn.execute("insert into events(user_id,save_id,kind,detail) values(%s,%s,'owner_confirmation',%s)",
@@ -227,7 +277,7 @@ def export_data(user=Depends(require_user)):
     with connect() as conn:
         return {'format':'reelbot.entries.v1','entries':items(conn,user),
             'folders':conn.execute('select * from folders where user_id=%s',(user,)).fetchall(),
-            'saves':conn.execute('select id,source_url,status,created_at,error_reason from saves where user_id=%s',(user,)).fetchall()}
+            'saves':conn.execute('select id,source_url,canonical_url,platform_video_id,status,created_at,error_reason from saves where user_id=%s',(user,)).fetchall()}
 
 def erase_owner(conn,user):
     conn.execute('delete from events where user_id=%s',(user,))
@@ -333,7 +383,7 @@ def merge_library(conn,source,target):
         folder_map[folder['id']]=row['id']
     for saved in conn.execute('select * from saves where user_id=%s',(source,)).fetchall():
         copied=enqueue(conn,target,saved['source_url'])
-        if copied['status']=='queued' and saved['status'] in {'resolved','needs_review','no_content_found','failed'}:
+        if copied['status']=='queued' and saved['status'] not in {'queued','processing'}:
             conn.execute('update saves set status=%s,raw_signals=%s,cost=%s,error_reason=%s,resolved_at=%s where id=%s',
                 (saved['status'],Jsonb(saved['raw_signals']),Jsonb(saved['cost']),saved['error_reason'],saved['resolved_at'],copied['id']))
             conn.execute('update jobs set status=%s where save_id=%s',(saved['status'],copied['id']))

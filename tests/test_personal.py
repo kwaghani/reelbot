@@ -1,5 +1,5 @@
 """Real disposable Postgres integration tests for isolation, recovery, cache and search."""
-import os,sys,unittest,hashlib,subprocess,tempfile
+import os,sys,unittest,hashlib,subprocess,tempfile,json
 from pathlib import Path
 from uuid import uuid4
 from unittest.mock import patch
@@ -25,7 +25,7 @@ class PersonalTests(unittest.TestCase):
         cls.client=TestClient(app)
     def setUp(self):
         with connect() as conn:
-            conn.execute('truncate events,jobs,folder_items,folders,entries,saves,devices,users,places cascade')
+            conn.execute('truncate source_url_cache,fetch_cache,fetch_rate_limits,city_bias_cache,events,jobs,folder_items,folders,entries,saves,devices,users,places cascade')
         self.a=self.register();self.b=self.register()
     def register(self):
         token=uuid4().hex+uuid4().hex
@@ -100,13 +100,13 @@ class PersonalTests(unittest.TestCase):
         self.save(self.a)
         with connect() as conn:
             saved=claim(conn);self.assertEqual(saved['attempts'],1)
-            conn.execute("update saves set started_at=now()-interval '61 seconds' where id=%s",(saved['id'],))
+            conn.execute("update saves set started_at=now()-interval '151 seconds' where id=%s",(saved['id'],))
         state=self.client.get('/sync',headers=self.a['headers']).json()['saves'][0]
         self.assertEqual(state['status'],'failed');self.assertIn('timed out',state['error_reason'])
         with connect() as conn:
             conn.execute("update saves set retry_at=now()-interval '1 second'")
             self.assertEqual(claim(conn)['attempts'],2)
-            conn.execute("update saves set started_at=now()-interval '61 seconds'")
+            conn.execute("update saves set started_at=now()-interval '151 seconds'")
             from worker.db import fail_expired
             fail_expired(conn)
             self.assertIsNone(claim(conn))
@@ -118,27 +118,22 @@ class PersonalTests(unittest.TestCase):
     def test_slow_media_retains_caption_for_extraction(self):
         from worker.pipeline import collect_signals
         with tempfile.TemporaryDirectory() as directory:
-            Path(directory,'caption.txt').write_text('Five hikes: Point Dume, Hollywood Sign, Los Leones, El Matador, Point Mugu')
+            Path(directory,'signals.json').write_text(json.dumps({'signals':{'caption':'Five hikes: Point Dume, Hollywood Sign, Los Leones, El Matador, Point Mugu','tier_log':[{'tier':1,'outcome':'ok','bytes':20}]},'metrics':{}}))
             with patch('worker.pipeline.subprocess.Popen') as spawn, patch('worker.pipeline.os.killpg') as kill:
                 spawn.return_value.wait.side_effect=[subprocess.TimeoutExpired('collector',30),0]
                 spawn.return_value.pid=12345
                 signals=collect_signals('https://instagram.com/reel/A/',directory,new_metrics())
             self.assertIn('Five hikes',signals['caption'])
-            self.assertTrue(signals['partial'])
-            self.assertIn('transcript',signals['unavailable'])
+            self.assertEqual(signals['fetch_state'],'fetched')
+            self.assertIn('collector',signals['unavailable'])
             kill.assert_called_once()
-    def test_server_queue_wait_expires_and_backoff_is_bounded(self):
+    def test_server_queue_wait_is_durable_and_only_claimed_work_expires(self):
         saved=self.save(self.a)
         with connect() as conn:
-            conn.execute("update saves set created_at=now()-interval '61 seconds',updated_at=now()-interval '61 seconds' where id=%s",(saved['id'],))
+            conn.execute("update saves set created_at=now()-interval '1 day',updated_at=now()-interval '1 day' where id=%s",(saved['id'],))
         state=self.client.get('/sync',headers=self.a['headers']).json()['saves'][0]
-        self.assertEqual(state['status'],'failed')
-        self.assertEqual(state['attempts'],1)
-        self.assertIsNotNone(state['retry_at'])
-        with connect() as conn:
-            self.assertIsNone(claim(conn))
-            conn.execute("update saves set retry_at=now()-interval '1 second'")
-            self.assertEqual(claim(conn)['attempts'],2)
+        self.assertEqual(state['status'],'queued')
+        with connect() as conn:self.assertEqual(claim(conn)['attempts'],1)
     def test_manual_retry_gets_fresh_deadline_and_keeps_prior_cost(self):
         from worker.worker import process
         from worker.db import fail_expired
@@ -151,14 +146,14 @@ class PersonalTests(unittest.TestCase):
             claimed=claim(conn)
             self.assertEqual(claimed['attempts'],1)
             self.assertEqual(fail_expired(conn),0)
-        def extract(signals,metrics):
+        def extract(resolved,signals,metrics,diagnostics):
             metrics['llm_tokens_in']+=50
             return []
-        with patch('worker.worker.collect_signals',return_value={'caption':'A cooking recipe'}),patch('worker.worker.extract_candidates',side_effect=extract),patch('worker.worker.signal.alarm'):
+        with patch('worker.worker.collect_signals',return_value={'caption':'A cooking recipe','fetch_state':'fetched'}),patch('worker.pipeline.candidates_for',side_effect=extract),patch('worker.worker.signal.alarm'):
             process(saved['id'])
         with connect() as conn:
             final=conn.execute('select status,cost from saves where id=%s',(saved['id'],)).fetchone()
-        self.assertEqual(final['status'],'no_content_found')
+        self.assertEqual(final['status'],'extraction_empty')
         self.assertEqual(final['cost']['places_calls'],1)
         self.assertEqual(final['cost']['llm_tokens_in'],150)
     def test_folder_edits_invalidate_semantic_index(self):
