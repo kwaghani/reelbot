@@ -9,5 +9,22 @@
   "api_healthz": {
     "loopback": "ok",
     "phone_facing": "ok"
+  },
+  "ios_build": {
+    "build": "21",
+    "bundle_id": "com.krishwaghani.reelbot",
+    "api_url": "http://100.70.22.235:8123",
+    "extensions": [
+      {
+        "bundle_id": "com.krishwaghani.reelbot.ShareExtension",
+        "build": "21"
+      }
+    ],
+    "signature_verification": "passed --deep --strict",
+    "release_debug_diagnostics_absent": true,
+    "js_bundle_sha256": "6a3458a393a3765838d20c4a7fbc2a89fc769aaf87b8a7ccc5b58353dfab2c56",
+    "source_implementation_commit": "9849bc4e",
+    "physical_install": "pending; iPhone unavailable",
+    "archive_sha256": "d8466a5e4623d3d52d293799ce544b7c53c139b2b3d1a52e6221dd8bfd8dde62"
   }
 }

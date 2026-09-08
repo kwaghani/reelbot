@@ -1,0 +1,44 @@
+{
+  "service": "restarted loopback API + shared phone-facing worker",
+  "test_owner": "temporary and erased after check",
+  "status": "resolved",
+  "entity": "BCD Tofu House",
+  "address": "3575 Wilshire Blvd, Los Angeles, CA 90010, USA",
+  "seconds": 2.14,
+  "fetch_tier_log": [
+    {
+      "tier": "cache",
+      "bytes": 0,
+      "outcome": "hit"
+    }
+  ],
+  "cost": {
+    "llm_usd": 0.0,
+    "ocr_cost": 0.0,
+    "cache_hits": 1,
+    "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+    "vision_usd": 0.0,
+    "ocr_seconds": 0.0,
+    "llm_requests": 0,
+    "places_calls": 0,
+    "content_types": {
+      "place": 1
+    },
+    "cost_complete": true,
+    "estimated_usd": 0.0,
+    "llm_tokens_in": 0,
+    "llm_cache_hits": 0,
+    "llm_tokens_out": 0,
+    "fetch_cache_hits": 1,
+    "transcription_cost": 0.0,
+    "places_calls_by_type": {
+      "place": 0
+    },
+    "extraction_cache_hits": 1,
+    "llm_cache_read_tokens": 0,
+    "transcription_seconds": 0.0,
+    "llm_cache_write_tokens": 0,
+    "llm_uncached_equivalent_usd": 0.0,
+    "llm_usage_unavailable_requests": 0
+  }
+}
