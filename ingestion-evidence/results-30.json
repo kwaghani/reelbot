@@ -1,0 +1,4556 @@
+[
+  {
+    "id": "ingestion-01",
+    "source_url": "https://vt.tiktok.com/ZSqr2rqry/",
+    "canonical_url": "https://www.tiktok.com/@exploringwithjoy/video/7511087612157873450",
+    "platform": "tiktok",
+    "platform_video_id": "7511087612157873450",
+    "discovery_provenance": "User failing link; caption and platform POI independently inspected",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 109,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "263b0acb0578a7a5b2b7569c92a23f424cbd02570a3df0932e4faf1d0669364f",
+    "poi": null,
+    "city_hint": "Los Angeles",
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 2365,
+        "outcome": "ok",
+        "seconds": 1.297,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSqr2rqry/",
+        "bytes": 128,
+        "http_status": 301
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "BCD Tofu House",
+        "content_type": "place",
+        "confidence": 0.85,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "BCD Tofu House",
+        "formatted_address": "3575 Wilshire Blvd, Los Angeles, CA 90010, USA",
+        "lat": 34.06192,
+        "lng": -118.3026,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0118485,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 2365,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 2365,
+          "outcome": "ok",
+          "seconds": 1.297,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 1,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0438485,
+      "llm_tokens_in": 271,
+      "llm_cache_hits": 0,
+      "llm_tokens_out": 134,
+      "places_queries": [
+        {
+          "query": "BCD Tofu House Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJobNaHIO4woARmjJB77L7Heg",
+                "location": {
+                  "latitude": 34.06192,
+                  "longitude": -118.3026
+                },
+                "displayName": {
+                  "text": "BCD Tofu House",
+                  "languageCode": "en"
+                },
+                "primaryType": "korean_restaurant",
+                "formattedAddress": "3575 Wilshire Blvd, Los Angeles, CA 90010, USA"
+              },
+              "score": 1.0,
+              "distance_m": 5532.6,
+              "inside_city_radius": true
+            },
+            {
+              "place": {
+                "id": "ChIJKUhncoa4woAR9rCHOP9SZg0",
+                "location": {
+                  "latitude": 34.056157299999995,
+                  "longitude": -118.30948509999999
+                },
+                "displayName": {
+                  "text": "BCD Tofu House",
+                  "languageCode": "en"
+                },
+                "primaryType": "korean_restaurant",
+                "formattedAddress": "869 S Western Ave #2, Los Angeles, CA 90005, USA"
+              },
+              "score": 1.0,
+              "distance_m": 6076.5,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJobNaHIO4woARmjJB77L7Heg",
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 1
+      },
+      "llm_cache_read_tokens": 0,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 8726,
+      "llm_uncached_equivalent_usd": 0.009667,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-02",
+    "source_url": "https://vt.tiktok.com/ZSCDMwK3f/",
+    "canonical_url": "https://www.tiktok.com/@ornella.munich/video/7597838208012995843",
+    "platform": "tiktok",
+    "platform_video_id": "7597838208012995843",
+    "discovery_provenance": "Prior regression fixture; archived caption",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 433,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "9c26cdaf5bad5166210ae4d1439b97c0c41cfad665055c1922a05f8c29b7752a",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 2674,
+        "outcome": "ok",
+        "seconds": 1.148,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSCDMwK3f/",
+        "bytes": 126,
+        "http_status": 301
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Ornella",
+        "content_type": "place",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "Ornella | Italian Kitchen",
+        "formatted_address": "Platzl 4, 80331 München-Altstadt-Lehel, Germany",
+        "lat": 48.1382292,
+        "lng": 11.5801515,
+        "source_grounded": true,
+        "city_hint": "Munich",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0118945,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 2674,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 2674,
+          "outcome": "ok",
+          "seconds": 1.148,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 2,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0758945,
+      "llm_tokens_in": 267,
+      "llm_cache_hits": 0,
+      "llm_tokens_out": 144,
+      "places_queries": [
+        {
+          "query": "Munich",
+          "purpose": "city_centroid",
+          "results": [
+            {
+              "id": "ChIJ2V-Mo_l1nkcRfZixfUq4DAE",
+              "location": {
+                "latitude": 48.1351253,
+                "longitude": 11.5819806
+              },
+              "displayName": {
+                "text": "Munich",
+                "languageCode": "en"
+              },
+              "formattedAddress": "Munich, Germany"
+            }
+          ],
+          "location_bias": null
+        },
+        {
+          "query": "Ornella Munich",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJbReNlIt1nkcRSGdcxJqfHfw",
+                "location": {
+                  "latitude": 48.1382292,
+                  "longitude": 11.5801515
+                },
+                "displayName": {
+                  "text": "Ornella | Italian Kitchen",
+                  "languageCode": "de"
+                },
+                "primaryType": "italian_restaurant",
+                "formattedAddress": "Platzl 4, 80331 München-Altstadt-Lehel, Germany"
+              },
+              "score": 1.0,
+              "distance_m": 370.9,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJbReNlIt1nkcRSGdcxJqfHfw",
+          "location_bias": {
+            "latitude": 48.1351253,
+            "longitude": 11.5819806
+          }
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 2
+      },
+      "llm_cache_read_tokens": 0,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 8726,
+      "llm_uncached_equivalent_usd": 0.009713,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-03",
+    "source_url": "https://vt.tiktok.com/ZSC9GQCVS/",
+    "canonical_url": "https://www.tiktok.com/@hamoni_usa/video/7642836911362444574",
+    "platform": "tiktok",
+    "platform_video_id": "7642836911362444574",
+    "discovery_provenance": "Prior regression fixture; archived caption",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 655,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "1a6a912d965405a5f11e017e0e9f959f99322e7d27b352aff4a51365b4172c38",
+    "poi": null,
+    "city_hint": "New York",
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 3111,
+        "outcome": "ok",
+        "seconds": 1.329,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSC9GQCVS/",
+        "bytes": 122,
+        "http_status": 301
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Peter Pan Donut & Pastry Shop",
+        "content_type": "place",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "Peter Pan Donut & Pastry Shop",
+        "formatted_address": "727 Manhattan Ave, Brooklyn, NY 11222, USA",
+        "lat": 40.7260834,
+        "lng": -73.9523074,
+        "source_grounded": true,
+        "city_hint": "Brooklyn",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0020956,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 3111,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 3111,
+          "outcome": "ok",
+          "seconds": 1.329,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 2,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0660956,
+      "llm_tokens_in": 403,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 164,
+      "places_queries": [
+        {
+          "query": "Brooklyn",
+          "purpose": "city_centroid",
+          "results": [
+            {
+              "id": "ChIJCSF8lBZEwokRhngABHRcdoI",
+              "location": {
+                "latitude": 40.6781784,
+                "longitude": -73.9441579
+              },
+              "displayName": {
+                "text": "Brooklyn",
+                "languageCode": "en"
+              },
+              "formattedAddress": "Brooklyn, NY, USA"
+            }
+          ],
+          "location_bias": null
+        },
+        {
+          "query": "Peter Pan Donut & Pastry Shop Brooklyn",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJfR8jHkRZwokRgllkzTBqhlM",
+                "location": {
+                  "latitude": 40.72608340000001,
+                  "longitude": -73.9523074
+                },
+                "displayName": {
+                  "text": "Peter Pan Donut & Pastry Shop",
+                  "languageCode": "en"
+                },
+                "primaryType": "donut_shop",
+                "formattedAddress": "727 Manhattan Ave, Brooklyn, NY 11222, USA"
+              },
+              "score": 1.0,
+              "distance_m": 5370.9,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJfR8jHkRZwokRgllkzTBqhlM",
+          "location_bias": {
+            "latitude": 40.6781784,
+            "longitude": -73.9441579
+          }
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 2
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009949,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-04",
+    "source_url": "https://vt.tiktok.com/ZSM46hvLU/",
+    "canonical_url": "https://www.tiktok.com/@quezoncitygovt/video/7478602824494877969",
+    "platform": "tiktok",
+    "platform_video_id": "7478602824494877969",
+    "discovery_provenance": "https://quezoncity.gov.ph/explore-qc-ramyeon-bar-and-restaurant/",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 637,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "8c623ae2101adac5535b97299247de054253416aaafedf22979f8bc70f37e1c9",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 5423,
+        "outcome": "ok",
+        "seconds": 0.508,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSM46hvLU/",
+        "bytes": 366,
+        "http_status": 302
+      },
+      {
+        "url": "https://www.tiktok.com/@/video/7478602824494877969",
+        "bytes": 410598,
+        "http_status": 200
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Ramyeon Bar and Restaurant",
+        "content_type": "place",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "Ramyeon Bar and Restaurant",
+        "formatted_address": "80 Maginhawa, Diliman, Quezon City, 1101 Kalakhang Maynila, Philippines",
+        "lat": 14.6466659,
+        "lng": 121.05804,
+        "source_grounded": true,
+        "city_hint": "Quezon City",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0025516,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 5423,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 5423,
+          "outcome": "ok",
+          "seconds": 0.508,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 2,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0665516,
+      "llm_tokens_in": 719,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 192,
+      "places_queries": [
+        {
+          "query": "Quezon City",
+          "purpose": "city_centroid",
+          "results": [
+            {
+              "id": "ChIJdXPvQgm6lzMRQD0I_tkymko",
+              "location": {
+                "latitude": 14.6487853,
+                "longitude": 121.05093850000002
+              },
+              "displayName": {
+                "text": "Quezon City",
+                "languageCode": "en"
+              },
+              "formattedAddress": "Quezon City, Metro Manila, Philippines"
+            }
+          ],
+          "location_bias": null
+        },
+        {
+          "query": "Ramyeon Bar and Restaurant Quezon City",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJ5-Hkjly3lzMRtOs4x27NwAY",
+                "location": {
+                  "latitude": 14.646665899999999,
+                  "longitude": 121.05803999999999
+                },
+                "displayName": {
+                  "text": "Ramyeon Bar and Restaurant",
+                  "languageCode": "en"
+                },
+                "primaryType": "restaurant",
+                "formattedAddress": "80 Maginhawa, Diliman, Quezon City, 1101 Kalakhang Maynila, Philippines"
+              },
+              "score": 1.0,
+              "distance_m": 799.5,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJ5-Hkjly3lzMRtOs4x27NwAY",
+          "location_bias": {
+            "latitude": 14.6487853,
+            "longitude": 121.05093850000002
+          }
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 2
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.010405,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-05",
+    "source_url": "https://vt.tiktok.com/ZSMPLgVYS/",
+    "canonical_url": "https://www.tiktok.com/@quezoncitygovt/video/7476319543972121874",
+    "platform": "tiktok",
+    "platform_video_id": "7476319543972121874",
+    "discovery_provenance": "https://quezoncity.gov.ph/explore-qc-bellinis-italian-restaurant/",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 673,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "da7ed54a594aa2ee68effd3349e6c976aa3622bcafb56bd3699b7cdb8950b25d",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 5448,
+        "outcome": "ok",
+        "seconds": 0.566,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSMPLgVYS/",
+        "bytes": 374,
+        "http_status": 302
+      },
+      {
+        "url": "https://www.tiktok.com/@/video/7476319543972121874",
+        "bytes": 418216,
+        "http_status": 200
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Bellini's Italian Restaurant",
+        "content_type": "place",
+        "confidence": 0.859259259259259,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "Bellini's",
+        "formatted_address": "Cubao Expo, 3 General Romulo Ave, Cubao, Quezon City, 1109 Metro Manila, Philippines",
+        "lat": 14.6224588,
+        "lng": 121.0569562,
+        "source_grounded": true,
+        "city_hint": "Quezon City",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0024406,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 5448,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 5448,
+          "outcome": "ok",
+          "seconds": 0.566,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 1,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0344406,
+      "llm_tokens_in": 758,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 162,
+      "places_queries": [
+        {
+          "query": "Bellini's Italian Restaurant Quezon City",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJW_rRe5W3lzMRfAEDADZhcOA",
+                "location": {
+                  "latitude": 14.622458799999999,
+                  "longitude": 121.0569562
+                },
+                "displayName": {
+                  "text": "Bellini's",
+                  "languageCode": "en"
+                },
+                "primaryType": "italian_restaurant",
+                "formattedAddress": "Cubao Expo, 3 General Romulo Ave, Cubao, Quezon City, 1109 Metro Manila, Philippines"
+              },
+              "score": 0.85926,
+              "distance_m": 2998.1,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJW_rRe5W3lzMRfAEDADZhcOA",
+          "location_bias": {
+            "latitude": 14.6487853,
+            "longitude": 121.0509385
+          }
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 1
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.010294,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-06",
+    "source_url": "https://vt.tiktok.com/ZS5GFuKMQ/",
+    "canonical_url": "https://www.tiktok.com/@popculturebf/video/7594127498833612052",
+    "platform": "tiktok",
+    "platform_video_id": "7594127498833612052",
+    "discovery_provenance": "https://www.eatwhatsia.com/places/binge",
+    "status": "needs_review",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 273,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "3a2b47b5e209a944ece9183f341af859de6146700e273cf80e22c75e13959241",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 1934,
+        "outcome": "ok",
+        "seconds": 0.592,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZS5GFuKMQ/",
+        "bytes": 372,
+        "http_status": 302
+      },
+      {
+        "url": "https://www.tiktok.com/@/video/7594127498833612052",
+        "bytes": 411568,
+        "http_status": 200
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Hey Binge",
+        "content_type": "place",
+        "confidence": 0.5,
+        "needs_review": true,
+        "review_reason": "low_confidence;ambiguous_place",
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": "Singapore",
+        "suggestions": [
+          {
+            "place": {
+              "id": "ChIJt5N4kjsZ2jERS-uoBzFdHQI",
+              "location": {
+                "latitude": 1.2842913999999999,
+                "longitude": 103.83298099999999
+              },
+              "displayName": {
+                "text": "Binge",
+                "languageCode": "en"
+              },
+              "primaryType": "cafe",
+              "formattedAddress": "61 Seng Poh Ln, #01-03, Singapore 160061"
+            },
+            "score": 0.43704,
+            "distance_m": 7678.4,
+            "inside_city_radius": true
+          },
+          {
+            "place": {
+              "id": "ChIJ_5fK6YLf3IARt4TnsbFVqUM",
+              "location": {
+                "latitude": 33.6796039,
+                "longitude": -117.90652329999998
+              },
+              "displayName": {
+                "text": "Heybings Desserts",
+                "languageCode": "en"
+              },
+              "primaryType": "dessert_shop",
+              "formattedAddress": "1175 Baker St A6, Costa Mesa, CA 92626, USA"
+            },
+            "score": 0.82538,
+            "distance_m": 14169662.5,
+            "inside_city_radius": false
+          },
+          {
+            "place": {
+              "id": "ChIJHeLSC7bf3IARxKfyAPD1gqw",
+              "location": {
+                "latitude": 33.6690998,
+                "longitude": -117.8520433
+              },
+              "displayName": {
+                "text": "Heybings Desserts & Coffee",
+                "languageCode": "en"
+              },
+              "primaryType": "dessert_shop",
+              "formattedAddress": "2636 Dupont Dr B50, Irvine, CA 92612, USA"
+            },
+            "score": 0.69907,
+            "distance_m": 14174523.7,
+            "inside_city_radius": false
+          }
+        ]
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0019206,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 1934,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 1934,
+          "outcome": "ok",
+          "seconds": 0.592,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 4,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.1299206,
+      "llm_tokens_in": 283,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 153,
+      "places_queries": [
+        {
+          "query": "Singapore",
+          "purpose": "city_centroid",
+          "results": [
+            {
+              "id": "ChIJdZOLiiMR2jERxPWrUs9peIg",
+              "location": {
+                "latitude": 1.352083,
+                "longitude": 103.819836
+              },
+              "displayName": {
+                "text": "Singapore",
+                "languageCode": "en"
+              },
+              "formattedAddress": "Singapore"
+            }
+          ],
+          "location_bias": null
+        },
+        {
+          "query": "Hey Binge Singapore",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJt5N4kjsZ2jERS-uoBzFdHQI",
+                "location": {
+                  "latitude": 1.2842913999999999,
+                  "longitude": 103.83298099999999
+                },
+                "displayName": {
+                  "text": "Binge",
+                  "languageCode": "en"
+                },
+                "primaryType": "cafe",
+                "formattedAddress": "61 Seng Poh Ln, #01-03, Singapore 160061"
+              },
+              "score": 0.43704,
+              "distance_m": 7678.4,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 1.352083,
+            "longitude": 103.819836
+          }
+        },
+        {
+          "query": "Hey Binge",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJt5N4kjsZ2jERS-uoBzFdHQI",
+                "location": {
+                  "latitude": 1.2842913999999999,
+                  "longitude": 103.83298099999999
+                },
+                "displayName": {
+                  "text": "Binge",
+                  "languageCode": "en"
+                },
+                "primaryType": "cafe",
+                "formattedAddress": "61 Seng Poh Ln, #01-03, Singapore 160061"
+              },
+              "score": 0.43704,
+              "distance_m": 7678.4,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 1.352083,
+            "longitude": 103.819836
+          }
+        },
+        {
+          "query": "Hey Binge",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJHeLSC7bf3IARxKfyAPD1gqw",
+                "location": {
+                  "latitude": 33.6690998,
+                  "longitude": -117.8520433
+                },
+                "displayName": {
+                  "text": "Heybings Desserts & Coffee",
+                  "languageCode": "en"
+                },
+                "primaryType": "dessert_shop",
+                "formattedAddress": "2636 Dupont Dr B50, Irvine, CA 92612, USA"
+              },
+              "score": 0.69907,
+              "distance_m": 14174523.7,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJ_5fK6YLf3IARt4TnsbFVqUM",
+                "location": {
+                  "latitude": 33.6796039,
+                  "longitude": -117.90652329999998
+                },
+                "displayName": {
+                  "text": "Heybings Desserts",
+                  "languageCode": "en"
+                },
+                "primaryType": "dessert_shop",
+                "formattedAddress": "1175 Baker St A6, Costa Mesa, CA 92626, USA"
+              },
+              "score": 0.82538,
+              "distance_m": 14169662.5,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": null,
+          "location_bias": null
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 4
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009774,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-07",
+    "source_url": "https://vt.tiktok.com/ZS6xp1QhX/",
+    "canonical_url": "https://www.tiktok.com/@sabrina_parsi/video/7213362829825461509",
+    "platform": "tiktok",
+    "platform_video_id": "7213362829825461509",
+    "discovery_provenance": "https://interioreducators.co.uk/uploads/submitted-files/185.Writing_.C25_01_.pdf",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 237,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "197d89a831d0538c585e1744aa103f8c51d86da3e2cdfc64f811693f08c249db",
+    "poi": null,
+    "city_hint": "London",
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 3119,
+        "outcome": "ok",
+        "seconds": 0.526,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZS6xp1QhX/",
+        "bytes": 356,
+        "http_status": 302
+      },
+      {
+        "url": "https://www.tiktok.com/@/video/7213362829825461509",
+        "bytes": 401939,
+        "http_status": 200
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "The Ivy Asia St Pauls",
+        "content_type": "place",
+        "confidence": 0.85,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "The Ivy Asia St Paul's",
+        "formatted_address": "20 New Change, London EC4M 9AG, UK",
+        "lat": 51.5137393,
+        "lng": -0.0960159,
+        "source_grounded": true,
+        "city_hint": "London",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0020436,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 3119,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 3119,
+          "outcome": "ok",
+          "seconds": 0.526,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 1,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0340436,
+      "llm_tokens_in": 336,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 167,
+      "places_queries": [
+        {
+          "query": "The Ivy Asia St Pauls London",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJi7MWEnIFdkgRuEWNRjzpQ6w",
+                "location": {
+                  "latitude": 51.5137393,
+                  "longitude": -0.0960159
+                },
+                "displayName": {
+                  "text": "The Ivy Asia St Paul's",
+                  "languageCode": "en"
+                },
+                "primaryType": "asian_restaurant",
+                "formattedAddress": "20 New Change, London EC4M 9AG, UK"
+              },
+              "score": 1.0,
+              "distance_m": 2309.8,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJi7MWEnIFdkgRuEWNRjzpQ6w",
+          "location_bias": {
+            "latitude": 51.5074,
+            "longitude": -0.1278
+          }
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 1
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009897,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-08",
+    "source_url": "https://vt.tiktok.com/ZSkGhKVwg/",
+    "canonical_url": "https://www.tiktok.com/@chefwayneliew/video/7516080346065063186",
+    "platform": "tiktok",
+    "platform_video_id": "7516080346065063186",
+    "discovery_provenance": "https://www.singaporemeal.com/247744285720336/Tiong-Kee-Hainanese-Chicken-Rice",
+    "status": "needs_review",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 160,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "55d786fe8dba58ee1223f2ea03ba9861a5513c1e2de519f2c96e9a2c942cbb2d",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 2719,
+        "outcome": "ok",
+        "seconds": 0.578,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSkGhKVwg/",
+        "bytes": 351,
+        "http_status": 302
+      },
+      {
+        "url": "https://www.tiktok.com/@/video/7516080346065063186",
+        "bytes": 407879,
+        "http_status": 200
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Zippy",
+        "content_type": "place",
+        "confidence": 0.5,
+        "needs_review": true,
+        "review_reason": "low_confidence",
+        "place_name": "Zippy",
+        "formatted_address": "961 Jurong West Street 92, Block 961, Singapore 640961",
+        "lat": 1.3413469,
+        "lng": 103.692065,
+        "source_grounded": false,
+        "city_hint": "Singapore",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0019016,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 2719,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 2719,
+          "outcome": "ok",
+          "seconds": 0.578,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 1,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0339016,
+      "llm_tokens_in": 304,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 145,
+      "places_queries": [
+        {
+          "query": "Zippy Singapore",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJQwNG-5sP2jERGrvUyaioRoE",
+                "location": {
+                  "latitude": 1.3413469,
+                  "longitude": 103.692065
+                },
+                "displayName": {
+                  "text": "Zippy",
+                  "languageCode": "en"
+                },
+                "primaryType": "point_of_interest",
+                "formattedAddress": "961 Jurong West Street 92, Block 961, Singapore 640961"
+              },
+              "score": 1.0,
+              "distance_m": 14253.6,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJQwNG-5sP2jERGrvUyaioRoE",
+          "location_bias": {
+            "latitude": 1.352083,
+            "longitude": 103.819836
+          }
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 1
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009755,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-09",
+    "source_url": "https://vt.tiktok.com/ZSxo2sX2B/",
+    "canonical_url": "https://www.tiktok.com/@ashleymarkletreats/video/7642516492377935135",
+    "platform": "tiktok",
+    "platform_video_id": "7642516492377935135",
+    "discovery_provenance": "https://recipechronicle.com/",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 927,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "1ae8a9313d530febc272ec3c823886d80a1121eb2598fd520207e6f7bf184551",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 3730,
+        "outcome": "ok",
+        "seconds": 0.583,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSxo2sX2B/",
+        "bytes": 130,
+        "http_status": 301
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Viral Dot Cake",
+        "content_type": "recipe",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0026116,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 3730,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 3730,
+          "outcome": "ok",
+          "seconds": 0.583,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0026116,
+      "llm_tokens_in": 459,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 256,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.010465,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-10",
+    "source_url": "https://vt.tiktok.com/ZSxoMaRfh/",
+    "canonical_url": "https://www.tiktok.com/@janinemakhlouf/video/7634226382280756498",
+    "platform": "tiktok",
+    "platform_video_id": "7634226382280756498",
+    "discovery_provenance": "https://recipechronicle.com/",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 186,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "eee8b146a3b05f94df5c7724b5fe095f9e85a873625ca922413f0fb3aae6b8e6",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 1740,
+        "outcome": "ok",
+        "seconds": 0.571,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSxoMaRfh/",
+        "bytes": 126,
+        "http_status": 301
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Greek Yogurt Mochi",
+        "content_type": "recipe",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0020376,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 1740,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 1740,
+          "outcome": "ok",
+          "seconds": 0.571,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0020376,
+      "llm_tokens_in": 190,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 195,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009891,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-11",
+    "source_url": "https://vt.tiktok.com/ZSxo6FSV2/",
+    "canonical_url": "https://www.tiktok.com/@eatpayylove/video/7320725246892412202",
+    "platform": "tiktok",
+    "platform_video_id": "7320725246892412202",
+    "discovery_provenance": "https://recipechronicle.com/",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 345,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "4692974e9129fc65a4f726590e15471a530ce86465ff0abb2d0f6046ad34b215",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 2432,
+        "outcome": "ok",
+        "seconds": 1.382,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSxo6FSV2/",
+        "bytes": 123,
+        "http_status": 301
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Cucumber Salad with Sesame-Ginger Dressing",
+        "content_type": "recipe",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0026616,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 2432,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 2432,
+          "outcome": "ok",
+          "seconds": 1.382,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0026616,
+      "llm_tokens_in": 289,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 300,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.010515,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-12",
+    "source_url": "https://vt.tiktok.com/ZSQep5HyY/",
+    "canonical_url": "https://www.tiktok.com/@michaelfinch/video/7609960154339118344",
+    "platform": "tiktok",
+    "platform_video_id": "7609960154339118344",
+    "discovery_provenance": "https://recipechronicle.com/",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 685,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "1864671a7329c7ff7793eec8d2c7d8991b11d5487ea32685d847d92ed4a8ba6f",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 2702,
+        "outcome": "ok",
+        "seconds": 1.213,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSQep5HyY/",
+        "bytes": 124,
+        "http_status": 301
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Easy One Pan Dumplings",
+        "content_type": "recipe",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0022256,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 2702,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 2702,
+          "outcome": "ok",
+          "seconds": 1.213,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0022256,
+      "llm_tokens_in": 363,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 198,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.010079,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-13",
+    "source_url": "https://vt.tiktok.com/ZSHa9YNo8/",
+    "canonical_url": "https://www.tiktok.com/@james.bok/video/7623534279053610247",
+    "platform": "tiktok",
+    "platform_video_id": "7623534279053610247",
+    "discovery_provenance": "https://www.reddit.com/r/selfaccountable/comments/1sfjs73/random_madness_april_7_2026_dinner_menu/",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 354,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "9a7f0f1d55d816dfc39cf51f047f208b1b5eadd7b371e8392042dbfe733391b1",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 2295,
+        "outcome": "ok",
+        "seconds": 1.182,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSHa9YNo8/",
+        "bytes": 364,
+        "http_status": 302
+      },
+      {
+        "url": "https://www.tiktok.com/@/video/7623534279053610247",
+        "bytes": 411313,
+        "http_status": 200
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Soy Garlic Tofu",
+        "content_type": "recipe",
+        "confidence": 0.92,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0025146,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 2295,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 2295,
+          "outcome": "ok",
+          "seconds": 1.182,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0025146,
+      "llm_tokens_in": 397,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 249,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.010368,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-14",
+    "source_url": "https://vt.tiktok.com/ZSayBXayu/",
+    "canonical_url": "https://www.tiktok.com/@roa.kurashi/video/7584381792661130504",
+    "platform": "tiktok",
+    "platform_video_id": "7584381792661130504",
+    "discovery_provenance": "https://tribune.com.pk/story/2588969/2-ingredient-japanese-greek-yoghurt-cheesecake-trend-goes-viral-on-tiktok",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 500,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "eb55011dbe2c3c58c8fbb7ba0e35b1c4cf1a0fc4bf2c7c7c933d18b6ad105a79",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 4749,
+        "outcome": "ok",
+        "seconds": 1.128,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSayBXayu/",
+        "bytes": 368,
+        "http_status": 302
+      },
+      {
+        "url": "https://www.tiktok.com/@/video/7584381792661130504",
+        "bytes": 416664,
+        "http_status": 200
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Lazy Cheesecake with Yogurt and Coconut Sablés",
+        "content_type": "recipe",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0032326,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 4749,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 4749,
+          "outcome": "ok",
+          "seconds": 1.128,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0032326,
+      "llm_tokens_in": 780,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 316,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.011086,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-15",
+    "source_url": "https://vt.tiktok.com/ZSjHvjuvU/",
+    "canonical_url": "https://www.tiktok.com/@jmlicup_official/video/7439388529823714567",
+    "platform": "tiktok",
+    "platform_video_id": "7439388529823714567",
+    "discovery_provenance": "https://tikwm.com/video/7439388529823714567.html",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 71,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "d359e162045f4f440a61a8f88154f5e11757c0022f00e79c691ceefb1115603c",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 1923,
+        "outcome": "ok",
+        "seconds": 0.679,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSjHvjuvU/",
+        "bytes": 368,
+        "http_status": 302
+      },
+      {
+        "url": "https://www.tiktok.com/@/video/7439388529823714567",
+        "bytes": 385131,
+        "http_status": 200
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Spinning Cardio Workout",
+        "content_type": "workout",
+        "confidence": 0.65,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0019386,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 1923,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 1923,
+          "outcome": "ok",
+          "seconds": 0.679,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "workout": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "workout": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0019386,
+      "llm_tokens_in": 206,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 172,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009792,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-16",
+    "source_url": "https://vt.tiktok.com/ZSkpKjwth/",
+    "canonical_url": "https://www.tiktok.com/@jeniferliuu/video/7487548198563712263",
+    "platform": "tiktok",
+    "platform_video_id": "7487548198563712263",
+    "discovery_provenance": "https://www.researchgate.net/publication/398139820_Lifestyle_Commodification_A_Netnographic_Analysis_of_the_Digital_Matcha_Subculture_on_Instagram_and_TikTok",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 396,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "740ff806796297bd3f3142432808adc951b898b0365ce0c1507217bf18459ed4",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 2654,
+        "outcome": "ok",
+        "seconds": 0.523,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [
+      {
+        "url": "https://vt.tiktok.com/ZSkpKjwth/",
+        "bytes": 364,
+        "http_status": 302
+      },
+      {
+        "url": "https://www.tiktok.com/@/video/7487548198563712263",
+        "bytes": 407418,
+        "http_status": 200
+      }
+    ],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Perfect Matcha",
+        "content_type": "recipe",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0024446,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 2654,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 2654,
+          "outcome": "ok",
+          "seconds": 0.523,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0024446,
+      "llm_tokens_in": 382,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 238,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.010298,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-17",
+    "source_url": "https://www.instagram.com/reel/DcuTC_5jWDW/",
+    "canonical_url": "https://www.instagram.com/reel/DcuTC_5jWDW/",
+    "platform": "instagram",
+    "platform_video_id": "DcuTC_5jWDW",
+    "discovery_provenance": "Actual prior saves, captions independently inspected",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 1767,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "bd8c37a6f45f44b3164fbbd832cbb79a8d4c66006b04ac087315fced05e88be7",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 0,
+        "reason": "No Instagram oEmbed token configured.",
+        "outcome": "skipped",
+        "seconds": 0.0
+      },
+      {
+        "tier": 2,
+        "bytes": 760898,
+        "outcome": "ok",
+        "seconds": 0.777,
+        "poi_found": false,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Trap Queen - Fetty Wap",
+        "content_type": "media",
+        "confidence": 0.92,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0024016,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 760898,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 0,
+          "reason": "No Instagram oEmbed token configured.",
+          "outcome": "skipped",
+          "seconds": 0.0
+        },
+        {
+          "tier": 2,
+          "bytes": 760898,
+          "outcome": "ok",
+          "seconds": 0.777,
+          "poi_found": false,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "media": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "media": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0024016,
+      "llm_tokens_in": 559,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 194,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.010255,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-18",
+    "source_url": "https://www.instagram.com/reel/DXE43z7DWev/",
+    "canonical_url": "https://www.instagram.com/reel/DXE43z7DWev/",
+    "platform": "instagram",
+    "platform_video_id": "DXE43z7DWev",
+    "discovery_provenance": "Actual prior saves, captions independently inspected",
+    "status": "needs_review",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 345,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "5ea2bb2e9ba4cfb8c4e55d49a0d850264dd2236207e34b2e846de36382a2760c",
+    "poi": null,
+    "city_hint": "Venice Beach",
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 0,
+        "reason": "No Instagram oEmbed token configured.",
+        "outcome": "skipped",
+        "seconds": 0.0
+      },
+      {
+        "tier": 2,
+        "bytes": 766618,
+        "outcome": "ok",
+        "seconds": 0.677,
+        "poi_found": false,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Vee's Cafe",
+        "content_type": "place",
+        "confidence": 0.65,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "Vees Cafe",
+        "formatted_address": "241 S Figueroa St, Los Angeles, CA 90012, USA",
+        "lat": 34.0561568,
+        "lng": -118.2541035,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": []
+      },
+      {
+        "title": "Alisa Wine Friends",
+        "content_type": "place",
+        "confidence": 0.65,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "Alisa wine & friends",
+        "formatted_address": "1009 Abbot Kinney Blvd, Venice, CA 90291, USA",
+        "lat": 33.992357,
+        "lng": -118.4724306,
+        "source_grounded": true,
+        "city_hint": "Venice Beach",
+        "suggestions": []
+      },
+      {
+        "title": "Karachi BBQ Tonight",
+        "content_type": "place",
+        "confidence": 0.65,
+        "needs_review": true,
+        "review_reason": "ambiguous_place",
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": [
+          {
+            "place": {
+              "id": "ChIJd9BxN2Qz3YAR9PPitVHbiCI",
+              "location": {
+                "latitude": 33.8763542,
+                "longitude": -118.1408632
+              },
+              "displayName": {
+                "text": "KARACHI BBQ TONIGHT | HALAL PAKISTANI RESTAURANT",
+                "languageCode": "en"
+              },
+              "primaryType": "pakistani_restaurant",
+              "formattedAddress": "17210 Lakewood Blvd, Bellflower, CA 90706, USA"
+            },
+            "score": 1.0,
+            "distance_m": 21731.8,
+            "inside_city_radius": false
+          }
+        ]
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0030966,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 766618,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 0,
+          "reason": "No Instagram oEmbed token configured.",
+          "outcome": "skipped",
+          "seconds": 0.0
+        },
+        {
+          "tier": 2,
+          "bytes": 766618,
+          "outcome": "ok",
+          "seconds": 0.677,
+          "poi_found": false,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 5,
+      "content_types": {
+        "place": 3
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.1630966,
+      "llm_tokens_in": 379,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 369,
+      "places_queries": [
+        {
+          "query": "Vee's Cafe Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJuZUWFnfHwoARUIk9cgBH7y8",
+                "location": {
+                  "latitude": 34.0561568,
+                  "longitude": -118.2541035
+                },
+                "displayName": {
+                  "text": "Vees Cafe",
+                  "languageCode": "en"
+                },
+                "primaryType": "brunch_restaurant",
+                "formattedAddress": "241 S Figueroa St, Los Angeles, CA 90012, USA"
+              },
+              "score": 1.0,
+              "distance_m": 1054.6,
+              "inside_city_radius": true
+            },
+            {
+              "place": {
+                "id": "ChIJ9YLGNKS5woARVFXh37hp1wo",
+                "location": {
+                  "latitude": 34.032346,
+                  "longitude": -118.36123889999998
+                },
+                "displayName": {
+                  "text": "Vees Cafe",
+                  "languageCode": "en"
+                },
+                "primaryType": "brunch_restaurant",
+                "formattedAddress": "5418 W Adams Blvd, Los Angeles, CA 90016, USA"
+              },
+              "score": 1.0,
+              "distance_m": 11052.6,
+              "inside_city_radius": true
+            },
+            {
+              "place": {
+                "id": "ChIJP13BMALHwoARnLNP5HIXqlo",
+                "location": {
+                  "latitude": 34.0692905,
+                  "longitude": -118.2923088
+                },
+                "displayName": {
+                  "text": "V Cafe ( Halal )",
+                  "languageCode": "en"
+                },
+                "primaryType": "halal_restaurant",
+                "formattedAddress": "3525 W 3rd St, Los Angeles, CA 90020, USA"
+              },
+              "score": 0.58333,
+              "distance_m": 4864.4,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJuZUWFnfHwoARUIk9cgBH7y8",
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Alisa Wine Friends Venice Beach",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJ2Vi6-Ny7woARYksb6X_xhzk",
+                "location": {
+                  "latitude": 33.992357,
+                  "longitude": -118.47243059999998
+                },
+                "displayName": {
+                  "text": "Alisa wine & friends",
+                  "languageCode": "en"
+                },
+                "primaryType": "restaurant",
+                "formattedAddress": "1009 Abbot Kinney Blvd, Venice, CA 90291, USA"
+              },
+              "score": 1.0,
+              "distance_m": 861.5,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJ2Vi6-Ny7woARYksb6X_xhzk",
+          "location_bias": {
+            "latitude": 33.985,
+            "longitude": -118.4695
+          }
+        },
+        {
+          "query": "Karachi BBQ Tonight Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJd9BxN2Qz3YAR9PPitVHbiCI",
+                "location": {
+                  "latitude": 33.8763542,
+                  "longitude": -118.1408632
+                },
+                "displayName": {
+                  "text": "KARACHI BBQ TONIGHT | HALAL PAKISTANI RESTAURANT",
+                  "languageCode": "en"
+                },
+                "primaryType": "pakistani_restaurant",
+                "formattedAddress": "17210 Lakewood Blvd, Bellflower, CA 90706, USA"
+              },
+              "score": 1.0,
+              "distance_m": 21731.8,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Karachi BBQ Tonight",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJd9BxN2Qz3YAR9PPitVHbiCI",
+                "location": {
+                  "latitude": 33.8763542,
+                  "longitude": -118.1408632
+                },
+                "displayName": {
+                  "text": "KARACHI BBQ TONIGHT | HALAL PAKISTANI RESTAURANT",
+                  "languageCode": "en"
+                },
+                "primaryType": "pakistani_restaurant",
+                "formattedAddress": "17210 Lakewood Blvd, Bellflower, CA 90706, USA"
+              },
+              "score": 1.0,
+              "distance_m": 21731.8,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Karachi BBQ Tonight",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJd9BxN2Qz3YAR9PPitVHbiCI",
+                "location": {
+                  "latitude": 33.8763542,
+                  "longitude": -118.1408632
+                },
+                "displayName": {
+                  "text": "KARACHI BBQ TONIGHT | HALAL PAKISTANI RESTAURANT",
+                  "languageCode": "en"
+                },
+                "primaryType": "pakistani_restaurant",
+                "formattedAddress": "17210 Lakewood Blvd, Bellflower, CA 90706, USA"
+              },
+              "score": 1.0,
+              "distance_m": 21731.8,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": null,
+          "location_bias": null
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 5
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.01095,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-19",
+    "source_url": "https://www.instagram.com/reel/DUpDIg1k87g/",
+    "canonical_url": "https://www.instagram.com/reel/DUpDIg1k87g/",
+    "platform": "instagram",
+    "platform_video_id": "DUpDIg1k87g",
+    "discovery_provenance": "Actual prior saves, captions independently inspected",
+    "status": "needs_review",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 569,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "e8d86670645b4cd593eac622efb1af4088084efeaa972dba88fd503b33ecafb3",
+    "poi": null,
+    "city_hint": "Los Angeles",
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 0,
+        "reason": "No Instagram oEmbed token configured.",
+        "outcome": "skipped",
+        "seconds": 0.0
+      },
+      {
+        "tier": 2,
+        "bytes": 804628,
+        "outcome": "ok",
+        "seconds": 0.922,
+        "poi_found": false,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "El Matador State Beach",
+        "content_type": "place",
+        "confidence": 0.9,
+        "needs_review": true,
+        "review_reason": "ambiguous_place",
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": [
+          {
+            "place": {
+              "id": "ChIJgR6jrls96IARK5jsg2fUeiQ",
+              "location": {
+                "latitude": 34.0380426,
+                "longitude": -118.874663
+              },
+              "displayName": {
+                "text": "El Matador State Beach",
+                "languageCode": "en"
+              },
+              "formattedAddress": "32350 Pacific Coast Hwy, Malibu, CA 90265, USA"
+            },
+            "score": 1.0,
+            "distance_m": 58155.5,
+            "inside_city_radius": false
+          },
+          {
+            "place": {
+              "id": "ChIJ72sbtFs96IARL10lRZv4esI",
+              "location": {
+                "latitude": 34.0380195,
+                "longitude": -118.87458090000001
+              },
+              "displayName": {
+                "text": "El Matador State Beach",
+                "languageCode": "en"
+              },
+              "primaryType": "beach",
+              "formattedAddress": "El Matador State Beach, Malibu, CA 90265, USA"
+            },
+            "score": 1.0,
+            "distance_m": 58148.0,
+            "inside_city_radius": false
+          }
+        ]
+      },
+      {
+        "title": "Point Mugu State Beach",
+        "content_type": "place",
+        "confidence": 0.9,
+        "needs_review": true,
+        "review_reason": "ambiguous_place",
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": [
+          {
+            "place": {
+              "id": "ChIJIzJtzDE_6IARAxhAQbY0_g4",
+              "location": {
+                "latitude": 34.109535699999995,
+                "longitude": -119.0074121
+              },
+              "displayName": {
+                "text": "Point Mugu State Park",
+                "languageCode": "en"
+              },
+              "primaryType": "state_park",
+              "formattedAddress": "9000 Pacific Coast Hwy, Malibu, CA 90265, USA"
+            },
+            "score": 0.93506,
+            "distance_m": 70623.7,
+            "inside_city_radius": false
+          },
+          {
+            "place": {
+              "id": "ChIJU6ctT11H6IARrsk5OI3Jar8",
+              "location": {
+                "latitude": 34.0855625,
+                "longitude": -119.057046
+              },
+              "displayName": {
+                "text": "Point Mugu Beach",
+                "languageCode": "en"
+              },
+              "primaryType": "beach",
+              "formattedAddress": "Point Mugu Beach, California 90265, USA"
+            },
+            "score": 0.93295,
+            "distance_m": 75008.9,
+            "inside_city_radius": false
+          },
+          {
+            "place": {
+              "id": "ChIJQezJe2lH6IARfUpAP9Xx2KE",
+              "location": {
+                "latitude": 34.088649,
+                "longitude": -119.06351199999999
+              },
+              "displayName": {
+                "text": "Point Mugu State Park - Mugu Beach",
+                "languageCode": "en"
+              },
+              "primaryType": "parking_lot",
+              "formattedAddress": "Pacific Coast Hwy, NAS Point Mugu, CA 93042, USA"
+            },
+            "score": 0.92386,
+            "distance_m": 75620.0,
+            "inside_city_radius": false
+          }
+        ]
+      },
+      {
+        "title": "Point Dume",
+        "content_type": "place",
+        "confidence": 0.9,
+        "needs_review": true,
+        "review_reason": "ambiguous_place",
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": [
+          {
+            "place": {
+              "id": "ChIJ783ZIgQZ6IAR10iNg5_H6a0",
+              "location": {
+                "latitude": 34.001201,
+                "longitude": -118.80644199999999
+              },
+              "displayName": {
+                "text": "Point Dume",
+                "languageCode": "en"
+              },
+              "primaryType": "tourist_attraction",
+              "formattedAddress": "Cliffside Dr &, Birdview Ave, Malibu, CA 90265, USA"
+            },
+            "score": 1.0,
+            "distance_m": 52169.0,
+            "inside_city_radius": false
+          },
+          {
+            "place": {
+              "id": "ChIJCVaxHgQZ6IARtqUavCkgOSM",
+              "location": {
+                "latitude": 34.0016746,
+                "longitude": -118.8068986
+              },
+              "displayName": {
+                "text": "Point Dume",
+                "languageCode": "en"
+              },
+              "primaryType": "mountain_peak",
+              "formattedAddress": "Point Dume, Malibu, CA 90265, USA"
+            },
+            "score": 1.0,
+            "distance_m": 52205.0,
+            "inside_city_radius": false
+          },
+          {
+            "place": {
+              "id": "ChIJe1OXllYY6IARhBZQ3k0fXTE",
+              "location": {
+                "latitude": 34.0110923,
+                "longitude": -118.8165959
+              },
+              "displayName": {
+                "text": "Point Dume State Beach",
+                "languageCode": "en"
+              },
+              "primaryType": "beach",
+              "formattedAddress": "Point Dume State Beach, 6800 Westward Beach Rd, Malibu, CA 90265, USA"
+            },
+            "score": 0.89091,
+            "distance_m": 52990.0,
+            "inside_city_radius": false
+          }
+        ]
+      },
+      {
+        "title": "Hollywood Sign",
+        "content_type": "place",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "Hollywood Sign",
+        "formatted_address": "Los Angeles, CA 90068, USA",
+        "lat": 34.1341151,
+        "lng": -118.3215482,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": []
+      },
+      {
+        "title": "Los Leones Trail",
+        "content_type": "place",
+        "confidence": 0.9,
+        "needs_review": true,
+        "review_reason": "ambiguous_place",
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": [
+          {
+            "place": {
+              "id": "ChIJ_Q-UsuujwoARdbpeaR54hEc",
+              "location": {
+                "latitude": 34.047355599999996,
+                "longitude": -118.560069
+              },
+              "displayName": {
+                "text": "Los Leones Canyon",
+                "languageCode": "en"
+              },
+              "primaryType": "hiking_area",
+              "formattedAddress": "510 Los Liones Dr, Pacific Palisades, CA 90272, USA"
+            },
+            "score": 0.89118,
+            "distance_m": 29152.3,
+            "inside_city_radius": false
+          },
+          {
+            "place": {
+              "id": "ChIJgQAX2sGjwoARNYeOpJ77aqI",
+              "location": {
+                "latitude": 34.0499261,
+                "longitude": -118.5597156
+              },
+              "displayName": {
+                "text": "Los Liones Canyon Trail",
+                "languageCode": "en"
+              },
+              "formattedAddress": "Los Liones Canyon Trail, Los Angeles, CA 90272, USA"
+            },
+            "score": 0.87127,
+            "distance_m": 29115.4,
+            "inside_city_radius": false
+          }
+        ]
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0041836,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 804628,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 0,
+          "reason": "No Instagram oEmbed token configured.",
+          "outcome": "skipped",
+          "seconds": 0.0
+        },
+        {
+          "tier": 2,
+          "bytes": 804628,
+          "outcome": "ok",
+          "seconds": 0.922,
+          "poi_found": false,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 13,
+      "content_types": {
+        "place": 5
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.4201836,
+      "llm_tokens_in": 441,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 574,
+      "places_queries": [
+        {
+          "query": "Point Dume Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJ783ZIgQZ6IAR10iNg5_H6a0",
+                "location": {
+                  "latitude": 34.001201,
+                  "longitude": -118.80644199999999
+                },
+                "displayName": {
+                  "text": "Point Dume",
+                  "languageCode": "en"
+                },
+                "primaryType": "tourist_attraction",
+                "formattedAddress": "Cliffside Dr &, Birdview Ave, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 52169.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Point Dume",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJ783ZIgQZ6IAR10iNg5_H6a0",
+                "location": {
+                  "latitude": 34.001201,
+                  "longitude": -118.80644199999999
+                },
+                "displayName": {
+                  "text": "Point Dume",
+                  "languageCode": "en"
+                },
+                "primaryType": "tourist_attraction",
+                "formattedAddress": "Cliffside Dr &, Birdview Ave, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 52169.0,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJe1OXllYY6IARhBZQ3k0fXTE",
+                "location": {
+                  "latitude": 34.0110923,
+                  "longitude": -118.8165959
+                },
+                "displayName": {
+                  "text": "Point Dume State Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "beach",
+                "formattedAddress": "Point Dume State Beach, 6800 Westward Beach Rd, Malibu, CA 90265, USA"
+              },
+              "score": 0.89091,
+              "distance_m": 52990.0,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJbck9LwAZ6IAR6JTZsFVl-XY",
+                "location": {
+                  "latitude": 34.010720299999996,
+                  "longitude": -118.81646309999999
+                },
+                "displayName": {
+                  "text": "Point Dume State Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "park",
+                "formattedAddress": "6800 Westward Beach Rd, Malibu, CA 90265, USA"
+              },
+              "score": 0.89091,
+              "distance_m": 52981.5,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJCVaxHgQZ6IARtqUavCkgOSM",
+                "location": {
+                  "latitude": 34.0016746,
+                  "longitude": -118.8068986
+                },
+                "displayName": {
+                  "text": "Point Dume",
+                  "languageCode": "en"
+                },
+                "primaryType": "mountain_peak",
+                "formattedAddress": "Point Dume, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 52205.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Point Dume",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJ783ZIgQZ6IAR10iNg5_H6a0",
+                "location": {
+                  "latitude": 34.001201,
+                  "longitude": -118.80644199999999
+                },
+                "displayName": {
+                  "text": "Point Dume",
+                  "languageCode": "en"
+                },
+                "primaryType": "tourist_attraction",
+                "formattedAddress": "Cliffside Dr &, Birdview Ave, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 52169.0,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJe1OXllYY6IARhBZQ3k0fXTE",
+                "location": {
+                  "latitude": 34.0110923,
+                  "longitude": -118.8165959
+                },
+                "displayName": {
+                  "text": "Point Dume State Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "beach",
+                "formattedAddress": "Point Dume State Beach, 6800 Westward Beach Rd, Malibu, CA 90265, USA"
+              },
+              "score": 0.89091,
+              "distance_m": 52990.0,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJbck9LwAZ6IAR6JTZsFVl-XY",
+                "location": {
+                  "latitude": 34.010720299999996,
+                  "longitude": -118.81646309999999
+                },
+                "displayName": {
+                  "text": "Point Dume State Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "park",
+                "formattedAddress": "6800 Westward Beach Rd, Malibu, CA 90265, USA"
+              },
+              "score": 0.89091,
+              "distance_m": 52981.5,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJCVaxHgQZ6IARtqUavCkgOSM",
+                "location": {
+                  "latitude": 34.0016746,
+                  "longitude": -118.8068986
+                },
+                "displayName": {
+                  "text": "Point Dume",
+                  "languageCode": "en"
+                },
+                "primaryType": "mountain_peak",
+                "formattedAddress": "Point Dume, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 52205.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": null,
+          "location_bias": null
+        },
+        {
+          "query": "Hollywood Sign Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJfVpQRQq_woARQ5hwJsast6s",
+                "location": {
+                  "latitude": 34.134115099999995,
+                  "longitude": -118.32154820000001
+                },
+                "displayName": {
+                  "text": "Hollywood Sign",
+                  "languageCode": "en"
+                },
+                "primaryType": "historical_landmark",
+                "formattedAddress": "Los Angeles, CA 90068, USA"
+              },
+              "score": 1.0,
+              "distance_m": 11591.1,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJfVpQRQq_woARQ5hwJsast6s",
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Los Leones Trail Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJgQAX2sGjwoARNYeOpJ77aqI",
+                "location": {
+                  "latitude": 34.0499261,
+                  "longitude": -118.5597156
+                },
+                "displayName": {
+                  "text": "Los Liones Canyon Trail",
+                  "languageCode": "en"
+                },
+                "formattedAddress": "Los Liones Canyon Trail, Los Angeles, CA 90272, USA"
+              },
+              "score": 0.87127,
+              "distance_m": 29115.4,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Los Leones Trail",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJ_Q-UsuujwoARdbpeaR54hEc",
+                "location": {
+                  "latitude": 34.047355599999996,
+                  "longitude": -118.560069
+                },
+                "displayName": {
+                  "text": "Los Leones Canyon",
+                  "languageCode": "en"
+                },
+                "primaryType": "hiking_area",
+                "formattedAddress": "510 Los Liones Dr, Pacific Palisades, CA 90272, USA"
+              },
+              "score": 0.89118,
+              "distance_m": 29152.3,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Los Leones Trail",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJ_Q-UsuujwoARdbpeaR54hEc",
+                "location": {
+                  "latitude": 34.047355599999996,
+                  "longitude": -118.560069
+                },
+                "displayName": {
+                  "text": "Los Leones Canyon",
+                  "languageCode": "en"
+                },
+                "primaryType": "hiking_area",
+                "formattedAddress": "510 Los Liones Dr, Pacific Palisades, CA 90272, USA"
+              },
+              "score": 0.89118,
+              "distance_m": 29152.3,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": null,
+          "location_bias": null
+        },
+        {
+          "query": "El Matador State Beach Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJgR6jrls96IARK5jsg2fUeiQ",
+                "location": {
+                  "latitude": 34.0380426,
+                  "longitude": -118.874663
+                },
+                "displayName": {
+                  "text": "El Matador State Beach",
+                  "languageCode": "en"
+                },
+                "formattedAddress": "32350 Pacific Coast Hwy, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 58155.5,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJ72sbtFs96IARL10lRZv4esI",
+                "location": {
+                  "latitude": 34.0380195,
+                  "longitude": -118.87458090000001
+                },
+                "displayName": {
+                  "text": "El Matador State Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "beach",
+                "formattedAddress": "El Matador State Beach, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 58148.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "El Matador State Beach",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJgR6jrls96IARK5jsg2fUeiQ",
+                "location": {
+                  "latitude": 34.0380426,
+                  "longitude": -118.874663
+                },
+                "displayName": {
+                  "text": "El Matador State Beach",
+                  "languageCode": "en"
+                },
+                "formattedAddress": "32350 Pacific Coast Hwy, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 58155.5,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJ72sbtFs96IARL10lRZv4esI",
+                "location": {
+                  "latitude": 34.0380195,
+                  "longitude": -118.87458090000001
+                },
+                "displayName": {
+                  "text": "El Matador State Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "beach",
+                "formattedAddress": "El Matador State Beach, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 58148.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "El Matador State Beach",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJgR6jrls96IARK5jsg2fUeiQ",
+                "location": {
+                  "latitude": 34.0380426,
+                  "longitude": -118.874663
+                },
+                "displayName": {
+                  "text": "El Matador State Beach",
+                  "languageCode": "en"
+                },
+                "formattedAddress": "32350 Pacific Coast Hwy, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 58155.5,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJ72sbtFs96IARL10lRZv4esI",
+                "location": {
+                  "latitude": 34.0380195,
+                  "longitude": -118.87458090000001
+                },
+                "displayName": {
+                  "text": "El Matador State Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "beach",
+                "formattedAddress": "El Matador State Beach, Malibu, CA 90265, USA"
+              },
+              "score": 1.0,
+              "distance_m": 58148.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": null,
+          "location_bias": null
+        },
+        {
+          "query": "Point Mugu State Beach Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJIzJtzDE_6IARAxhAQbY0_g4",
+                "location": {
+                  "latitude": 34.109535699999995,
+                  "longitude": -119.0074121
+                },
+                "displayName": {
+                  "text": "Point Mugu State Park",
+                  "languageCode": "en"
+                },
+                "primaryType": "state_park",
+                "formattedAddress": "9000 Pacific Coast Hwy, Malibu, CA 90265, USA"
+              },
+              "score": 0.93506,
+              "distance_m": 70623.7,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJQezJe2lH6IARfUpAP9Xx2KE",
+                "location": {
+                  "latitude": 34.088649,
+                  "longitude": -119.06351199999999
+                },
+                "displayName": {
+                  "text": "Point Mugu State Park - Mugu Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "parking_lot",
+                "formattedAddress": "Pacific Coast Hwy, NAS Point Mugu, CA 93042, USA"
+              },
+              "score": 0.92386,
+              "distance_m": 75620.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Point Mugu State Beach",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJQezJe2lH6IARfUpAP9Xx2KE",
+                "location": {
+                  "latitude": 34.088649,
+                  "longitude": -119.06351199999999
+                },
+                "displayName": {
+                  "text": "Point Mugu State Park - Mugu Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "parking_lot",
+                "formattedAddress": "Pacific Coast Hwy, NAS Point Mugu, CA 93042, USA"
+              },
+              "score": 0.92386,
+              "distance_m": 75620.0,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJIzJtzDE_6IARAxhAQbY0_g4",
+                "location": {
+                  "latitude": 34.109535699999995,
+                  "longitude": -119.0074121
+                },
+                "displayName": {
+                  "text": "Point Mugu State Park",
+                  "languageCode": "en"
+                },
+                "primaryType": "state_park",
+                "formattedAddress": "9000 Pacific Coast Hwy, Malibu, CA 90265, USA"
+              },
+              "score": 0.93506,
+              "distance_m": 70623.7,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJU6ctT11H6IARrsk5OI3Jar8",
+                "location": {
+                  "latitude": 34.0855625,
+                  "longitude": -119.057046
+                },
+                "displayName": {
+                  "text": "Point Mugu Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "beach",
+                "formattedAddress": "Point Mugu Beach, California 90265, USA"
+              },
+              "score": 0.93295,
+              "distance_m": 75008.9,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Point Mugu State Beach",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJQezJe2lH6IARfUpAP9Xx2KE",
+                "location": {
+                  "latitude": 34.088649,
+                  "longitude": -119.06351199999999
+                },
+                "displayName": {
+                  "text": "Point Mugu State Park - Mugu Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "parking_lot",
+                "formattedAddress": "Pacific Coast Hwy, NAS Point Mugu, CA 93042, USA"
+              },
+              "score": 0.92386,
+              "distance_m": 75620.0,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJIzJtzDE_6IARAxhAQbY0_g4",
+                "location": {
+                  "latitude": 34.109535699999995,
+                  "longitude": -119.0074121
+                },
+                "displayName": {
+                  "text": "Point Mugu State Park",
+                  "languageCode": "en"
+                },
+                "primaryType": "state_park",
+                "formattedAddress": "9000 Pacific Coast Hwy, Malibu, CA 90265, USA"
+              },
+              "score": 0.93506,
+              "distance_m": 70623.7,
+              "inside_city_radius": false
+            },
+            {
+              "place": {
+                "id": "ChIJU6ctT11H6IARrsk5OI3Jar8",
+                "location": {
+                  "latitude": 34.0855625,
+                  "longitude": -119.057046
+                },
+                "displayName": {
+                  "text": "Point Mugu Beach",
+                  "languageCode": "en"
+                },
+                "primaryType": "beach",
+                "formattedAddress": "Point Mugu Beach, California 90265, USA"
+              },
+              "score": 0.93295,
+              "distance_m": 75008.9,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": null,
+          "location_bias": null
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 13
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.012037,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-20",
+    "source_url": "https://www.youtube.com/watch?v=fMl1pwvXobk",
+    "canonical_url": "https://www.youtube.com/watch?v=fMl1pwvXobk",
+    "platform": "youtube",
+    "platform_video_id": "fMl1pwvXobk",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 78,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "252365bcb733367171e9960a90a53ce11ce6e38595d591247a6c674a70591199",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 888,
+        "outcome": "ok",
+        "seconds": 0.532,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Chest Workout with Dumbbell",
+        "content_type": "workout",
+        "confidence": 0.85,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0017646,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 888,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 888,
+          "outcome": "ok",
+          "seconds": 0.532,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "workout": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "workout": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0017646,
+      "llm_tokens_in": 172,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 144,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009618,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-21",
+    "source_url": "https://www.youtube.com/watch?v=gB4nd6tVel4",
+    "canonical_url": "https://www.youtube.com/watch?v=gB4nd6tVel4",
+    "platform": "youtube",
+    "platform_video_id": "gB4nd6tVel4",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 154,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "7d2723f6085616fa7bf62d6259da14b63908b28b93fe32068d55c83a8a65315c",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 771,
+        "outcome": "ok",
+        "seconds": 0.418,
+        "http_status": 200
+      },
+      {
+        "tier": 2,
+        "bytes": 1219451,
+        "outcome": "ok",
+        "seconds": 1.513,
+        "poi_found": false,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Leg Workout",
+        "content_type": "workout",
+        "confidence": 0.85,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0016776,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 1220222,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 771,
+          "outcome": "ok",
+          "seconds": 0.418,
+          "http_status": 200
+        },
+        {
+          "tier": 2,
+          "bytes": 1219451,
+          "outcome": "ok",
+          "seconds": 1.513,
+          "poi_found": false,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "workout": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "workout": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0016776,
+      "llm_tokens_in": 230,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 115,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009531,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-22",
+    "source_url": "https://www.youtube.com/watch?v=KyUNiRgraR8",
+    "canonical_url": "https://www.youtube.com/watch?v=KyUNiRgraR8",
+    "platform": "youtube",
+    "platform_video_id": "KyUNiRgraR8",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 33,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "4252ea594577be7c0406bb60215416ed139d1af1c2c95687a25915650dc20aca",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 808,
+        "outcome": "ok",
+        "seconds": 0.389,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Treino de braços completo",
+        "content_type": "workout",
+        "confidence": 0.85,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0016426,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 808,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 808,
+          "outcome": "ok",
+          "seconds": 0.389,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "workout": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "workout": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0016426,
+      "llm_tokens_in": 145,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 125,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009496,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-23",
+    "source_url": "https://www.youtube.com/watch?v=bRWcwVZQXKU",
+    "canonical_url": "https://www.youtube.com/watch?v=bRWcwVZQXKU",
+    "platform": "youtube",
+    "platform_video_id": "bRWcwVZQXKU",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 58,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "78a05502c26dd26641d60119e7989314a690b349de68c2109f75c213e7afbbd1",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 901,
+        "outcome": "ok",
+        "seconds": 0.378,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Arm Workout",
+        "content_type": "workout",
+        "confidence": 0.65,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0016286,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 901,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 901,
+          "outcome": "ok",
+          "seconds": 0.378,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "workout": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "workout": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0016286,
+      "llm_tokens_in": 156,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 120,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009482,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-24",
+    "source_url": "https://www.youtube.com/watch?v=k_xf8RwP9Wo",
+    "canonical_url": "https://www.youtube.com/watch?v=k_xf8RwP9Wo",
+    "platform": "youtube",
+    "platform_video_id": "k_xf8RwP9Wo",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 43,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "bf6624757d3d74535d6d178ead518dc46822ad8657d24ae9f21eb2f165afc500",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 930,
+        "outcome": "ok",
+        "seconds": 0.469,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Pad Thai Recipe (Part 1)",
+        "content_type": "recipe",
+        "confidence": 0.7,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0019226,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 930,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 930,
+          "outcome": "ok",
+          "seconds": 0.469,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0019226,
+      "llm_tokens_in": 160,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 178,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009776,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-25",
+    "source_url": "https://www.youtube.com/watch?v=c1QfsmBYakU",
+    "canonical_url": "https://www.youtube.com/watch?v=c1QfsmBYakU",
+    "platform": "youtube",
+    "platform_video_id": "c1QfsmBYakU",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 59,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "f6d2240827c4aeaab2fec61e1b30339744109dfd6121b95cfa6afc08c37198f0",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 871,
+        "outcome": "ok",
+        "seconds": 0.427,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Thai Pork Satay Skewers",
+        "content_type": "recipe",
+        "confidence": 0.85,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0017896,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 871,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 871,
+          "outcome": "ok",
+          "seconds": 0.427,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0017896,
+      "llm_tokens_in": 162,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 151,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009643,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-26",
+    "source_url": "https://www.youtube.com/watch?v=dSFU6YFT9J0",
+    "canonical_url": "https://www.youtube.com/watch?v=dSFU6YFT9J0",
+    "platform": "youtube",
+    "platform_video_id": "dSFU6YFT9J0",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 34,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "c5dde9633f9dbb3145f0e8a15fcb466f2d40d32d9407744c2c374a2859f46b3e",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 812,
+        "outcome": "ok",
+        "seconds": 0.473,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Bruschetta",
+        "content_type": "recipe",
+        "confidence": 0.85,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0015886,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 812,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 812,
+          "outcome": "ok",
+          "seconds": 0.473,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0015886,
+      "llm_tokens_in": 146,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 114,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009442,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-27",
+    "source_url": "https://www.youtube.com/watch?v=VTuYlMW3DYQ",
+    "canonical_url": "https://www.youtube.com/watch?v=VTuYlMW3DYQ",
+    "platform": "youtube",
+    "platform_video_id": "VTuYlMW3DYQ",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 24,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "3eefbb3bf1d58555bdd59870748ccf148f8213ba7272c644bd4921b3727980c8",
+    "poi": null,
+    "city_hint": null,
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 799,
+        "outcome": "ok",
+        "seconds": 0.486,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Japanese Curry",
+        "content_type": "recipe",
+        "confidence": 0.7,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": null,
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0016096,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 799,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 799,
+          "outcome": "ok",
+          "seconds": 0.486,
+          "http_status": 200
+        }
+      ],
+      "geo_skipped": {
+        "recipe": 1
+      },
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 0,
+      "content_types": {
+        "recipe": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0016096,
+      "llm_tokens_in": 142,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 119,
+      "transcription_cost": 0.0,
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009463,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-28",
+    "source_url": "https://www.instagram.com/reel/DaDPI6muPFN/",
+    "canonical_url": "https://www.instagram.com/reel/DaDPI6muPFN/",
+    "platform": "instagram",
+    "platform_video_id": "DaDPI6muPFN",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 842,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "c6c49558bbe059edd9b869358ec60116a82cba16cc13fd1b2cceca523f4fe0fe",
+    "poi": null,
+    "city_hint": "Mumbai",
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 0,
+        "reason": "No Instagram oEmbed token configured.",
+        "outcome": "skipped",
+        "seconds": 0.0
+      },
+      {
+        "tier": 2,
+        "bytes": 882674,
+        "outcome": "ok",
+        "seconds": 0.85,
+        "poi_found": false,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Bayshack Pizzeria",
+        "content_type": "place",
+        "confidence": 0.836007130124777,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "The Bay Shack Pizzeria",
+        "formatted_address": "Shop no.8, Kakad Estate, Dr RG Thadani Marg, B Wing, Siddharth Nagar, Worli, Mumbai, Maharashtra 400018, India",
+        "lat": 19.0014295,
+        "lng": 72.8149327,
+        "source_grounded": true,
+        "city_hint": "Mumbai",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0021206,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 882674,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 0,
+          "reason": "No Instagram oEmbed token configured.",
+          "outcome": "skipped",
+          "seconds": 0.0
+        },
+        {
+          "tier": 2,
+          "bytes": 882674,
+          "outcome": "ok",
+          "seconds": 0.85,
+          "poi_found": false,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 1,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0341206,
+      "llm_tokens_in": 413,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 167,
+      "places_queries": [
+        {
+          "query": "Bayshack Pizzeria Mumbai",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJQx0c7-nP5zsRtMMkolX-HpI",
+                "location": {
+                  "latitude": 19.0014295,
+                  "longitude": 72.8149327
+                },
+                "displayName": {
+                  "text": "The Bay Shack Pizzeria",
+                  "languageCode": "en"
+                },
+                "primaryType": "cafe",
+                "formattedAddress": "Shop no.8, Kakad Estate, Dr RG Thadani Marg, B Wing, Siddharth Nagar, Worli, Mumbai, Maharashtra 400018, India"
+              },
+              "score": 0.83601,
+              "distance_m": 10596.4,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJQx0c7-nP5zsRtMMkolX-HpI",
+          "location_bias": {
+            "latitude": 19.076,
+            "longitude": 72.8777
+          }
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 1
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.009974,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-29",
+    "source_url": "https://www.instagram.com/reel/Dbzg5DJIMzU/",
+    "canonical_url": "https://www.instagram.com/reel/Dbzg5DJIMzU/",
+    "platform": "instagram",
+    "platform_video_id": "Dbzg5DJIMzU",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "resolved",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 66,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "e81e827531784605143e41c5443baa4033f9bf6d5bfab53540b95e2de29412cc",
+    "poi": {
+      "id": "",
+      "lat": 19.027138230676,
+      "lng": 72.838172146765,
+      "city": "",
+      "name": "Shivaji Park Dadar West",
+      "address": "",
+      "category": ""
+    },
+    "city_hint": "Mumbai",
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 0,
+        "reason": "No Instagram oEmbed token configured.",
+        "outcome": "skipped",
+        "seconds": 0.0
+      },
+      {
+        "tier": 2,
+        "bytes": 814759,
+        "outcome": "ok",
+        "seconds": 2.031,
+        "poi_found": true,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "platform_poi",
+    "entries": [
+      {
+        "title": "Shivaji Park Dadar West",
+        "content_type": "place",
+        "confidence": 0.95,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "Shivaji Park Dadar West",
+        "formatted_address": "",
+        "lat": 19.027138230676,
+        "lng": 72.838172146765,
+        "source_grounded": true,
+        "city_hint": "Mumbai",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 814759,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 0,
+          "reason": "No Instagram oEmbed token configured.",
+          "outcome": "skipped",
+          "seconds": 0.0
+        },
+        {
+          "tier": 2,
+          "bytes": 814759,
+          "outcome": "ok",
+          "seconds": 2.031,
+          "poi_found": true,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 0,
+      "places_calls": 0,
+      "content_types": {
+        "place": 1
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.0,
+      "llm_tokens_in": 0,
+      "llm_cache_hits": 0,
+      "llm_tokens_out": 0,
+      "places_queries": [
+        {
+          "query": null,
+          "score": 0.95,
+          "purpose": "platform_poi",
+          "results": [
+            {
+              "id": "",
+              "lat": 19.027138230676,
+              "lng": 72.838172146765,
+              "city": "",
+              "name": "Shivaji Park Dadar West",
+              "address": "",
+              "category": ""
+            }
+          ],
+          "accepted": true
+        }
+      ],
+      "poi_extractions": 1,
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 0
+      },
+      "llm_cache_read_tokens": 0,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.0,
+      "llm_usage_unavailable_requests": 0
+    }
+  },
+  {
+    "id": "ingestion-30",
+    "source_url": "https://www.instagram.com/p/DNQqeSYxhGq/",
+    "canonical_url": "https://www.instagram.com/reel/DNQqeSYxhGq/",
+    "platform": "instagram",
+    "platform_video_id": "DNQqeSYxhGq",
+    "discovery_provenance": "Prior real URL fixture; independent caption review pending",
+    "status": "needs_review",
+    "fetch_state": "fetched",
+    "signal_character_counts": {
+      "caption": 290,
+      "ocr": 0,
+      "transcript": 0
+    },
+    "caption_sha256": "fc7403295fd5b4413e02c5926dc3944e1964c0a6a1089e9fb1e6cbe9f058253d",
+    "poi": null,
+    "city_hint": "Santa Monica",
+    "tier_log": [
+      {
+        "tier": 1,
+        "bytes": 0,
+        "reason": "No Instagram oEmbed token configured.",
+        "outcome": "skipped",
+        "seconds": 0.0
+      },
+      {
+        "tier": 2,
+        "bytes": 836090,
+        "outcome": "ok",
+        "seconds": 0.845,
+        "poi_found": false,
+        "http_status": 200
+      }
+    ],
+    "resolution_hops": [],
+    "extraction_path": "classifier",
+    "entries": [
+      {
+        "title": "Fitoor",
+        "content_type": "place",
+        "confidence": 0.7,
+        "needs_review": true,
+        "review_reason": "ambiguous_place",
+        "place_name": null,
+        "formatted_address": null,
+        "lat": null,
+        "lng": null,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": [
+          {
+            "place": {
+              "id": "ChIJS2OV55ulwoARJjt5eVr7rMo",
+              "location": {
+                "latitude": 34.0087067,
+                "longitude": -118.4914474
+              },
+              "displayName": {
+                "text": "FITOOR",
+                "languageCode": "en"
+              },
+              "primaryType": "indian_restaurant",
+              "formattedAddress": "1755 Ocean Ave, Santa Monica, CA 90401, USA"
+            },
+            "score": 1.0,
+            "distance_m": 23337.0,
+            "inside_city_radius": false
+          }
+        ]
+      },
+      {
+        "title": "Kateen",
+        "content_type": "place",
+        "confidence": 0.7,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "KA'TEEN",
+        "formatted_address": "6516 Selma Ave, Los Angeles, CA 90028, USA",
+        "lat": 34.0996828,
+        "lng": -118.3317076,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": []
+      },
+      {
+        "title": "Yunomi",
+        "content_type": "place",
+        "confidence": 0.7,
+        "needs_review": false,
+        "review_reason": null,
+        "place_name": "Yunomi Handroll",
+        "formatted_address": "806 E 3rd St #100, Los Angeles, CA 90013, USA",
+        "lat": 34.0457256,
+        "lng": -118.2359452,
+        "source_grounded": true,
+        "city_hint": "Los Angeles",
+        "suggestions": []
+      }
+    ],
+    "cost": {
+      "llm_usd": 0.0029866,
+      "ocr_cost": 0.0,
+      "cache_hits": 0,
+      "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+      "vision_usd": 0.0,
+      "fetch_bytes": 836090,
+      "fetch_tiers": [
+        {
+          "tier": 1,
+          "bytes": 0,
+          "reason": "No Instagram oEmbed token configured.",
+          "outcome": "skipped",
+          "seconds": 0.0
+        },
+        {
+          "tier": 2,
+          "bytes": 836090,
+          "outcome": "ok",
+          "seconds": 0.845,
+          "poi_found": false,
+          "http_status": 200
+        }
+      ],
+      "ocr_seconds": 0.0,
+      "llm_requests": 1,
+      "places_calls": 5,
+      "content_types": {
+        "place": 3
+      },
+      "cost_complete": true,
+      "estimated_usd": 0.1629866,
+      "llm_tokens_in": 394,
+      "llm_cache_hits": 1,
+      "llm_tokens_out": 344,
+      "places_queries": [
+        {
+          "query": "Kateen Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJ5eGiqxq_woARw16RF2_1dVc",
+                "location": {
+                  "latitude": 34.0996828,
+                  "longitude": -118.33170760000002
+                },
+                "displayName": {
+                  "text": "KA'TEEN",
+                  "languageCode": "en"
+                },
+                "primaryType": "restaurant",
+                "formattedAddress": "6516 Selma Ave, Los Angeles, CA 90028, USA"
+              },
+              "score": 1.0,
+              "distance_m": 9673.6,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJ5eGiqxq_woARw16RF2_1dVc",
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Yunomi Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJSXug65vHwoARL7woRsKWBV0",
+                "location": {
+                  "latitude": 34.0457256,
+                  "longitude": -118.23594519999999
+                },
+                "displayName": {
+                  "text": "Yunomi Handroll",
+                  "languageCode": "en"
+                },
+                "primaryType": "sushi_restaurant",
+                "formattedAddress": "806 E 3rd St #100, Los Angeles, CA 90013, USA"
+              },
+              "score": 0.88,
+              "distance_m": 1014.3,
+              "inside_city_radius": true
+            }
+          ],
+          "radius_m": 20000,
+          "accepted_id": "ChIJSXug65vHwoARL7woRsKWBV0",
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Fitoor Los Angeles",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJS2OV55ulwoARJjt5eVr7rMo",
+                "location": {
+                  "latitude": 34.0087067,
+                  "longitude": -118.4914474
+                },
+                "displayName": {
+                  "text": "FITOOR",
+                  "languageCode": "en"
+                },
+                "primaryType": "indian_restaurant",
+                "formattedAddress": "1755 Ocean Ave, Santa Monica, CA 90401, USA"
+              },
+              "score": 1.0,
+              "distance_m": 23337.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Fitoor",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJS2OV55ulwoARJjt5eVr7rMo",
+                "location": {
+                  "latitude": 34.0087067,
+                  "longitude": -118.4914474
+                },
+                "displayName": {
+                  "text": "FITOOR",
+                  "languageCode": "en"
+                },
+                "primaryType": "indian_restaurant",
+                "formattedAddress": "1755 Ocean Ave, Santa Monica, CA 90401, USA"
+              },
+              "score": 1.0,
+              "distance_m": 23337.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": 20000,
+          "location_bias": {
+            "latitude": 34.0522,
+            "longitude": -118.2437
+          }
+        },
+        {
+          "query": "Fitoor",
+          "results": [
+            {
+              "place": {
+                "id": "ChIJS2OV55ulwoARJjt5eVr7rMo",
+                "location": {
+                  "latitude": 34.0087067,
+                  "longitude": -118.4914474
+                },
+                "displayName": {
+                  "text": "FITOOR",
+                  "languageCode": "en"
+                },
+                "primaryType": "indian_restaurant",
+                "formattedAddress": "1755 Ocean Ave, Santa Monica, CA 90401, USA"
+              },
+              "score": 1.0,
+              "distance_m": 23337.0,
+              "inside_city_radius": false
+            }
+          ],
+          "radius_m": null,
+          "location_bias": null
+        }
+      ],
+      "places_field_masks": [
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType",
+        "places.id,places.displayName,places.formattedAddress,places.location,places.primaryType"
+      ],
+      "transcription_cost": 0.0,
+      "places_calls_by_type": {
+        "place": 5
+      },
+      "llm_cache_read_tokens": 8726,
+      "transcription_seconds": 0.0,
+      "llm_cache_write_tokens": 0,
+      "llm_uncached_equivalent_usd": 0.01084,
+      "llm_usage_unavailable_requests": 0
+    }
+  }
+]

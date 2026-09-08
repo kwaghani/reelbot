@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ingestion-07",
+    "url": "https://vt.tiktok.com/ZS5pYVR4C/",
+    "expected_type": "place",
+    "source_title": "Yanhuo Restaurant",
+    "provenance": "https://www.eatwhatsia.com/places/yanhuo-restaurant-modern-chinese-cuisine",
+    "eligibility": "not_a_reel",
+    "reason": "Redirects to a TikTok photo carousel, not a reel: /@/photo/7576624357032709397"
+  },
+  {
+    "id": "ingestion-16",
+    "url": "https://vt.tiktok.com/ZSLDh22Yf/",
+    "expected_type": "workout",
+    "source_title": "Fitness routine",
+    "provenance": "https://msha.ke/lwyzive/",
+    "eligibility": "not_a_reel",
+    "reason": "Redirects to the TikTok homepage, not an identifiable video"
+  }
+]

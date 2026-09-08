@@ -1,0 +1,13 @@
+{
+  "backend_sql_tests": 49,
+  "app_tests": 15,
+  "typescript": "passed",
+  "python_compileall": "passed",
+  "scope": "Includes source identity, error taxonomy, blocked retries, caches, owner-only recovery, six real frame files, and migration preservation",
+  "implementation_commit": "9849bc4e",
+  "phone_install": "pending; device unavailable",
+  "api_healthz": {
+    "loopback": "ok",
+    "phone_facing": "ok"
+  }
+}

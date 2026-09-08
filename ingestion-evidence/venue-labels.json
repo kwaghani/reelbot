@@ -1,0 +1,140 @@
+[
+  {
+    "fixture_id": "ingestion-01",
+    "expected_venue_names_from_source": [
+      "BCD Tofu House"
+    ],
+    "basis": "Caption names the restaurant; #la/#losangeles/#laeats locate it. Separately inspected TikTok POI supplies the Wilshire address.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 1,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-02",
+    "expected_venue_names_from_source": [
+      "Ornella"
+    ],
+    "basis": "Caption explicitly describes dinner at Ornella in Munich. The caption does not independently identify a street address.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 1,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-03",
+    "expected_venue_names_from_source": [
+      "Peter Pan Donut & Pastry Shop"
+    ],
+    "basis": "Caption supplies the name and 727 Manhattan Avenue, Brooklyn address.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 1,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-04",
+    "expected_venue_names_from_source": [
+      "Ramyeon Bar and Restaurant"
+    ],
+    "basis": "Caption supplies the name and 80 Maginhawa, Quezon City address.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 1,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-05",
+    "expected_venue_names_from_source": [
+      "Bellini's Italian Restaurant"
+    ],
+    "basis": "Caption supplies Bellini’s and Cubao Expo in Quezon City.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 1,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-06",
+    "expected_venue_names_from_source": [
+      "Binge"
+    ],
+    "basis": "Caption describes visiting @hey_binge, sandwiches in Tiong Bahru, and #bingecafe. Hey Binge is a handle-derived alias; Binge is offered but not automatically accepted.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 1,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-07",
+    "expected_venue_names_from_source": [
+      "The Ivy Asia St Pauls"
+    ],
+    "basis": "London caption contains #ivyasia and the branch-specific #theivyasiastpauls, plus @theivyasia.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 1,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-08",
+    "expected_venue_names_from_source": [],
+    "basis": "Caption describes chicken rice and curry, but @Zippy alone does not establish the venue. Count the Zippy venue prediction as unsupported. The discovery page names Tiong Kee; this was not verified from the video.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 0,
+    "unsupported_predictions": [
+      "Zippy"
+    ]
+  },
+  {
+    "fixture_id": "ingestion-18",
+    "expected_venue_names_from_source": [
+      "Vee's Cafe",
+      "Alisa Wine Friends",
+      "Karachi BBQ Tonight"
+    ],
+    "basis": "Each named handle has an explicit restaurant description. Venice Beach is supplied for Alisa. The precise Vee’s branch is not established.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 3,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-19",
+    "expected_venue_names_from_source": [
+      "Point Dume",
+      "Hollywood Sign",
+      "Los Leones Trail",
+      "El Matador State Beach",
+      "Point Mugu State Beach"
+    ],
+    "basis": "All five names occur in caption pin-prefixed lines. The caption describes the Los Angeles region and contains #malibuhikes.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 5,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-28",
+    "expected_venue_names_from_source": [
+      "Bayshack Pizzeria"
+    ],
+    "basis": "Caption pin names Bayshack Pizzeria in Worli and repeatedly supplies Mumbai.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 1,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-29",
+    "expected_venue_names_from_source": [
+      "Shivaji Park Dadar West"
+    ],
+    "basis": "Matched Instagram post state contains the named location and coordinates; caption corroborates #shivajipark/#mumbai.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 1,
+    "unsupported_predictions": []
+  },
+  {
+    "fixture_id": "ingestion-30",
+    "expected_venue_names_from_source": [
+      "Kateen",
+      "Yunomi",
+      "Fitoor"
+    ],
+    "basis": "Restaurant caption names the three venues in hashtags. It describes Los Angeles and mentions Downtown Santa Monica without unambiguously assigning that locality to one venue.",
+    "review_method": "Agent read the retrieved caption / matched post POI directly; full video not independently reviewed",
+    "supported_predictions": 3,
+    "unsupported_predictions": []
+  }
+]

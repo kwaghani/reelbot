@@ -1,0 +1,25 @@
+{
+  "fixture_reels": 30,
+  "tiktok_shortlinks": 16,
+  "fetch_sufficient": 30,
+  "venue_predictions": 21,
+  "source_grounded_venue_predictions": 20,
+  "venue_precision": 0.9523809523809523,
+  "anchored_venue_predictions": 14,
+  "anchor_coverage": 0.6666666666666666,
+  "grounded_anchored_predictions": 13,
+  "needs_review_saves": 5,
+  "needs_review_rate": 0.16666666666666666,
+  "false_no_content": 0,
+  "estimated_provider_usd": 1.3007762,
+  "mean_estimated_provider_usd": 0.04335920666666667,
+  "tier_3_reached": 0,
+  "acceptance_met": false,
+  "unmet": [
+    "Geocode coverage below 85%; exact branch-level geocode accuracy not independently certified"
+  ],
+  "status_counts": {
+    "resolved": 25,
+    "needs_review": 5
+  }
+}

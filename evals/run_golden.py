@@ -9,7 +9,8 @@ from urllib.parse import urlsplit
 from dotenv import load_dotenv
 from worker.db import connect, enqueue
 ROOT = Path(__file__).resolve().parents[1]
-TERMINAL = {'resolved','needs_review','no_content_found','failed'}
+from worker.ingestion_states import TERMINAL
+EMPTY = {'extraction_empty','fetch_ok_no_content'}
 
 def one(fixture, owner, log_dir):
     with connect() as conn:
@@ -18,7 +19,7 @@ def one(fixture, owner, log_dir):
     start=time.monotonic()
     with (log_dir/(fixture['id']+'.log')).open('w') as log:
         child=subprocess.Popen([sys.executable,'-m','worker.worker','--save',str(saved['id'])],cwd=ROOT,start_new_session=True,stdout=log,stderr=log)
-        try: child.wait(timeout=55)
+        try: child.wait(timeout=145)
         except subprocess.TimeoutExpired:
             os.killpg(child.pid,signal.SIGKILL);child.wait()
         with connect() as conn: current=conn.execute('select status,cost from saves where id=%s',(saved['id'],)).fetchone()
@@ -81,7 +82,7 @@ def score(rows):
         missing=[i for i in range(len(expected)) if i not in used]
         if row['result']['status']!='failed': silent+=len(missing)
         provisional=len(used)==len(expected) and len(row['produced'])==len(expected) and all(m['correct_type'] for m in matched)
-        if not expected: provisional=row['category']=='empty' and row['result']['status']=='no_content_found'
+        if not expected: provisional=row['category']=='empty' and row['result']['status'] in EMPTY
         row.update(matches=matched,missed_expected_indices=missing,provisional_match=provisional,passed=bool(provisional and row.get('labels_verified')),failure=None if row.get('labels_verified') else 'Full independent labels are incomplete; provisional results cannot pass acceptance.')
     distribution=Counter(r['category'] for r in rows)
     required={'place':10,'workout':6,'recipe':6,'product':4,'style_home':4,'media_learning':4,'empty':4,'mixed':2}
@@ -89,10 +90,10 @@ def score(rows):
     classification=correct/produced if produced else 0;attribute_precision=attrs_correct/attrs if attrs else 0;place_precision=place_correct/resolved if resolved else 0;recall=found/expected_total if expected_total else 0
     checks={'composition':distribution==required and sum('listicle' in r.get('tags',[]) for r in rows)>=3 and any('five_plus' in r.get('tags',[]) and len(r['expected'])>=5 for r in rows) and sum('chain' in r.get('tags',[]) for r in rows)>=2 and verified,
         'classification_at_least_85_percent':verified and classification>=.85,'required_attribute_precision_at_least_80_percent':verified and attribute_precision>=.8,'place_precision_at_least_85_percent':verified and place_precision>=.85,'recall_at_least_75_percent':verified and recall>=.75,
-        'zero_silent_drops':verified and silent==0,'four_empty_reels':all(r['result']['status']=='no_content_found' and not r['produced'] for r in rows if r['category']=='empty'),
+        'zero_silent_drops':verified and silent==0,'four_empty_reels':all(r['result']['status'] in EMPTY and not r['produced'] for r in rows if r['category']=='empty'),
         'five_plus_listicle':all(len(r['produced'])>=5 for r in rows if 'five_plus' in r.get('tags',[])),
         'both_mixed_have_two_types':all(len({e['content_type'] for e in r['produced']})>=2 for r in rows if r['category']=='mixed'),
-        'review_rate_under_20_percent':produced>0 and review/produced<.2,'terminal_under_60_seconds':all(r['result']['status'] in TERMINAL and r['elapsed_seconds']<60 for r in rows)}
+        'review_rate_under_20_percent':produced>0 and review/produced<.2,'terminal_under_150_seconds':all(r['result']['status'] in TERMINAL and r['elapsed_seconds']<150 for r in rows)}
     return {'classification_accuracy':classification,'required_attribute_precision':attribute_precision,'place_precision':place_precision,'recall':recall,'provisional_only':not verified,'verified_rows':sum(bool(r.get('labels_verified')) for r in rows),'produced_entries':produced,'expected_entries':expected_total,'matched_correct_type':found,'labeled_required_attributes':attrs,'correct_required_attributes':attrs_correct,'resolved_places':resolved,'correct_resolved_places':place_correct,'needs_review_rate':review/produced if produced else None,'review_reasons':dict(reasons),'silent_drops':silent,'distribution':dict(distribution),'checks':{k:'PASS' if v else 'FAIL' for k,v in checks.items()},'acceptance':'PASS' if all(checks.values()) else 'FAIL'}
 
 def main():

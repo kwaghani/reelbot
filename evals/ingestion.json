@@ -1,0 +1,212 @@
+[
+  {
+    "id": "ingestion-01",
+    "url": "https://vt.tiktok.com/ZSqr2rqry/",
+    "expected_type": "place",
+    "source_title": "BCD Tofu House",
+    "provenance": "User failing link; caption and platform POI independently inspected"
+  },
+  {
+    "id": "ingestion-02",
+    "url": "https://vt.tiktok.com/ZSCDMwK3f/",
+    "expected_type": "place",
+    "source_title": "Ornella Munich",
+    "provenance": "Prior regression fixture; archived caption"
+  },
+  {
+    "id": "ingestion-03",
+    "url": "https://vt.tiktok.com/ZSC9GQCVS/",
+    "expected_type": "place",
+    "source_title": "Peter Pan Donut & Pastry Shop",
+    "provenance": "Prior regression fixture; archived caption"
+  },
+  {
+    "id": "ingestion-04",
+    "url": "https://vt.tiktok.com/ZSM46hvLU/",
+    "expected_type": "place",
+    "source_title": "Ramyeon Bar and Restaurant",
+    "provenance": "https://quezoncity.gov.ph/explore-qc-ramyeon-bar-and-restaurant/"
+  },
+  {
+    "id": "ingestion-05",
+    "url": "https://vt.tiktok.com/ZSMPLgVYS/",
+    "expected_type": "place",
+    "source_title": "Bellini’s Italian Restaurant",
+    "provenance": "https://quezoncity.gov.ph/explore-qc-bellinis-italian-restaurant/"
+  },
+  {
+    "id": "ingestion-06",
+    "url": "https://vt.tiktok.com/ZS5GFuKMQ/",
+    "expected_type": "place",
+    "source_title": "Binge",
+    "provenance": "https://www.eatwhatsia.com/places/binge"
+  },
+  {
+    "id": "ingestion-07",
+    "url": "https://vt.tiktok.com/ZS6xp1QhX/",
+    "expected_type": "place",
+    "source_title": "The Ivy Asia, St Paul’s",
+    "provenance": "https://interioreducators.co.uk/uploads/submitted-files/185.Writing_.C25_01_.pdf"
+  },
+  {
+    "id": "ingestion-08",
+    "url": "https://vt.tiktok.com/ZSkGhKVwg/",
+    "expected_type": "place",
+    "source_title": "Tiong Kee Hainanese Chicken Rice",
+    "provenance": "https://www.singaporemeal.com/247744285720336/Tiong-Kee-Hainanese-Chicken-Rice"
+  },
+  {
+    "id": "ingestion-09",
+    "url": "https://vt.tiktok.com/ZSxo2sX2B/",
+    "expected_type": "recipe",
+    "source_title": "Dot Cake",
+    "provenance": "https://recipechronicle.com/"
+  },
+  {
+    "id": "ingestion-10",
+    "url": "https://vt.tiktok.com/ZSxoMaRfh/",
+    "expected_type": "recipe",
+    "source_title": "Rice Paper Mochi",
+    "provenance": "https://recipechronicle.com/"
+  },
+  {
+    "id": "ingestion-11",
+    "url": "https://vt.tiktok.com/ZSxo6FSV2/",
+    "expected_type": "recipe",
+    "source_title": "Cucumber Salad",
+    "provenance": "https://recipechronicle.com/"
+  },
+  {
+    "id": "ingestion-12",
+    "url": "https://vt.tiktok.com/ZSQep5HyY/",
+    "expected_type": "recipe",
+    "source_title": "Blanket Dumplings",
+    "provenance": "https://recipechronicle.com/"
+  },
+  {
+    "id": "ingestion-13",
+    "url": "https://vt.tiktok.com/ZSHa9YNo8/",
+    "expected_type": "recipe",
+    "source_title": "Crispy Soy Garlic Tofu",
+    "provenance": "https://www.reddit.com/r/selfaccountable/comments/1sfjs73/random_madness_april_7_2026_dinner_menu/"
+  },
+  {
+    "id": "ingestion-14",
+    "url": "https://vt.tiktok.com/ZSayBXayu/",
+    "expected_type": "recipe",
+    "source_title": "Greek yoghurt cheesecake",
+    "provenance": "https://tribune.com.pk/story/2588969/2-ingredient-japanese-greek-yoghurt-cheesecake-trend-goes-viral-on-tiktok"
+  },
+  {
+    "id": "ingestion-15",
+    "url": "https://vt.tiktok.com/ZSjHvjuvU/",
+    "expected_type": "workout",
+    "source_title": "Spinning cardio",
+    "provenance": "https://tikwm.com/video/7439388529823714567.html"
+  },
+  {
+    "id": "ingestion-16",
+    "url": "https://vt.tiktok.com/ZSkpKjwth/",
+    "expected_type": "recipe",
+    "source_title": "Matcha milk drink",
+    "provenance": "https://www.researchgate.net/publication/398139820_Lifestyle_Commodification_A_Netnographic_Analysis_of_the_Digital_Matcha_Subculture_on_Instagram_and_TikTok"
+  },
+  {
+    "id": "ingestion-17",
+    "url": "https://www.instagram.com/reel/DcuTC_5jWDW/",
+    "expected_type": "media",
+    "source_title": "Fetty Wap Trap Queen performance",
+    "provenance": "Actual prior saves, captions independently inspected"
+  },
+  {
+    "id": "ingestion-18",
+    "url": "https://www.instagram.com/reel/DXE43z7DWev/",
+    "expected_type": "place",
+    "source_title": "Los Angeles venues",
+    "provenance": "Actual prior saves, captions independently inspected"
+  },
+  {
+    "id": "ingestion-19",
+    "url": "https://www.instagram.com/reel/DUpDIg1k87g/",
+    "expected_type": "place",
+    "source_title": "Los Angeles romantic hikes",
+    "provenance": "Actual prior saves, captions independently inspected"
+  },
+  {
+    "id": "ingestion-20",
+    "url": "https://www.youtube.com/watch?v=fMl1pwvXobk",
+    "expected_type": "workout",
+    "source_title": "CHEST WORKOUT WITH DUMBBELL #shorts",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-21",
+    "url": "https://www.youtube.com/watch?v=gB4nd6tVel4",
+    "expected_type": "workout",
+    "source_title": "Leg Workout #shorts",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-22",
+    "url": "https://www.youtube.com/watch?v=KyUNiRgraR8",
+    "expected_type": "workout",
+    "source_title": "Complete arm workout #shorts",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-23",
+    "url": "https://www.youtube.com/watch?v=bRWcwVZQXKU",
+    "expected_type": "workout",
+    "source_title": "Save this ARM workout",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-24",
+    "url": "https://www.youtube.com/watch?v=k_xf8RwP9Wo",
+    "expected_type": "recipe",
+    "source_title": "Pad Thai Recipe (Part 1) #shorts",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-25",
+    "url": "https://www.youtube.com/watch?v=c1QfsmBYakU",
+    "expected_type": "recipe",
+    "source_title": "How to Marinade Thai Pork Satay #Shorts",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-26",
+    "url": "https://www.youtube.com/watch?v=dSFU6YFT9J0",
+    "expected_type": "recipe",
+    "source_title": "BRUSCHETTA Like an Italian #Shorts",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-27",
+    "url": "https://www.youtube.com/watch?v=VTuYlMW3DYQ",
+    "expected_type": "recipe",
+    "source_title": "Japanese curry #shorts",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-28",
+    "url": "https://www.instagram.com/reel/DaDPI6muPFN/",
+    "expected_type": "place",
+    "source_title": "The Bay Shack Pizzeria",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-29",
+    "url": "https://www.instagram.com/reel/Dbzg5DJIMzU/",
+    "expected_type": "place",
+    "source_title": "Shivaji Park",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  },
+  {
+    "id": "ingestion-30",
+    "url": "https://www.instagram.com/p/DNQqeSYxhGq/",
+    "expected_type": "place",
+    "source_title": "Three Los Angeles restaurants",
+    "provenance": "Prior real URL fixture; independent caption review pending"
+  }
+]

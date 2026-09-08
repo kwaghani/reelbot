@@ -1,0 +1,38 @@
+{
+  "source_url": "https://vt.tiktok.com/ZSqr2rqry/",
+  "canonical_url": "https://www.tiktok.com/@exploringwithjoy/video/7511087612157873450",
+  "same_owner_save_count": 1,
+  "outbound_requests": 0,
+  "resolution_cache_hit": true,
+  "fetch_tier_log": [
+    {
+      "tier": "cache",
+      "outcome": "hit",
+      "bytes": 0
+    }
+  ],
+  "metrics": {
+    "transcription_cost": 0.0,
+    "ocr_cost": 0.0,
+    "transcription_seconds": 0.0,
+    "ocr_seconds": 0.0,
+    "llm_tokens_in": 0,
+    "llm_tokens_out": 0,
+    "places_calls": 0,
+    "cache_hits": 1,
+    "estimated_usd": 0.0,
+    "llm_cache_read_tokens": 0,
+    "llm_cache_write_tokens": 0,
+    "llm_requests": 0,
+    "llm_cache_hits": 0,
+    "llm_usage_unavailable_requests": 0,
+    "cost_basis": "Measured usage; configured API rates. Local compute excluded.",
+    "fetch_cache_hits": 1,
+    "extraction_cache_hits": 1,
+    "llm_usd": 0.0,
+    "llm_uncached_equivalent_usd": 0.0,
+    "vision_usd": 0.0,
+    "cost_complete": true
+  },
+  "address": "3575 Wilshire Blvd, Los Angeles, CA 90010, USA"
+}
