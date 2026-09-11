@@ -73,10 +73,11 @@ def bounded_media_file(url,target,request_url):
     raise FetchError('needs_source_info','Media redirect limit exceeded.')
 
 
-def collect_media(url,directory,metrics,checkpoint=None):
+def collect_media(url,directory,metrics,checkpoint=None,context=None):
     from worker.media import ytdlp_options,extract_caption,stage_transcript,clean_ocr_text
     from worker.fetch.http import rate_limit
     from PIL import Image
+    from worker.compilations import classify,collect_compilation
     import pytesseract
     directory=Path(directory);directory.mkdir(parents=True,exist_ok=True)
     result={'caption':'','ocr':'','transcript':'','unavailable':{},'metadata':{}}
@@ -111,8 +112,12 @@ def collect_media(url,directory,metrics,checkpoint=None):
         if result['caption'].lower().startswith('youtube video #'):raise FetchError('fetch_not_found','The video is unavailable.')
         result['creator_handle']=str(info.get('uploader_id') or '');result['hashtags']=info.get('tags') or []
         duration=float(info.get('duration') or 0);result['metadata']={'duration':duration,'caption_source':'yt-dlp'}
+        shared={**(context or {}),**{k:v for k,v in result.items() if v},'title':info.get('title','')}
+        classification=classify(shared,duration=duration)
+        dense=bool((context or {}).get('force_dense') or classification['is_compilation'])
+        result.update(is_compilation=dense,expected_venue_count=classification['expected_venue_count'])
         if checkpoint:checkpoint(result)
-        if len(result['caption'])>20:return result
+        if len(result['caption'])>20 and not dense:return result
         if os.getenv('REELBOT_ENABLE_VIDEO_DOWNLOAD','true').lower() not in ('true','1','yes','on'):
             result['unavailable'].update(frames='Media downloading is disabled.',transcript='Media downloading is disabled.');return result
         formats=[f for f in info.get('formats',[]) if f.get('vcodec') not in ('none',None)
@@ -127,9 +132,15 @@ def collect_media(url,directory,metrics,checkpoint=None):
                 probe=subprocess.run(['ffprobe','-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',str(video)],capture_output=True,text=True,timeout=4,check=True)
                 duration=float(probe.stdout.strip())
             except Exception:result['unavailable']['duration']='Video duration could not be read.'
-        oversized=duration>MAX_SECONDS or truncated
+        if not dense and duration:
+            from worker.compilations import scene_cuts
+            try:dense=classify(shared,duration=duration,cuts=len(scene_cuts(video,duration)))['is_compilation']
+            except Exception:pass
+            result['is_compilation']=dense
+            if checkpoint:checkpoint(result)
+        oversized=duration>(180 if dense else MAX_SECONDS) or truncated
         if oversized:
-            result['unavailable']['transcript']='Audio skipped for media beyond 90 seconds or 50 MB.'
+            result['unavailable']['transcript']='Audio skipped because the duration or 50 MB media budget was exceeded.'
             result['metadata']['frames_only']=True
         elif not duration:result['unavailable']['transcript']='Audio skipped because video duration could not be verified.'
         elif info.get('music_only') is True and info.get('has_speech') is False:
@@ -141,6 +152,12 @@ def collect_media(url,directory,metrics,checkpoint=None):
             try:result['transcript']=stage_transcript(video,directory)[:24000]
             except Exception:result['unavailable']['transcript']='Speech transcription failed.'
             metrics['transcription_seconds']+=time.monotonic()-at
+        if dense:
+            timed=directory/'transcript-segments.json'
+            result['transcript_segments']=json.loads(timed.read_text()) if timed.exists() else []
+            result.update(collect_compilation(video,directory,duration,shared,metrics,result['transcript_segments'],checkpoint))
+            return result
+        metrics['reel_class']='standard'
         for index,point in enumerate(frame_times(duration)):
             if time.monotonic()-start>74:
                 result['unavailable']['frames']='Frame sampling reached its time limit.';break

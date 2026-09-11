@@ -4,12 +4,12 @@ import hashlib
 import os
 import secrets
 from uuid import UUID, uuid4
-from fastapi import FastAPI, Depends, Header, HTTPException, Query
+from fastapi import FastAPI, BackgroundTasks, Depends, Header, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict
 from psycopg.types.json import Jsonb
 from psycopg.errors import UniqueViolation, CheckViolation
-from worker.registry import registry, registry_version, sync_registry, validate_attributes
+from worker.registry import registry, registry_version, sync_registry, validate_attributes, venue_kinds
 from worker.db import file_entry, prune_auto_folders
 from worker.db import connect, enqueue, items, fail_expired, save_hash, store_candidate
 
@@ -29,6 +29,15 @@ class EntryEdit(Input):
     content_type: str | None = None
     attributes: dict | None = None
     place_id: UUID | None = None
+    venue_kind: str | None = None
+    image_choice: str | None = Field(default=None,pattern=r'^(auto|cover|google:[0-2]|site:[0-2]|commons:[0-9]+)$')
+class ImageryRequest(Input):
+    entry_ids: list[UUID] = Field(min_length=1,max_length=8)
+    gallery: bool = False
+    context: str = Field(default='library',pattern=r'^(library|map)$')
+class UIPreferences(Input):
+    groupBy: str | None = None
+    distanceUnits: str | None = None
 class Preference(Input):
     enabled: bool
 class Folder(Input):
@@ -88,12 +97,69 @@ def invalid_attribute(_request,_error):
 def content_types():
     data=registry()
     with connect() as conn: sync_registry(conn,data)
-    return {'types':data,'version':registry_version(data)}
+    return {'types':data,'venue_kinds':venue_kinds(),'version':registry_version({'types':data,'venue_kinds':venue_kinds()})}
 
 @app.get('/healthz')
 def health():
     with connect() as conn: conn.execute('select 1')
     return {'status':'ok','product':'personal-reels'}
+
+@app.post('/imagery/resolve')
+def imagery(body:ImageryRequest,user=Depends(require_user)):
+    from worker.imagery import resolve_batch
+    try: result=resolve_batch(user,body.entry_ids,gallery=body.gallery,context=body.context)
+    except PermissionError as exc: raise HTTPException(404,'An entry is not in your library.') from exc
+    return JSONResponse(result,headers={'Cache-Control':'private, no-store','Pragma':'no-cache'})
+
+class MapThumbnailRequest(BaseModel):
+    jpeg: str = Field(max_length=140000)
+
+@app.get('/items/{entry_id}/map-thumbnail')
+def map_thumbnail(entry_id:UUID,user=Depends(require_user)):
+    import base64,re
+    from worker.imagery import cached_thumb
+    with connect() as conn:
+        entry=owned(conn,'entries',entry_id,user)
+        row=conn.execute('select map_thumbnail->%s as map_thumbnail from places where id=%s',(str(user),entry['place_id'])).fetchone() if entry['place_id'] else None
+    asset=((row or {}).get('map_thumbnail') or {}).get('asset','')
+    data=cached_thumb(asset)
+    value='data:image/jpeg;base64,'+base64.b64encode(data).decode() if data else None
+    return JSONResponse({'uri':value},headers={'Cache-Control':'private, no-store'})
+
+@app.post('/items/{entry_id}/map-thumbnail')
+def cache_map_thumbnail(entry_id:UUID,body:MapThumbnailRequest,user=Depends(require_user)):
+    import base64,io
+    from PIL import Image
+    from worker.imagery import store_thumb,stamp
+    with connect() as conn:
+        entry=owned(conn,'entries',entry_id,user)
+        if not entry['place_id']:raise HTTPException(409,'Resolve this place before adding a map preview.')
+        try:
+            raw=base64.b64decode(body.jpeg,validate=True)
+            if len(raw)>100000:raise ValueError()
+            with Image.open(io.BytesIO(raw)) as image:
+                if image.format!='JPEG' or image.width>540 or image.height>675:raise ValueError()
+                image.verify()
+        except Exception as exc:raise HTTPException(422,'Invalid map preview.') from exc
+        record={'asset':store_thumb(raw),'source':'MapKit snapshot','acquired_at':stamp(),'version':1}
+        conn.execute("update places set map_thumbnail=jsonb_set(map_thumbnail,%s,%s) where id=%s and not (map_thumbnail ? %s)",([str(user)],Jsonb(record),entry['place_id'],str(user)))
+    return {'stored':True}
+
+@app.post('/items/{entry_id}/image/retry')
+def retry_image(entry_id:UUID,user=Depends(require_user)):
+    from worker.photo_jobs import enqueue_photo
+    with connect() as conn:
+        entry=owned(conn,'entries',entry_id,user)
+        if entry['place_id']:enqueue_photo(conn,entry['place_id'],force=True)
+        conn.execute("update saves set cover_imagery='{}' where id=%s and user_id=%s",(entry['save_id'],user))
+    return {'queued':bool(entry['place_id'])}
+
+@app.get('/items/{entry_id}/image/diagnostics')
+def image_diagnostics(entry_id:UUID,user=Depends(require_user)):
+    with connect() as conn:
+        entry=owned(conn,'entries',entry_id,user)
+        if not entry['place_id']:return {'source':None,'failure_reason':'Place has not been resolved.'}
+        return conn.execute('select image_source as source,image_acquired_at as acquired_at,image_failure_reason as failure_reason,image_diagnostics as steps from places where id=%s',(entry['place_id'],)).fetchone()
 
 @app.post('/devices')
 def register(body:Device):
@@ -124,14 +190,26 @@ def library(q:str=Query(default='',max_length=500),user=Depends(require_user)):
     with connect() as conn: return {'items':items(conn,user)}
 
 @app.get('/sync')
-def sync(user=Depends(require_user)):
+def sync(background_tasks:BackgroundTasks,user=Depends(require_user)):
+    from worker.geography import enrich_owner
+    background_tasks.add_task(enrich_owner,str(user))
     with connect() as conn:
         fail_expired(conn)
-        return {'registry':registry(),'items':items(conn,user),
-            'saves':conn.execute('''select id,source_url,canonical_url,platform,platform_video_id,status,created_at,error_reason,retry_at,
+        return {'registry':registry(),'venue_kinds':venue_kinds(),'preferences':conn.execute('select ui_preferences from users where id=%s',(user,)).fetchone()['ui_preferences'],'items':items(conn,user),
+            'saves':conn.execute('''select id,source_url,canonical_url,platform,platform_video_id,status,created_at,error_reason,retry_at,is_compilation,expected_venue_count,extracted_venue_count,
                 coalesce(raw_signals->'deterministic_candidates'->0->>'name','') as source_info_hint from saves where user_id=%s order by created_at desc''',(user,)).fetchall(),
             'folders':conn.execute('select * from folders where user_id=%s order by sort_order,name',(user,)).fetchall(),
             'apple_linked':bool(conn.execute('select apple_user_id from users where id=%s',(user,)).fetchone()['apple_user_id'])}
+
+@app.patch('/preferences')
+def ui_preferences(body:UIPreferences,user=Depends(require_user)):
+    values=body.model_dump(exclude_none=True)
+    for key,value in values.items():
+        if value not in ({'city','type'} if key=='groupBy' else {'auto','imperial','metric'}):
+            raise HTTPException(422,'Choose a supported preference.')
+    with connect() as conn:
+        conn.execute('update users set ui_preferences=ui_preferences || %s where id=%s',(Jsonb(values),user))
+    return values
 
 @app.get('/jobs/{job_id}')
 def job(job_id:UUID,user=Depends(require_user)):
@@ -140,13 +218,13 @@ def job(job_id:UUID,user=Depends(require_user)):
         return owned(conn,'jobs',job_id,user)
 
 @app.post('/saves/{save_id}/retry')
-def retry(save_id:UUID,user=Depends(require_user)):
+def retry(save_id:UUID,deeper:bool=False,user=Depends(require_user)):
     with connect() as conn:
         row=owned(conn,'saves',save_id,user)
         from worker.ingestion_states import MANUAL_RETRY
         if row['status'] not in MANUAL_RETRY | {'needs_review'}: return row
         conn.execute("update jobs set status='queued',error_reason=null,updated_at=now() where save_id=%s and user_id=%s",(save_id,user))
-        return conn.execute("update saves set status='queued',attempts=0,blocked_attempts=0,error_reason=null,retry_at=null,updated_at=now() where id=%s returning *",(save_id,)).fetchone()
+        return conn.execute("update saves set status='queued',force_dense=%s,attempts=0,blocked_attempts=0,error_reason=null,retry_at=null,updated_at=now() where id=%s returning *",(deeper,save_id)).fetchone()
 
 @app.get('/debug/saves/{save_id}')
 def save_diagnostics(save_id:UUID,user=Depends(require_user)):
@@ -181,8 +259,13 @@ def choose_place(item_id:UUID,body:PlaceChoice,user=Depends(require_user)):
         options=item['candidate'].get('place_candidates',[])
         selected=next((v['place'] for v in options if v.get('place',{}).get('id')==body.place_id),None)
         if not selected:raise HTTPException(422,'Choose one of the places offered for this entry.')
-        place=persist_google(conn,selected,{'name':item['candidate'].get('venue_name') or item['title'],'city_hint':item['candidate'].get('city_hint')},manual=True)
+        try:
+            place=persist_google(conn,selected,{'name':item['candidate'].get('venue_name') or item['title'],'city_hint':item['candidate'].get('city_hint')},manual=True)
+        except ValueError:
+            raise HTTPException(422,'This result is an area or address. Choose a specific place.')
         attrs,reasons=validate_attributes(item['content_type'],item['attributes'])
+        if place['id']!=item['place_id']:
+            conn.execute("update entries set organization_city='',attributes=attributes-'neighborhood' where id=%s and user_id=%s",(item_id,user))
         row=conn.execute("""update entries set place_id=%s,confidence=1,needs_review=%s,review_reason=%s,
             verified_at=case when %s then null else now() end,embedding=null,updated_at=now() where id=%s returning *""",
             (place['id'],bool(reasons),';'.join(reasons) or None,bool(reasons),item_id)).fetchone()
@@ -218,13 +301,32 @@ def edit_entry(item_id:UUID,body:EntryEdit,user=Depends(require_user)):
         data=sync_registry(conn)
         key=body.content_type or item['content_type']
         changing=body.content_type is not None and body.content_type!=item['content_type']
-        try: attrs,reasons=validate_attributes(key,body.attributes if body.attributes is not None else {} if changing else item['attributes'],data=data)
+        incoming=body.attributes if body.attributes is not None else {} if changing else item['attributes']
+        target_kind=body.venue_kind or incoming.get('venue_kind')
+        if key=='place' and target_kind!=item['attributes'].get('venue_kind'):
+            from worker.registry import attribute_fields
+            incoming={**incoming,'venue_kind':target_kind}
+            incoming={k:v for k,v in incoming.items() if k in attribute_fields(key,target_kind,data)}
+        try: attrs,reasons=validate_attributes(key,incoming,data=data)
         except ValueError as exc: raise HTTPException(422,str(exc)) from exc
         place_id=body.place_id if 'place_id' in body.model_fields_set else item['place_id']
         if place_id and not conn.execute('select id from entries where user_id=%s and place_id=%s',(user,place_id)).fetchone():
             raise HTTPException(422,'Choose a place already in your library.')
+        if place_id!=item['place_id']:
+            attrs.pop('neighborhood',None)
+            conn.execute("update entries set organization_city='' where id=%s and user_id=%s",(item_id,user))
         if data[key]['geo']=='required' and not place_id: reasons.append('unresolved_place')
-        structural=bool({'content_type','attributes','title','summary','place_id'} & body.model_fields_set)
+        if body.image_choice is not None:
+            if key!='place':raise HTTPException(422,'Photo choices apply to places only.')
+            conn.execute('update entries set image_choice=%s where id=%s and user_id=%s',(body.image_choice,item_id,user))
+        override=body.venue_kind
+        if override is None and body.attributes is not None and 'venue_kind' in body.attributes and body.attributes['venue_kind']!=item['attributes'].get('venue_kind'):
+            override=body.attributes['venue_kind']
+        if override is not None:
+            if key!='place' or override not in venue_kinds(): raise HTTPException(422,'Choose a valid venue kind.')
+            attrs['venue_kind']=override
+            conn.execute("update entries set venue_kind=%s,venue_kind_source='user' where id=%s and user_id=%s",(override,item_id,user))
+        structural=bool({'content_type','attributes','title','summary','place_id','venue_kind'} & body.model_fields_set)
         if not structural:
             reasons=item['review_reason'].split(';') if item['needs_review'] and item['review_reason'] else []
         row=conn.execute("""update entries set content_type=%s,title=%s,summary=%s,attributes=%s,note=%s,
@@ -258,9 +360,12 @@ def confirm(item_id:UUID,body:Review,user=Depends(require_user)):
         data=sync_registry(conn)
         if data[item['content_type']]['geo']=='never':
             raise HTTPException(422,'This type does not use address lookup. You can link a saved place in the editor.')
+        candidate['venue_kind']=item.get('venue_kind') or item['attributes'].get('venue_kind','other')
         place,confidence,reason=resolve(conn,candidate,metrics)
         attrs,reasons=validate_attributes(item['content_type'],item['attributes'],data=data)
         if not place: reasons.append(reason or 'unresolved_place')
+        if (place['id'] if place else None)!=item['place_id']:
+            conn.execute("update entries set organization_city='',attributes=attributes-'neighborhood' where id=%s and user_id=%s",(item_id,user))
         row=conn.execute("""update entries set candidate=candidate || %s,place_id=%s,confidence=%s,needs_review=%s,
             review_reason=%s,verified_at=case when %s then null else now() end,
             embedding=null,updated_at=now() where id=%s and user_id=%s returning *""",
@@ -280,6 +385,7 @@ def export_data(user=Depends(require_user)):
             'saves':conn.execute('select id,source_url,canonical_url,platform_video_id,status,created_at,error_reason from saves where user_id=%s',(user,)).fetchall()}
 
 def erase_owner(conn,user):
+    conn.execute("update places set map_thumbnail=map_thumbnail-%s where map_thumbnail ? %s",(str(user),str(user)))
     conn.execute('delete from events where user_id=%s',(user,))
     conn.execute('delete from jobs where user_id=%s',(user,))
     conn.execute('delete from folders where user_id=%s',(user,))
@@ -389,17 +495,21 @@ def merge_library(conn,source,target):
             conn.execute('update jobs set status=%s where save_id=%s',(saved['status'],copied['id']))
         for item in conn.execute('select * from entries where save_id=%s and user_id=%s',(saved['id'],source)).fetchall():
             row=conn.execute("""insert into entries(user_id,save_id,place_id,note,content_type,title,summary,attributes,
-                confidence,needs_review,review_reason,verified_at,candidate,candidate_key)
-                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(user_id,save_id,candidate_key)
-                do update set note=case when entries.note='' then excluded.note else entries.note end returning *""",
+                confidence,needs_review,review_reason,verified_at,candidate,candidate_key,venue_kind,venue_kind_source,organization_city,image_choice)
+                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(user_id,save_id,candidate_key)
+                do update set note=case when entries.note='' then excluded.note else entries.note end,
+                image_choice=case when entries.image_choice='auto' then excluded.image_choice else entries.image_choice end,
+                venue_kind=case when entries.venue_kind_source='user' then entries.venue_kind when excluded.venue_kind_source='user' then excluded.venue_kind else entries.venue_kind end,
+                venue_kind_source=case when entries.venue_kind_source='user' or excluded.venue_kind_source='user' then 'user' else 'provider' end returning *""",
                 (target,copied['id'],item['place_id'],item['note'],item['content_type'],item['title'],item['summary'],Jsonb(item['attributes']),
-                 item['confidence'],item['needs_review'],item['review_reason'],item['verified_at'],Jsonb(item['candidate']),item['candidate_key'])).fetchone()
+                 item['confidence'],item['needs_review'],item['review_reason'],item['verified_at'],Jsonb(item['candidate']),item['candidate_key'],item['venue_kind'],item['venue_kind_source'],item['organization_city'],item['image_choice'])).fetchone()
             place=conn.execute('select * from places where id=%s',(row['place_id'],)).fetchone() if row['place_id'] else None
             file_entry(conn,row,place)
             for link in conn.execute('select folder_id from folder_items where entry_id=%s and user_id=%s',(item['id'],source)).fetchall():
                 if link['folder_id'] in folder_map:
                     conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',
                                  (folder_map[link['folder_id']],row['id'],target))
+    conn.execute('update users set ui_preferences=(select ui_preferences from users where id=%s) || ui_preferences where id=%s',(source,target))
     conn.execute('update devices set user_id=%s where user_id=%s',(target,source))
     erase_owner(conn,source)
 

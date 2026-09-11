@@ -10,10 +10,10 @@ from worker.fetch.http import get, check_response, FetchError
 from worker.fetch.parsing import parse_html
 from worker.fetch.hints import identify
 
-FETCH_VERSION='2026-09-08.2'
+FETCH_VERSION='2026-09-10.compilation-v1'
 
 def sufficient(signals):
-    return bool(signals.get('poi')) or len(signals.get('caption','').strip())>20 or len((signals.get('ocr','')+signals.get('transcript','')).strip())>40
+    return bool(signals.get('poi') or signals.get('geotag')) or len(signals.get('caption','').strip())>20 or len((signals.get('ocr','')+signals.get('transcript','')).strip())>40
 
 def merge(signals,incoming,tier):
     for key,value in incoming.items():
@@ -67,13 +67,13 @@ def fetch_signals(resolved,directory,metrics,*,request=get,media=None,use_cache=
 
 def _fetch_signals(resolved,directory,metrics,*,request=get,media=None,use_cache=True,checkpoint=None):
     from worker.db import connect
-    if use_cache:
+    if use_cache and not resolved.get('force_dense'):
         with connect() as conn:
             cached=conn.execute("select signals,outcome from fetch_cache where platform=%s and platform_video_id=%s and fetched_at>now()-interval '30 days' and signals->>'fetch_version'=%s",(resolved['platform'],resolved['platform_video_id'],FETCH_VERSION)).fetchone()
         if cached:
             metrics['fetch_cache_hits']=metrics.get('fetch_cache_hits',0)+1
             return {**cached['signals'],'fetch_state':cached['outcome'],'origin_tier_log':cached['signals'].get('tier_log',[]),'tier_log':[{'tier':'cache','outcome':'hit','bytes':0}], 'fetch_cache_hit':True}
-    signals={'fetch_version':FETCH_VERSION,'caption':'','ocr':'','transcript':'','hashtags':[],'poi':None,'unavailable':{},'provenance':{},'tier_log':[]}
+    signals={'expected_venue_count':resolved.get('expected_venue_count'),'force_dense':bool(resolved.get('force_dense')),'fetch_version':FETCH_VERSION,'caption':'','ocr':'','transcript':'','hashtags':[],'poi':None,'unavailable':{},'provenance':{},'tier_log':[]}
     failures=[]
     for tier in (1,2,3):
         start=time.monotonic()
@@ -87,7 +87,7 @@ def _fetch_signals(resolved,directory,metrics,*,request=get,media=None,use_cache
                     def progress(partial):
                         merge(signals,partial,'tier_3')
                         if checkpoint:checkpoint(signals)
-                    incoming=collect_media(resolved['canonical_url'],directory,metrics,checkpoint=progress)
+                    incoming=collect_media(resolved['canonical_url'],directory,metrics,checkpoint=progress,context=signals)
                 else:incoming=media(resolved['canonical_url'],directory,metrics)
                 log={'outcome':'ok','bytes':metrics.get('media_download_bytes',0)+metrics.get('media_metadata_bytes',0)-before}
             merge(signals,incoming,f'tier_{tier}')
@@ -101,7 +101,13 @@ def _fetch_signals(resolved,directory,metrics,*,request=get,media=None,use_cache
         metrics['fetch_bytes']=metrics.get('fetch_bytes',0)+log['bytes']
         metrics.setdefault('fetch_tiers',[]).append(log)
         if checkpoint:checkpoint(signals)
-        if sufficient(signals):break
+        from worker.compilations import classify
+        classification=classify(signals)
+        signals['is_compilation']=bool(signals.get('is_compilation') or signals.get('force_dense') or classification['is_compilation'])
+        signals['expected_venue_count']=signals.get('expected_venue_count') or classification['expected_venue_count']
+        metrics['reel_class']='compilation' if signals['is_compilation'] else 'standard'
+        if checkpoint:checkpoint(signals)
+        if sufficient(signals) and (not signals['is_compilation'] or tier==3):break
     signals.update(identify(signals))
     if sufficient(signals):outcome='fetched'
     elif any(t['outcome']=='fetch_not_found' and t['tier'] in (2,3) for t in signals['tier_log']):outcome='fetch_not_found'
@@ -114,7 +120,7 @@ def _fetch_signals(resolved,directory,metrics,*,request=get,media=None,use_cache
     signals['fetch_state']=outcome
     if outcome in ('needs_source_info','fetch_ok_no_content'):
         signals['tier_log'].append({'tier':4,'outcome':'needs_source_info','bytes':0,'seconds':0})
-    if use_cache and outcome in ('fetched','fetch_ok_no_content'):
+    if use_cache and outcome in ('fetched','fetch_ok_no_content') and not (signals.get('is_compilation') and (not signals.get('compilation') or signals['compilation'].get('provider_error'))):
         with connect() as conn:
             conn.execute('''insert into fetch_cache(platform,platform_video_id,canonical_url,signals,outcome)
                 values(%s,%s,%s,%s,%s) on conflict(platform,platform_video_id) do update

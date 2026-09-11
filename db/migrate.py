@@ -98,6 +98,14 @@ def migrate_legacy(database_url, dry_run=False):
 
 
 def harden_registry(conn):
+    venue_version='20260908090846_venue_kinds'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(venue_version,)).fetchone():
+        from worker.registry import sync_registry
+        from worker.venue_kinds import backfill
+        conn.execute((ROOT/'db/migrations'/f'{venue_version}.sql').read_text(),prepare=False)
+        sync_registry(conn)
+        report=backfill(conn)
+        conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(venue_version,Jsonb(report)))
     ingestion_version='20260908014221_ingestion_ladder'
     if not conn.execute('select 1 from schema_migrations where id=%s',(ingestion_version,)).fetchone():
         conn.execute((ROOT/'db/migrations/20260908014221_ingestion_ladder.sql').read_text(),prepare=False)
@@ -106,6 +114,24 @@ def harden_registry(conn):
     if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
         conn.execute((ROOT/'db/migrations/003_registry_function_path.sql').read_text(),prepare=False)
         conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(version,Jsonb({'validation_search_path_fixed':True})))
+    version='20260908074706_organization_geography'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
+        conn.execute((ROOT/'db/migrations/20260908074706_organization_geography.sql').read_text(),prepare=False)
+        from worker.registry import sync_registry
+        from worker.geography import migrate_folders
+        sync_registry(conn)
+        conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(version,Jsonb(migrate_folders(conn))))
+    version='20260910102343_compilation_and_photo_jobs'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
+        conn.execute((ROOT/'db/migrations'/f'{version}.sql').read_text(),prepare=False)
+        conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(version,Jsonb({'additive_compilation_and_photos':True})))
+    version='20260911150000_shared_image_cache'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
+        conn.execute((ROOT/'db/migrations'/f'{version}.sql').read_text(),prepare=False)
+        conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(version,Jsonb({'shared_non_google_image_cache':True})))
+    from db.identity_migrate import VERSION as identity_version, run as migrate_identity
+    if not conn.execute('select 1 from schema_migrations where id=%s',(identity_version,)).fetchone():
+        migrate_identity(conn)
 
 
 def run(database_url, dry_run=False):

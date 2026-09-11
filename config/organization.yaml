@@ -1,0 +1,17 @@
+# Folder grouping only: never changes map pins, provider IDs or geocoder decisions.
+version: 1
+locality_cache_days: 30
+failed_lookup_retry_hours: 24
+max_lookups_per_sync: 2
+google_details_essentials_usd: 0.005
+metros:
+  - city: Los Angeles
+    country: US
+    region: CA
+    localities: [Los Angeles, Santa Monica, Beverly Hills, West Hollywood, Culver City, Malibu, Bellflower]
+    neighborhoods: [Venice, Venice Beach, Silver Lake, Koreatown, Hollywood, Downtown Los Angeles, Echo Park, Los Feliz, Highland Park, Westwood, Brentwood, Pacific Palisades]
+  - city: New York
+    country: US
+    region: NY
+    localities: [New York, New York City, Brooklyn, Queens, Bronx, The Bronx, Staten Island, Manhattan]
+    neighborhoods: [Williamsburg, Greenpoint, Astoria, Harlem, SoHo, DUMBO, Lower East Side, Upper East Side, Upper West Side, Greenwich Village, Chelsea]

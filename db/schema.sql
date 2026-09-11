@@ -203,3 +203,171 @@ begin
   end loop;
  end loop;
 end $$;
+
+-- Administrative locality used only for personal folder organization.
+-- Generated with `supabase migration new organization_geography`.
+-- Organization metadata only; existing RLS/ownership and saved pin IDs are unchanged.
+alter table places add column if not exists organization_geography jsonb;
+alter table places add column if not exists organization_checked_at timestamptz;
+alter table places add column if not exists organization_calls integer not null default 0;
+alter table places add column if not exists organization_cost_usd numeric not null default 0;
+alter table entries add column if not exists organization_city text not null default '';
+
+create index if not exists entries_owner_place on entries(user_id,place_id) where place_id is not null;
+alter table entries add column if not exists venue_kind text not null default 'other';
+alter table entries add column if not exists venue_kind_source text not null default 'provider' check(venue_kind_source in ('provider','user'));
+alter table entries add column if not exists venue_kind_primary_type text;
+alter table places add column if not exists venue_primary_checked_at timestamptz;
+alter table places add column if not exists venue_kind_calls integer not null default 0;
+alter table places add column if not exists venue_kind_cost_usd numeric not null default 0;
+alter table users add column if not exists ui_preferences jsonb not null default '{}'::jsonb;
+create table if not exists venue_kind_unmapped (
+ primary_type text primary key, occurrences integer not null default 1,
+ first_seen_at timestamptz not null default now(), last_seen_at timestamptz not null default now()
+);
+alter table venue_kind_unmapped enable row level security;
+revoke all on venue_kind_unmapped from public;
+do $$ begin
+ if exists(select 1 from pg_roles where rolname='anon') then revoke all on venue_kind_unmapped from anon; end if;
+ if exists(select 1 from pg_roles where rolname='authenticated') then revoke all on venue_kind_unmapped from authenticated; end if;
+end $$;
+alter table places add column if not exists imagery jsonb not null default '{}';
+alter table saves add column if not exists cover_imagery jsonb not null default '{}';
+alter table entries add column if not exists image_choice text not null default 'auto';
+alter table entries add column if not exists image_selection jsonb not null default '{}';
+create table if not exists imagery_claims (
+ content_hash text primary key,
+ place_id uuid references places(id) on delete cascade,
+ google_place_id text,
+ created_at timestamptz not null default now()
+);
+create table if not exists imagery_runs (
+ id bigint generated always as identity primary key,
+ user_id uuid not null references users(id) on delete cascade,
+ metrics jsonb not null,
+ created_at timestamptz not null default now()
+);
+alter table imagery_claims enable row level security;
+alter table imagery_runs enable row level security;
+revoke all on imagery_claims,imagery_runs from public;
+do $$ begin
+ if exists(select 1 from pg_roles where rolname='anon') then execute 'revoke all on imagery_claims,imagery_runs from anon'; end if;
+ if exists(select 1 from pg_roles where rolname='authenticated') then execute 'revoke all on imagery_claims,imagery_runs from authenticated'; end if;
+end $$;
+
+-- Provider caches and repair audit are internal, never public library access.
+alter table places add column if not exists resolution_attribution jsonb;
+alter table places add column if not exists resolution_types text[] not null default '{}';
+create table if not exists natural_geocode_cache (
+ cache_key text primary key, results jsonb not null, expires_at timestamptz not null
+);
+create table if not exists venue_identity_repairs (
+ entry_id uuid primary key references entries(id) on delete cascade,
+ previous_place_id uuid, previous_candidate jsonb not null,
+ reason text not null, repaired_at timestamptz not null default now()
+);
+do $$ declare relation text; client_role text; begin
+ foreach relation in array array['natural_geocode_cache','venue_identity_repairs'] loop
+  execute format('alter table %I enable row level security',relation);
+  execute format('revoke all on %I from public',relation);
+  foreach client_role in array array['anon','authenticated'] loop
+   if exists(select 1 from pg_roles where rolname=client_role) then execute format('revoke all on %I from %I',relation,client_role); end if;
+  end loop;
+ end loop;
+end $$;
+
+create or replace function validate_entry_attributes() returns trigger language plpgsql set search_path = pg_catalog, public as $$
+declare spec jsonb; fields jsonb; key text; val jsonb; field jsonb; item jsonb; values_to_check jsonb;
+begin
+ select r.spec into spec from content_type_registry r where r.key=new.content_type;
+ if spec is null then raise exception 'Unknown content type' using errcode='23514'; end if;
+ fields:=spec->'attributes';
+ if new.content_type='place' then fields:=fields || coalesce(spec->'kind_attributes'->(new.attributes->>'venue_kind'),'{}'::jsonb); end if;
+ if jsonb_typeof(new.attributes)<>'object' then raise exception 'Attributes must be an object' using errcode='23514'; end if;
+ for key,val in select * from jsonb_each(new.attributes) loop
+  field:=fields->key;
+  if field is null then raise exception 'Unknown attribute: %',key using errcode='23514'; end if;
+  if val='null'::jsonb then continue; end if;
+  if coalesce((field->>'multi')::boolean,false) then
+   if jsonb_typeof(val)<>'array' or jsonb_array_length(val)>50 then
+    raise exception 'Attribute must be an array: %',key using errcode='23514'; end if;
+   values_to_check:=val;
+  else values_to_check:=jsonb_build_array(val); end if;
+  for item in select * from jsonb_array_elements(values_to_check) loop
+   if field->>'type'='boolean' then
+    if jsonb_typeof(item)<>'boolean' then raise exception 'Invalid boolean attribute: %',key using errcode='23514'; end if;
+   elsif field->>'type'='number' then
+    if jsonb_typeof(item)<>'number' or (item#>>'{}')::numeric<0 or (item#>>'{}')::numeric>100000 then
+     raise exception 'Invalid numeric attribute: %',key using errcode='23514'; end if;
+   elsif field->>'type'='integer' then
+    if jsonb_typeof(item)<>'number' or (item#>>'{}') !~ '^[0-9]+$' or (item#>>'{}')::numeric>100000 then
+     raise exception 'Invalid integer attribute: %',key using errcode='23514'; end if;
+   else
+    if jsonb_typeof(item)<>'string' or length(trim(item#>>'{}')) not between 1 and 1000 then
+     raise exception 'Invalid string attribute: %',key using errcode='23514'; end if;
+    if field->>'type'='enum' and not (field->'values' @> jsonb_build_array(item)) then
+     raise exception 'Invalid enum attribute: %',key using errcode='23514'; end if;
+   end if;
+  end loop;
+ end loop;
+ for key,field in select * from jsonb_each(fields) loop
+  if coalesce((field->>'required')::boolean,false) and
+   (not new.attributes ? key or new.attributes->key in ('null'::jsonb,'[]'::jsonb,'""'::jsonb)) and
+   not new.needs_review and new.verified_at is null then
+   raise exception 'Missing required attribute must be reviewable: %',key using errcode='23514';
+  end if;
+ end loop;
+ return new;
+end $$;
+
+-- Additive metadata; all personal rows and native queue identities are preserved.
+alter table saves add column if not exists is_compilation boolean not null default false;
+alter table saves add column if not exists expected_venue_count integer check(expected_venue_count between 2 and 30);
+alter table saves add column if not exists extracted_venue_count integer not null default 0;
+alter table saves add column if not exists force_dense boolean not null default false;
+alter table saves drop constraint if exists saves_status_check;
+alter table saves add constraint saves_status_check check(status in ('queued','processing','resolved','needs_review','failed','no_content_found','resolve_failed','fetch_blocked','fetch_not_found','fetch_ok_no_content','extraction_empty','needs_source_info','partial_extraction'));
+alter table jobs drop constraint if exists jobs_status_check;
+alter table jobs add constraint jobs_status_check check(status in ('queued','processing','resolved','needs_review','failed','no_content_found','resolve_failed','fetch_blocked','fetch_not_found','fetch_ok_no_content','extraction_empty','needs_source_info','partial_extraction'));
+alter table places add column if not exists image_source text;
+alter table places add column if not exists image_acquired_at timestamptz;
+alter table places add column if not exists image_failure_reason text;
+alter table places add column if not exists image_diagnostics jsonb not null default '[]';
+create table if not exists photo_jobs (
+ place_id uuid primary key references places(id) on delete cascade,
+ status text not null default 'queued' check(status in ('queued','processing','complete','failed')),
+ attempts integer not null default 0, retry_at timestamptz not null default now(),
+ started_at timestamptz, updated_at timestamptz not null default now(), error_reason text
+);
+create index if not exists photo_jobs_due on photo_jobs(retry_at) where status in ('queued','failed');
+alter table photo_jobs enable row level security;
+revoke all on photo_jobs from public;
+do $$ begin
+ if exists(select 1 from pg_roles where rolname='anon') then revoke all on photo_jobs from anon; end if;
+ if exists(select 1 from pg_roles where rolname='authenticated') then revoke all on photo_jobs from authenticated; end if;
+ if exists(select 1 from pg_roles where rolname='service_role') then grant all on photo_jobs to service_role; end if;
+end $$;
+
+create or replace function public.enqueue_place_photo() returns trigger language plpgsql set search_path='' as $$
+begin
+ if new.place_id is not null then insert into public.photo_jobs(place_id) values(new.place_id) on conflict do nothing; end if;
+ return new;
+end $$;
+drop trigger if exists entry_photo_job on entries;
+create trigger entry_photo_job after insert or update of place_id on entries for each row execute function public.enqueue_place_photo();
+
+alter table places add column if not exists map_thumbnail jsonb not null default '{}';
+
+-- Bounded non-Google image cache shared by API and worker instances.
+create table if not exists image_assets (
+ content_hash text primary key check(content_hash ~ '^[a-f0-9]{64}$'),
+ jpeg bytea not null check(octet_length(jpeg) between 1 and 100000),
+ created_at timestamptz not null default now()
+);
+alter table image_assets enable row level security;
+revoke all on image_assets from public;
+do $$ begin
+ if exists(select 1 from pg_roles where rolname='anon') then revoke all on image_assets from anon; end if;
+ if exists(select 1 from pg_roles where rolname='authenticated') then revoke all on image_assets from authenticated; end if;
+ if exists(select 1 from pg_roles where rolname='service_role') then grant all on image_assets to service_role; end if;
+end $$;

@@ -534,8 +534,12 @@ def extract_audio(video_path: Path, workdir: Path) -> Path | None:
         "-loglevel",
         "error",
         "-y",
+        "-protocol_whitelist",
+        "file,pipe",
         "-i",
         str(video_path),
+        "-t",
+        "180",
         "-map",
         "0:a:0?",
         "-vn",
@@ -627,10 +631,12 @@ def stage_transcript(video_path: Path, workdir: Path) -> str:
         segments, _info = model.transcribe(str(audio_path), vad_filter=True)
         # Preserve Whisper's segment boundaries so downstream quality filters
         # can remove noisy music without throwing away nearby useful speech.
-        lines = []
+        lines = []; timed = []
         for segment in segments:
             if segment.text:
                 lines.append(segment.text.strip())
+                timed.append({"start":float(segment.start),"end":float(segment.end),"text":segment.text.strip()})
+                (workdir / "transcript-segments.json").write_text(json.dumps(timed), encoding="utf-8")
                 (workdir / "transcript.txt").write_text("\n".join(lines), encoding="utf-8")
         transcript = "\n".join(lines)
     except StageError:

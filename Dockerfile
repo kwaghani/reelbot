@@ -23,7 +23,11 @@ RUN python -m pip install --upgrade pip \
     && python -m pip install -r /app/worker/requirements.txt
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('BAAI/bge-small-en-v1.5', device='cpu')"
 
-COPY . /app
+COPY api /app/api
+COPY worker /app/worker
+COPY db /app/db
+COPY config /app/config
+COPY deploy /app/deploy
 RUN chmod +x /app/deploy/render/*.sh
 
-CMD ["./deploy/render/start-api.sh"]
+CMD ["./deploy/render/start-personal-api.sh"]

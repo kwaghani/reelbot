@@ -1,4 +1,4 @@
-"""Global place resolution, using only the five required Text Search fields."""
+"""Global place resolution, using minimal identity, coordinate and classification fields."""
 from __future__ import annotations
 import json
 import math
@@ -7,7 +7,7 @@ import re
 import unicodedata
 from urllib.request import Request, urlopen
 
-FIELDS = ("id", "displayName", "formattedAddress", "location", "primaryType")
+FIELDS = ("id", "displayName", "formattedAddress", "location", "primaryType", "types")
 FIELD_MASK = ",".join("places."+field for field in FIELDS)
 
 
@@ -111,72 +111,134 @@ def city_bias(conn,city,metrics,search):
 
 
 def persist_google(conn,place,candidate,*,manual=False):
+    from worker.venue_identity import administrative_type,administrative_name
+    if administrative_type(place) or administrative_name((place.get('displayName') or {}).get('text')):
+        raise ValueError('resolved_to_administrative_area')
+    target_key='choice:'+place['id'] if manual else lookup_key(candidate)
+    conn.execute('update places set lookup_key=null where lookup_key=%s and google_place_id is distinct from %s',(target_key,place['id']))
     loc=place['location'];city=str(candidate.get('city_hint') or '')
-    row=conn.execute("""insert into places(google_place_id,name,formatted_address,lat,lng,primary_type,city,lookup_key)
-        values(%s,%s,%s,%s,%s,%s,%s,%s) on conflict(google_place_id) do update set
+    row=conn.execute("""insert into places(google_place_id,name,formatted_address,lat,lng,primary_type,city,lookup_key,resolution_types)
+        values(%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(google_place_id) do update set
         name=excluded.name,formatted_address=excluded.formatted_address,lat=excluded.lat,lng=excluded.lng,
-        primary_type=excluded.primary_type,city=excluded.city,lookup_key=excluded.lookup_key,last_refreshed_at=now() returning *""",
+        primary_type=excluded.primary_type,city=excluded.city,lookup_key=excluded.lookup_key,resolution_types=excluded.resolution_types,last_refreshed_at=now() returning *""",
         (place['id'],place['displayName']['text'],place['formattedAddress'],loc['latitude'],loc['longitude'],
-         place.get('primaryType','other'),city,'choice:'+place['id'] if manual else lookup_key(candidate))).fetchone()
+         place.get('primaryType') or next(iter(place.get('types',[])),'other'),city,'choice:'+place['id'] if manual else lookup_key(candidate),place.get('types',[]))).fetchone()
     return dict(row)
 
 
+def resolution_guard(place,candidate,biases=()):
+    from worker.venue_identity import administrative_type,administrative_name
+    primary=place.get('primaryType') or place.get('primary_type') or place.get('category')
+    title=(place.get('displayName') or {}).get('text') or place.get('name','')
+    if administrative_type(place) or administrative_name(title):return 'resolved_to_administrative_area'
+    loc=place.get('location') or {'latitude':place.get('lat'),'longitude':place.get('lng')}
+    if not valid_location(loc):return 'invalid_coordinates'
+    points=[v for v in biases if valid_location(v)]
+    if points and all(distance_m(loc,v)>150000 for v in points):return 'distance_implausible'
+    from worker.venue_kinds import kind_for
+    kind=kind_for(primary)
+    if kind=='other':kind=candidate.get('venue_kind','other')
+    if kind!='attraction':
+        from worker.fetch.http import settings
+        centroids=[{'latitude':p[0],'longitude':p[1]} for p in settings()['city_centroids'].values()]
+        centroids+=candidate.get('city_centroids',[])
+        if any(valid_location(p) and distance_m(loc,p)<200 for p in centroids):return 'probable_city_centroid'
+    return None
+
+
 def resolve(conn,candidate,metrics,search=text_search):
+    from worker.venue_identity import administrative_name,administrative_type,specific_poi
+    candidate.setdefault('confidence',.5)
+    if candidate.get('identity_source')=='platform_geotag':
+        return None,min(.3,float(candidate['confidence'])),'resolved_to_administrative_area'
+    if not candidate.get('name') or administrative_name(candidate['name']):
+        candidate.setdefault('location_hints',[]).append({'name':candidate.get('name',''),'source':'administrative_name','rank':2})
+        return None,min(.3,float(candidate['confidence'])),'resolved_to_administrative_area'
     cache_key=lookup_key(candidate)
     conn.execute('select pg_advisory_xact_lock(hashtextextended(%s,0))',('place:'+cache_key,))
     poi=candidate.get('poi') or {}
+    hints=candidate.get('location_hints',[])
+    biases=[{'latitude':h.get('latitude'),'longitude':h.get('longitude')} for h in hints]
+    biases=[p for p in biases if valid_location(p)]
+    from worker.fetch.http import settings
+    for hint in hints:
+        for known,point in settings()['city_centroids'].items():
+            if normalized(str(hint.get('name','')).split(',')[0])==normalized(known):
+                biases.append({'latitude':point[0],'longitude':point[1]})
+    city=candidate.get('city_hint')
+    try: bias=city_bias(conn,city,metrics,search)
+    except Exception: bias=None
+    if bias:biases.append(bias);candidate['city_centroids']=[bias]
+    ranked_points=[{'latitude':h.get('latitude'),'longitude':h.get('longitude')} for h in sorted(hints,key=lambda h:h.get('rank',99)) if h.get('source')=='platform_poi_coordinates']
+    if ranked_points and valid_location(ranked_points[0]):bias=ranked_points[0]
+    if biases and not bias:bias=biases[0]
+    candidate['location_bias']=bias
+    rejected=[]
     loc={'latitude':poi.get('lat'),'longitude':poi.get('lng')}
-    if valid_location(loc):
-        import hashlib
-        provider=poi.get('platform') or 'tiktok'
-        identifier=str(poi.get('id') or hashlib.sha256(json.dumps(poi,sort_keys=True).encode()).hexdigest())
-        row=conn.execute("""insert into places(provider,provider_place_id,name,formatted_address,lat,lng,primary_type,city,lookup_key)
-            values(%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(provider,provider_place_id) where provider_place_id is not null
-            do update set name=excluded.name,formatted_address=excluded.formatted_address,lat=excluded.lat,lng=excluded.lng,city=excluded.city,last_refreshed_at=now() returning *""",
-            (provider,identifier,poi['name'],poi.get('address') or '',loc['latitude'],loc['longitude'],poi.get('category') or 'other',poi.get('city') or candidate.get('city_hint') or '','poi:'+provider+':'+identifier)).fetchone()
-        metrics.setdefault('places_queries',[]).append({'purpose':'platform_poi','query':None,'results':[poi],'accepted':True,'score':.95})
-        return dict(row),.95,None
-    city=candidate.get('city_hint');bias=city_bias(conn,city,metrics,search)
+    if valid_location(loc) and specific_poi(poi) and poi.get('platform')!='instagram':
+        reason=resolution_guard(poi,candidate,biases)
+        if not reason:
+            import hashlib
+            provider=poi.get('platform') or 'tiktok'
+            identifier=str(poi.get('id') or hashlib.sha256(json.dumps(poi,sort_keys=True).encode()).hexdigest())
+            row=conn.execute("""insert into places(provider,provider_place_id,name,formatted_address,lat,lng,primary_type,city,lookup_key)
+                values(%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(provider,provider_place_id) where provider_place_id is not null
+                do update set name=excluded.name,formatted_address=excluded.formatted_address,lat=excluded.lat,lng=excluded.lng,
+                primary_type=excluded.primary_type,city=excluded.city,last_refreshed_at=now() returning *""",
+                (provider,identifier,poi['name'],poi.get('address') or '',loc['latitude'],loc['longitude'],poi.get('category') or 'other',poi.get('city') or city or '','poi:'+provider+':'+identifier)).fetchone()
+            metrics.setdefault('places_queries',[]).append({'purpose':'platform_poi','query':None,'results':[poi],'accepted':True,'score':.95})
+            return dict(row),min(.95,candidate['confidence']),None
+        rejected.append(reason)
+    radius=150000 if candidate.get('venue_kind') in {'outdoors','beach','attraction'} else 20000
     cached=conn.execute('select * from places where lookup_key=%s',(cache_key,)).fetchone()
     if cached:
-        loc={'latitude':cached['lat'],'longitude':cached['lng']}
+        reason=resolution_guard(cached,candidate,biases)
         score=name_similarity(candidate['name'],cached['name'])
-        inside=not city or (bias is not None and valid_location(loc) and distance_m(bias,loc)<=20000)
-        if score>.7 and inside:
+        inside=not city or (bias is not None and distance_m(bias,{'latitude':cached['lat'],'longitude':cached['lng']})<=radius)
+        if not reason and score>.7 and inside and (cached.get('primary_type') not in {'other',''} or cached.get('resolution_types')):
             metrics['cache_hits']+=1
             return dict(cached),min(float(candidate['confidence']),score),None
+        if reason:rejected.append(reason)
     name=candidate['name'];address=candidate.get('address') or poi.get('address')
     queries=[]
     if city:queries.append((name+' '+city,bias))
     if address:queries.append((name+' '+address,bias))
     queries.extend([(name,bias),(name,None)])
-    seen=set();ranked={}
+    seen=set();ranked={};attempts=0
     for query,request_bias in queries:
         identity=(query,json.dumps(request_bias,sort_keys=True))
         if identity in seen:continue
-        seen.add(identity)
-        results=search({**candidate,'text_query':query,'location_bias':request_bias},metrics)
-        log={'query':query,'location_bias':request_bias,'radius_m':20000 if request_bias else None,'results':[]}
-        metrics.setdefault('places_queries',[]).append(log)
-        acceptable=[]
+        seen.add(identity);attempts+=1
+        if radius==150000 and attempts>2:break
+        try:results=search({**candidate,'text_query':query,'location_bias':request_bias},metrics)
+        except Exception as exc:
+            metrics.setdefault('places_errors',[]).append(type(exc).__name__);continue
+        log={'query':query,'location_bias':request_bias,'radius_m':radius if request_bias else None,'results':[]}
+        metrics.setdefault('places_queries',[]).append(log);acceptable=[]
         for place in results:
             loc=place.get('location');title=(place.get('displayName') or {}).get('text','')
             if not valid_location(loc) or not place.get('id') or not place.get('formattedAddress') or not title:continue
-            score=name_similarity(name,title)
-            distance=distance_m(bias,loc) if bias else None
-            inside=(distance is not None and distance<=20000) if city else True
-            row={'place':place,'score':round(score,5),'distance_m':round(distance,1) if distance is not None else None,'inside_city_radius':inside}
+            score=name_similarity(name,title);distance=distance_m(bias,loc) if bias else None
+            inside=(distance is not None and distance<=radius) if city else True
+            reason=resolution_guard(place,candidate,biases)
+            row={'place':place,'score':round(score,5),'distance_m':round(distance,1) if distance is not None else None,'inside_city_radius':inside,'rejection':reason}
             log['results'].append(row)
+            if reason:
+                rejected.append(reason);continue
             ranked[place['id']]=row
             if score>.7 and inside:acceptable.append((score,place))
         if acceptable:
-            # Provider ordering breaks ties, as in Text Search. Never reward a location outside the city.
             acceptable.sort(key=lambda p:p[0],reverse=True)
             score,best=acceptable[0];log['accepted_id']=best['id']
             return persist_google(conn,best,candidate),min(float(candidate['confidence']),score),None
-    candidates=sorted(ranked.values(),key=lambda p:(p['inside_city_radius'],p['score']),reverse=True)[:3]
-    candidate['place_candidates']=candidates
-    return None,float(candidate['confidence']),'ambiguous_place' if candidates else 'unresolved_place'
+    if candidate.get('venue_kind') in {'outdoors','beach','attraction'}:
+        from worker.noncommercial import resolve_natural
+        place,reason=resolve_natural(conn,candidate,metrics,biases)
+        if place:return place,min(float(candidate['confidence']),.9),None
+        if reason:rejected.append(reason)
+    candidate['place_candidates']=sorted(ranked.values(),key=lambda p:(p['inside_city_radius'],p['score']),reverse=True)[:3]
+    reason=next((r for r in ('resolved_to_administrative_area','distance_implausible','probable_city_centroid') if r in rejected),None)
+    return None,float(candidate['confidence']),reason or ('ambiguous_place' if ranked else 'unresolved_place')
 
 
 def details(conn,place):

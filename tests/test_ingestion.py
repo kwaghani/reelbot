@@ -147,13 +147,14 @@ class IngestionTests(unittest.TestCase):
         self.assertEqual(result['caption'],target['caption']['text'])
 
     def test_poi_coordinates_zero_google_calls(self):
-        candidate={'name':'Tagged Venue','city_hint':'Los Angeles','confidence':.95,'poi':{'id':'real-style-tag','name':'Tagged Venue','address':'Los Angeles','lat':34.0522,'lng':-118.2437}}
+        candidate={'name':'Tagged Venue','city_hint':'Los Angeles','confidence':.95,'poi':{'id':'real-style-tag','category':'restaurant','name':'Tagged Venue','address':'Los Angeles','lat':34.11,'lng':-118.2437}}
         provider=Mock(side_effect=AssertionError('Google must not run'))
         with connect() as conn:place,confidence,reason=resolve(conn,candidate,new_metrics(),search=provider)
         self.assertEqual(confidence,.95);self.assertEqual(place['provider'],'tiktok');provider.assert_not_called()
         candidate['poi']['platform']='instagram'
-        with connect() as conn:instagram,confidence,_=resolve(conn,candidate,new_metrics(),search=provider)
-        self.assertEqual(instagram['provider'],'instagram');self.assertNotEqual(instagram['id'],place['id']);provider.assert_not_called()
+        # An Instagram location object can bias a caption lookup, never supply the pin.
+        with connect() as conn:instagram,confidence,_=resolve(conn,candidate,new_metrics(),search=lambda *_:[])
+        self.assertIsNone(instagram);provider.assert_not_called()
 
     def test_name_normalization_bias_and_outside_radius_choices(self):
         self.assertEqual(normalized('Vees Cafe'),normalized("Vee’s Café"))
@@ -164,12 +165,12 @@ class IngestionTests(unittest.TestCase):
             return [{'id':'elsewhere','displayName':{'text':'Vee’s Café'},'formattedAddress':'Paris, France','location':{'latitude':48.85,'longitude':2.35}}]
         lookup={'name':'Vees Cafe','city_hint':'Venice Beach','confidence':.9}
         with connect() as conn:place,confidence,reason=resolve(conn,lookup,new_metrics(),search=provider)
-        self.assertIsNone(place);self.assertEqual(reason,'ambiguous_place');self.assertEqual(len(seen),3)
+        self.assertIsNone(place);self.assertEqual(reason,'distance_implausible');self.assertEqual(len(seen),3)
         self.assertEqual(seen[0]['location_bias'],{'latitude':33.985,'longitude':-118.4695})
-        self.assertIsNone(seen[-1]['location_bias']);self.assertEqual(lookup['place_candidates'][0]['place']['id'],'elsewhere')
+        self.assertIsNone(seen[-1]['location_bias']);self.assertEqual(lookup['place_candidates'],[])
         from worker.places import persist_google
         with connect() as conn:
-            persist_google(conn,lookup['place_candidates'][0]['place'],lookup)
+            persist_google(conn,provider({}, {})[0],lookup)
             seen.clear();place,_,_=resolve(conn,lookup,new_metrics(),search=provider)
             self.assertIsNone(place);self.assertEqual(len(seen),3)  # Old cache entries must pass today's city bounds too.
 

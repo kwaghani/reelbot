@@ -1,7 +1,7 @@
 """Content absence, platform access failure and extraction uncertainty are distinct."""
-TERMINAL = {'resolved','needs_review','failed','resolve_failed','fetch_blocked','fetch_not_found',
+TERMINAL = {'partial_extraction','resolved','needs_review','failed','resolve_failed','fetch_blocked','fetch_not_found',
             'fetch_ok_no_content','extraction_empty','needs_source_info'}
-MANUAL_RETRY = {'failed','resolve_failed','needs_review','needs_source_info','extraction_empty','fetch_ok_no_content','no_content_found'}
+MANUAL_RETRY = {'partial_extraction','failed','resolve_failed','needs_review','needs_source_info','extraction_empty','fetch_ok_no_content','no_content_found'}
 def message(state, platform='source', retrying=True):
     name={'tiktok':'TikTok','instagram':'Instagram','youtube':'YouTube'}.get(platform,'The source platform')
     return {'resolve_failed':"Couldn't open this link",'fetch_blocked':f'{name} is limiting access — retrying automatically' if retrying else f'{name} is limiting access',

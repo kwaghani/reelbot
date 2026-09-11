@@ -2,11 +2,13 @@ services:
   - type: web
     name: reelbot-api
     runtime: docker
-    plan: standard
+    plan: starter
+    branch: codex/render-restore
+    autoDeployTrigger: off
     region: oregon
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerCommand: ./deploy/render/start-api.sh
+    dockerCommand: ./deploy/render/start-personal-api.sh
     healthCheckPath: /healthz
     maxShutdownDelaySeconds: 60
     envVars:
@@ -20,10 +22,12 @@ services:
     name: reelbot-worker
     runtime: docker
     plan: standard
+    branch: codex/render-restore
+    autoDeployTrigger: off
     region: oregon
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerCommand: ./deploy/render/start-worker.sh
+    dockerCommand: ./deploy/render/start-personal-worker.sh
     maxShutdownDelaySeconds: 60
     envVars:
       - key: DATABASE_URL
