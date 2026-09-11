@@ -3,7 +3,7 @@ FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PYTHONPATH=/app/worker:/app \
+    PYTHONPATH=/app \
     EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
 
 WORKDIR /app
