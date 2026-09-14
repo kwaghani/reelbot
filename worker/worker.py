@@ -94,6 +94,18 @@ def process(save_id):
                     finish(save_id,state,metrics);return
                 candidates=candidates_for(resolved,signals,metrics,diagnostics)
                 signals['extraction_registry_version']=registry_version()
+            # Re-apply role gates even to historical durable/compilation caches.
+            from worker.venue_identity import inputs_for,condition_rows
+            signals.update(inputs_for(signals).payload())
+            if signals.get('is_compilation'):
+                safe=[]
+                for candidate in candidates:
+                    own=candidate.get('segment_signals') or {'caption':candidate.get('evidence','')}
+                    safe.extend(condition_rows([candidate],{**own,'sponsor_candidates':signals['sponsor_candidates'],
+                        'city_hint':candidate.get('city_hint') or signals.get('city_hint')}))
+                candidates=safe
+            else:
+                candidates=condition_rows(candidates,signals)
             signals['candidates']=candidates
             checkpoint(save_id,metrics,signals,diagnostics)
             if signals.get('is_compilation'):
@@ -127,6 +139,9 @@ def process(save_id):
                 lookup={'name':candidate['venue_name'],'city_hint':candidate.get('city_hint') or signals.get('city_hint'),
                         'country_hint':None,'confidence':candidate['confidence'],'poi':candidate.get('poi') or {},
                         'venue_kind':candidate['attributes'].get('venue_kind','other'),
+                        'category_contexts':candidate.get('category_contexts'),
+                        'sponsor_candidates':candidate.get('sponsor_candidates',[]),
+                        'handle_only':'handle_only' in candidate.get('review_reasons',[]),
                         'identity_source':candidate.get('identity_source'), 'location_hints':candidate.get('location_hints',[]),
                         'address':candidate.get('address_hint') or (candidate.get('poi') or {}).get('address')}
                 try:

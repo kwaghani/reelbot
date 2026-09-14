@@ -122,11 +122,14 @@ def persist_google(conn,place,candidate,*,manual=False):
         name=excluded.name,formatted_address=excluded.formatted_address,lat=excluded.lat,lng=excluded.lng,
         primary_type=excluded.primary_type,city=excluded.city,lookup_key=excluded.lookup_key,resolution_types=excluded.resolution_types,last_refreshed_at=now() returning *""",
         (place['id'],place['displayName']['text'],place['formattedAddress'],loc['latitude'],loc['longitude'],
-         place.get('primaryType') or next(iter(place.get('types',[])),'other'),city,'choice:'+place['id'] if manual else lookup_key(candidate),place.get('types',[]))).fetchone()
+         place.get('primaryType') or '',city,'choice:'+place['id'] if manual else lookup_key(candidate),place.get('types',[]))).fetchone()
     return dict(row)
 
 
 def resolution_guard(place,candidate,biases=()):
+    from worker.category_coherence import assess
+    verdict=assess(place,candidate)
+    if verdict['reason']:return verdict['reason']
     from worker.venue_identity import administrative_type,administrative_name
     primary=place.get('primaryType') or place.get('primary_type') or place.get('category')
     title=(place.get('displayName') or {}).get('text') or place.get('name','')
@@ -148,7 +151,13 @@ def resolution_guard(place,candidate,biases=()):
 
 def resolve(conn,candidate,metrics,search=text_search):
     from worker.venue_identity import administrative_name,administrative_type,specific_poi
+    from worker.sponsors import is_sponsor
+    from worker.category_coherence import assess,log_veto
     candidate.setdefault('confidence',.5)
+    if is_sponsor(candidate.get('name'),candidate.get('sponsor_candidates',[])):
+        return None,min(.3,float(candidate['confidence'])),'sponsor_not_venue'
+    if candidate.get('handle_only'):
+        return None,min(.4,float(candidate['confidence'])),'handle_only'
     if candidate.get('identity_source')=='platform_geotag':
         return None,min(.3,float(candidate['confidence'])),'resolved_to_administrative_area'
     if not candidate.get('name') or administrative_name(candidate['name']):
@@ -177,6 +186,7 @@ def resolve(conn,candidate,metrics,search=text_search):
     loc={'latitude':poi.get('lat'),'longitude':poi.get('lng')}
     if valid_location(loc) and specific_poi(poi) and poi.get('platform')!='instagram':
         reason=resolution_guard(poi,candidate,biases)
+        if reason=='category_mismatch':log_veto(poi,candidate,assess(poi,candidate),metrics)
         if not reason:
             import hashlib
             provider=poi.get('platform') or 'tiktok'
@@ -193,6 +203,7 @@ def resolve(conn,candidate,metrics,search=text_search):
     cached=conn.execute('select * from places where lookup_key=%s',(cache_key,)).fetchone()
     if cached:
         reason=resolution_guard(cached,candidate,biases)
+        if reason=='category_mismatch':log_veto(cached,candidate,assess(cached,candidate),metrics)
         score=name_similarity(candidate['name'],cached['name'])
         inside=not city or (bias is not None and distance_m(bias,{'latitude':cached['lat'],'longitude':cached['lng']})<=radius)
         if not reason and score>.7 and inside and (cached.get('primary_type') not in {'other',''} or cached.get('resolution_types')):
@@ -218,10 +229,13 @@ def resolve(conn,candidate,metrics,search=text_search):
         for place in results:
             loc=place.get('location');title=(place.get('displayName') or {}).get('text','')
             if not valid_location(loc) or not place.get('id') or not place.get('formattedAddress') or not title:continue
+            # Hard eligibility is decided before a candidate enters ranking.
+            verdict=assess(place,candidate)
+            reason=resolution_guard(place,candidate,biases)
+            if reason=='category_mismatch':log_veto(place,candidate,verdict,metrics)
             score=name_similarity(name,title);distance=distance_m(bias,loc) if bias else None
             inside=(distance is not None and distance<=radius) if city else True
-            reason=resolution_guard(place,candidate,biases)
-            row={'place':place,'score':round(score,5),'distance_m':round(distance,1) if distance is not None else None,'inside_city_radius':inside,'rejection':reason}
+            row={'place':place,'score':round(score,5),'type_match':verdict['type_match'],'context':verdict['context'],'distance_m':round(distance,1) if distance is not None else None,'inside_city_radius':inside,'rejection':reason}
             log['results'].append(row)
             if reason:
                 rejected.append(reason);continue
@@ -237,7 +251,7 @@ def resolve(conn,candidate,metrics,search=text_search):
         if place:return place,min(float(candidate['confidence']),.9),None
         if reason:rejected.append(reason)
     candidate['place_candidates']=sorted(ranked.values(),key=lambda p:(p['inside_city_radius'],p['score']),reverse=True)[:3]
-    reason=next((r for r in ('resolved_to_administrative_area','distance_implausible','probable_city_centroid') if r in rejected),None)
+    reason=next((r for r in ('category_mismatch','resolved_to_administrative_area','distance_implausible','probable_city_centroid') if r in rejected),None)
     return None,float(candidate['confidence']),reason or ('ambiguous_place' if ranked else 'unresolved_place')
 
 

@@ -33,7 +33,7 @@ def venue_kinds():
     return data
 
 def registry():
-    data = {k:v for k,v in registry_document().items() if k not in {'venue_kinds','venue_kind_signals'}}
+    data = {k:v for k,v in registry_document().items() if k not in {'venue_kinds','venue_kind_signals','category_compatibility','venue_type_specificity'}}
     if 'place' in data:
         kinds=venue_kinds()
         data['place']['attributes']['venue_kind']['values'] = list(kinds)
@@ -56,7 +56,7 @@ def registry():
     return data
 
 def registry_version(data=None):
-    return hashlib.sha256(json.dumps(data or registry(), sort_keys=True).encode()).hexdigest()
+    return hashlib.sha256(json.dumps(data if data is not None else registry_document(), sort_keys=True).encode()).hexdigest()
 
 def sync_registry(conn, data=None):
     data = data or registry()

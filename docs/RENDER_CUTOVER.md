@@ -110,6 +110,12 @@ both old and new generations overlapping during deployment).
 
 ## Remaining acceptance and recovery notes
 
+Follow-up: the [September 14 acceptance report](PRODUCTION_ACCEPTANCE_2026-09-14.md)
+now records five fresh-link backend tests and one successful physical-iPhone
+share test. The earlier unexecuted-test notes below describe cutover-time
+coverage, not the later run. The follow-up found a sponsor/venue matching
+defect, so content-quality acceptance is not fully passing.
+
 - A physical iOS share-extension → production-entry UI test was not executed
   during this infrastructure cutover. Backend ingestion and imagery were tested;
   this is not a claim of completed real-phone UI acceptance.

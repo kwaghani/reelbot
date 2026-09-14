@@ -10,7 +10,7 @@ from worker.fetch.parsing import parse_html
 from worker.fetch.hints import identify
 from config import settings
 
-FETCH_VERSION='2026-09-10.compilation-v1'
+FETCH_VERSION='2026-09-14.sponsor-roles-v1'
 
 def sufficient(signals):
     return bool(signals.get('poi') or signals.get('geotag')) or len(signals.get('caption','').strip())>20 or len((signals.get('ocr','')+signals.get('transcript','')).strip())>40
@@ -43,6 +43,8 @@ def tier_one(resolved,request):
     # A YouTube video title alone is not a full caption; preserve it without claiming speech availability.
     result={'caption':str(data.get('title') or '')[:24000],'creator_name':data.get('author_name'),
         'creator_handle':data.get('author_url','').rstrip('/').split('/')[-1], 'thumbnail_url':data.get('thumbnail_url')}
+    from worker.sponsors import platform_sponsors
+    result['paid_partnerships']=platform_sponsors(data)
     return result,{'outcome':'ok','bytes':len(response.body),'http_status':response.status}
 
 def tier_two(resolved,request):
@@ -107,7 +109,12 @@ def _fetch_signals(resolved,directory,metrics,*,request=get,media=None,use_cache
         signals['expected_venue_count']=signals.get('expected_venue_count') or classification['expected_venue_count']
         metrics['reel_class']='compilation' if signals['is_compilation'] else 'standard'
         if checkpoint:checkpoint(signals)
-        if sufficient(signals) and (not signals['is_compilation'] or tier==3):break
+        from worker.sponsors import DISCLOSURE,sponsors_for
+        # Embed metadata often omits partnership labels. A disclosed post gets
+        # one bounded public-page metadata attempt, never an unbounded crawl.
+        partnership_probe=tier==1 and not signals.get('paid_partnerships') and bool(
+            sponsors_for(signals) or DISCLOSURE.search(signals.get('caption','')))
+        if sufficient(signals) and (not signals['is_compilation'] or tier==3) and not partnership_probe:break
     signals.update(identify(signals))
     if sufficient(signals):outcome='fetched'
     elif any(t['outcome']=='fetch_not_found' and t['tier'] in (2,3) for t in signals['tier_log']):outcome='fetch_not_found'

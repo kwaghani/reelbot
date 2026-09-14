@@ -1,0 +1,12 @@
+[
+  {"name":"Toast","wrong":"clothing_store","right":"breakfast_restaurant"},
+  {"name":"Apple","wrong":"electronics_store","right":"cafe"},
+  {"name":"Chase","wrong":"bank","right":"restaurant"},
+  {"name":"Lotus","wrong":"car_dealer","right":"thai_restaurant"},
+  {"name":"Rose","wrong":"pharmacy","right":"bakery"},
+  {"name":"Sole","wrong":"shoe_store","right":"seafood_restaurant"},
+  {"name":"Craft","wrong":"hardware_store","right":"brewery"},
+  {"name":"Room","wrong":"furniture_store","right":"coffee_shop"},
+  {"name":"Gem","wrong":"jewelry_store","right":"deli"},
+  {"name":"State","wrong":"insurance_agency","right":"diner"}
+]

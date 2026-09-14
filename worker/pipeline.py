@@ -59,6 +59,8 @@ def extraction_prefix(data=None):
         "In ONE pass classify and extract every distinct saveable entry. A list of five venues yields five entries; "
         "a coherent exercise circuit or recipe yields one, not an entry per movement or ingredient. "
         "VENUE IDENTITY: use ranked venue_candidates only. Platform geotags and location_hints are search bias, never venue names. "
+        "SPONSOR ROLES: sponsor_candidates are excluded identities, never venues or entries, even when the sponsor has physical locations. "
+        "A handle alone without independent venue evidence has confidence at most 0.4 and requires review. "
         "Prefer a specific non-administrative platform POI, caption venue line, explicit address, business handle, overlay, then transcript. "
         "Place attributes must use only the inferred venue kind schema supplied in kind_attributes plus common fields. "
         "Encode attributes as a JSON object inside a string, as required by the wire contract; omit unrelated fields. "
@@ -103,7 +105,7 @@ def extract_candidates(signals, metrics, *, use_cache=True, diagnostics=None):
     model=settings().anthropic_fast_model
     block={'type':'text','text':extraction_prefix(data)}
     if use_cache: block['cache_control']={'type':'ephemeral'}
-    inputs={key:signals.get(key) for key in ('caption','ocr','transcript','poi','hashtags','city_hint','city_evidence','creator_handle','creator_name','deterministic_candidates','venue_candidates','location_hints','geotag','provenance','unavailable','user_source_info','segment_context')}
+    inputs={key:signals.get(key) for key in ('caption','ocr','transcript','poi','hashtags','city_hint','city_evidence','creator_handle','creator_name','deterministic_candidates','venue_candidates','sponsor_candidates','paid_partnerships','location_hints','geotag','provenance','unavailable','user_source_info','segment_context')}
     user=json.dumps(inputs,ensure_ascii=False)
     if diagnostics is not None:diagnostics['llm']={'model':model,'system':block['text'],'user':user,'output':None}
     metrics['llm_requests']=metrics.get('llm_requests',0)+1
@@ -141,21 +143,13 @@ def extract_candidates(signals, metrics, *, use_cache=True, diagnostics=None):
 
 
 def enforce_candidate_uncertainty(rows,signals):
-    import re
+    from worker.sponsors import handle_only
     for row in rows:
         venue=row.get('venue_name')
         if not venue:continue
-        from worker.places import normalized
-        compact=lambda value:normalized(value).replace(' ','')
-        original='\n'.join(str(signals.get(k) or '') for k in ('caption','ocr','transcript'))
-        without_handles=re.sub(r'@[\w.]+','',original)
-        if compact(venue) not in compact(without_handles):
-            matches=list(re.finditer(r'@([\w.]+)',original))
-            mentions=[m for m in matches if compact(m[1])==compact(venue)]
-            described=any(re.match(r'\s*(?:->|→|[-–—:]|is a\b)',original[m.end():]) or re.search(r'\b(?:at|visit)\s*$',original[:m.start()],re.I) for m in mentions)
-            if mentions and not described:
-                row['confidence']=min(row['confidence'],.5)
-                row['review_reasons']=list(dict.fromkeys(row.get('review_reasons',[])+['low_confidence']))
+        if handle_only(venue,signals):
+            row['confidence']=min(row['confidence'],.4)
+            row['review_reasons']=list(dict.fromkeys(row.get('review_reasons',[])+['handle_only','low_confidence']))
     return rows
 
 

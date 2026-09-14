@@ -78,10 +78,12 @@ def parse_html(document, video_id):
         return value.get('text','') if isinstance(value,dict) else value if isinstance(value,str) else ''
     roots=[root for root in roots if caption_value(root) or root.get('poi') or root.get('edge_media_to_caption')] or roots
     roots=roots or [root for root in fallback if not any(k in root for k in ('code','shortcode','videoId','video_id'))]
-    result={'caption':'','hashtags':[],'poi':None,'creator_handle':'','creator_name':'','region':'','music':{},'metadata':{}}
+    result={'caption':'','hashtags':[],'poi':None,'creator_handle':'','creator_name':'','region':'','music':{},'metadata':{},'paid_partnerships':[]}
     captions=[]
     primary=[caption_value(root) for root in roots if caption_value(root).strip()]
     for root in roots:
+        from worker.sponsors import platform_sponsors
+        result['paid_partnerships'].extend(platform_sponsors(root))
         for node in walk(root,video_id):
             foreign_id=node.get('id')
             if foreign_id and str(foreign_id)!=video_id and 'video' in node and 'author' in node:continue

@@ -1,0 +1,14 @@
+[
+  {"name":"toast_reported","sponsor":"Toast","caption":"Busy tables for the Big Chicken Bun with @Toast. Power ranking: Big Chicken Bun, Sloppy Bao, Sesame Noodles, Scallion Pancakes #ToastPartner #ad #brooklyn #nyc #foodreview"},
+  {"name":"physical_coffee_brand","sponsor":"Starbucks","caption":"Paid partnership with Starbucks. Coffee time #ad"},
+  {"name":"physical_clothing_brand","sponsor":"Uniqlo","caption":"Thanks to @Uniqlo for sponsoring this food tour. #sponsored"},
+  {"name":"physical_retail_brand","sponsor":"Target","ocr":"Use code @Target for 20% off. #gifted"},
+  {"name":"physical_restaurant_brand","sponsor":"Chipotle","transcript":"Sponsored by @Chipotle. Download the app for a free meal."},
+  {"name":"physical_hotel_brand","sponsor":"Marriott","caption":"Weekend travel #paidpartnership","paid_partnerships":[{"name":"Marriott","evidence":"branded_content_tag_info"}]},
+  {"name":"dual_coffee","sponsor":"Airbnb","venue":"Four Barrel Coffee","caption":"📍Four Barrel Coffee\nSan Francisco coffee tasting and roastery tour.\nThanks to @Airbnb for sponsoring. #AirbnbPartner"},
+  {"name":"dual_grill","sponsor":"Toast","venue":"Madison Bar and Grill","caption":"📍Madison Bar and Grill\nHoboken burgers and fries.\nPaid partnership with @Toast #ad"},
+  {"name":"dual_sandwich","sponsor":"Nike","venue":"Cappone's","caption":"📍Cappone's\nNew York restaurant with Italian sandwiches.\nIn partnership with @Nike #collab"},
+  {"name":"dual_diner","sponsor":"Samsung","venue":"Golden Diner","caption":"📍Golden Diner\nPancakes in New York.\n#ad with @Samsung"},
+  {"name":"dual_overlay","sponsor":"Booking","venue":"BCD Tofu House","caption":"📍BCD Tofu House\nLos Angeles Korean restaurant.","ocr":"Sign up at @Booking, link in bio #partner"},
+  {"name":"dual_metadata","sponsor":"REI","venue":"Sturtevant Falls Trail","caption":"📍Sturtevant Falls Trail\nHiking waterfalls near Los Angeles.","paid_partnerships":[{"name":"REI","evidence":"paidPartnership"}]}
+]

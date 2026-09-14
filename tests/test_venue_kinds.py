@@ -75,7 +75,7 @@ class VenueKindTests(unittest.TestCase):
             self.assertEqual(row['place_id'], source['place_id'])
             self.assertEqual(conn.execute('select ui_preferences from users where id=%s', (self.b['user'],)).fetchone()['ui_preferences']['groupBy'], 'type')
 
-    def test_compilation_kind_survives_provider_and_user_override_wins(self):
+    def test_provider_beats_compilation_and_user_override_wins(self):
         from psycopg.types.json import Jsonb
         entry, _ = self.venue(self.save(self.a), self.a)
         with connect() as conn:
@@ -86,11 +86,10 @@ class VenueKindTests(unittest.TestCase):
             row=conn.execute('select * from entries where id=%s',(entry['id'],)).fetchone()
             file_entry(conn,row)
             saved=conn.execute('select * from entries where id=%s',(entry['id'],)).fetchone()
-            self.assertEqual(saved['venue_kind'],'restaurant')
-            self.assertTrue(saved['attributes']['rooftop'])
-        response=self.client.patch('/items/'+str(entry['id']),headers=self.a['headers'],json={'venue_kind':'bar'})
+            self.assertEqual(saved['venue_kind'],'bar')
+        response=self.client.patch('/items/'+str(entry['id']),headers=self.a['headers'],json={'venue_kind':'restaurant'})
         self.assertEqual(response.status_code,200)
         with connect() as conn:
             backfill(conn)
             saved=conn.execute('select * from entries where id=%s',(entry['id'],)).fetchone()
-            self.assertEqual((saved['venue_kind'],saved['venue_kind_source']),('bar','user'))
+            self.assertEqual((saved['venue_kind'],saved['venue_kind_source']),('restaurant','user'))

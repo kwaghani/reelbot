@@ -4,7 +4,7 @@ import logging
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 from psycopg.types.json import Jsonb
-from worker.registry import venue_kinds
+from worker.registry import venue_kinds, registry_document
 from config import settings
 
 LOG = logging.getLogger(__name__)
@@ -17,32 +17,61 @@ def kind_for(primary_type, kinds=None):
     return next((key for key, spec in kinds.items() if primary_type in spec['google_types']), 'other')
 
 
+def provider_kind(place):
+    primary=(place or {}).get('primary_type') or (place or {}).get('primaryType')
+    if primary:
+        return kind_for(primary), primary, 'primary_type'
+    types=(place or {}).get('resolution_types') or (place or {}).get('types') or []
+    kinds=venue_kinds()
+    order=registry_document().get('venue_type_specificity', list(kinds))
+    generic={'restaurant','food','meal_takeaway','meal_delivery','store','point_of_interest','establishment'}
+    def specificity(value):
+        kind=kind_for(value)
+        return (0 if kind in {'restaurant','cafe','bakery','dessert'} else 1,
+                int(value in generic),order.index(kind) if kind in order else len(order),value)
+    ranked=sorted(set(types),key=specificity)
+    match=next((value for value in ranked if kind_for(value)!='other'),None)
+    return (kind_for(match), match, 'types_specificity') if match else ('other','<missing>','missing')
+
+
+def derive_kind(entry, place=None):
+    if entry.get('venue_kind_source')=='user':return entry['venue_kind'],'user'
+    from worker.venue_identity import infer_kind
+    kind,primary,source=provider_kind(place)
+    if kind!='other':return kind,source
+    evidence=entry.get('candidate') or {}
+    segment=evidence.get('segment_signals')
+    if segment:
+        kind=infer_kind(segment,entry.get('title',''))['kind']
+        if kind!='other':return kind,'segment_signals'
+    # Legacy evidence sentences may describe the entire reel; do not pretend
+    # they are a temporal segment. They are explicitly a lower-priority fallback.
+    inferred=evidence.get('reel_kind_inference') or evidence.get('kind_inference') or infer_kind({'caption':evidence.get('evidence','')},entry.get('title',''))
+    shared=evidence.get('compilation_context') or {}
+    kind=shared.get('venue_kind') if shared.get('source')=='reel_shared_context' else inferred.get('kind','other')
+    return (kind if kind in venue_kinds() else 'other'),'reel_context'
+
+
 def classify_entry(conn, entry, place=None):
     if entry['content_type'] != 'place': return entry
     if place is None and entry.get('place_id'):
         place = conn.execute('select * from places where id=%s', (entry['place_id'],)).fetchone()
-    primary = (place or {}).get('primary_type') or '<missing>'
+    provider, primary, provider_source = provider_kind(place)
     if entry.get('venue_kind_source') == 'user':
         kind = entry['venue_kind']
     else:
-        from worker.venue_identity import infer_kind,administrative_type
-        evidence=entry.get('candidate') or {}
-        inferred=evidence.get('kind_inference') or infer_kind({'caption':evidence.get('evidence','')},entry.get('title',''))
-        shared=evidence.get('compilation_context') or {}
-        shared_kind=shared.get('venue_kind') if shared.get('source')=='reel_shared_context' else None
-        kind = shared_kind if shared_kind in venue_kinds() else kind_for(primary) if place and not administrative_type(primary) else 'other'
-        if kind=='other':kind=inferred['kind']
-        if place and inferred['kind']!='other' and kind!=inferred['kind']:
-            LOG.info('venue_kind_disagreement entry=%s signal=%s primary_type=%s provider_kind=%s',entry['id'],inferred['kind'],primary,kind)
-        if kind == 'other' and entry.get('venue_kind_primary_type') != primary:
+        kind,source=derive_kind(entry,place)
+        if provider == 'other' and entry.get('venue_kind_primary_type') != primary:
             LOG.warning('venue_kind_unmapped primary_type=%s', primary)
             conn.execute('''insert into venue_kind_unmapped(primary_type) values(%s)
                 on conflict(primary_type) do update set occurrences=venue_kind_unmapped.occurrences+1,last_seen_at=now()''', (primary,))
     from worker.registry import attribute_fields
     fields=attribute_fields('place',kind)
     attrs = {**{k:v for k,v in entry['attributes'].items() if k in fields}, 'venue_kind': kind}
-    conn.execute('''update entries set venue_kind=%s,venue_kind_primary_type=%s,attributes=%s
-        where id=%s and user_id=%s''', (kind, primary, Jsonb(attrs), entry['id'], entry['user_id']))
+    source='user' if entry.get('venue_kind_source')=='user' else source
+    candidate={**(entry.get('candidate') or {}),'venue_kind_derivation':{'source':source,'primary_type':primary,'kind':kind}}
+    conn.execute('''update entries set venue_kind=%s,venue_kind_primary_type=%s,attributes=%s,candidate=%s,updated_at=now(),embedding=null
+        where id=%s and user_id=%s''', (kind, primary, Jsonb(attrs), Jsonb(candidate), entry['id'], entry['user_id']))
     entry.update(venue_kind=kind, venue_kind_primary_type=primary, attributes=attrs)
     return entry
 

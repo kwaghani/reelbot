@@ -324,6 +324,7 @@ venue_kinds:
     - austrian_restaurant
     - bangladeshi_restaurant
     - barbecue_restaurant
+    - bar_and_grill
     - basque_restaurant
     - bavarian_restaurant
     - belgian_restaurant
@@ -332,6 +333,7 @@ venue_kinds:
     - breakfast_restaurant
     - british_restaurant
     - brunch_restaurant
+    - brewpub
     - buffet_restaurant
     - burmese_restaurant
     - burrito_restaurant
@@ -370,6 +372,7 @@ venue_kinds:
     - french_restaurant
     - fusion_restaurant
     - german_restaurant
+    - gastropub
     - greek_restaurant
     - gyro_restaurant
     - halal_restaurant
@@ -399,6 +402,7 @@ venue_kinds:
     - mexican_restaurant
     - middle_eastern_restaurant
     - mongolian_barbecue_restaurant
+    - noodle_shop
     - moroccan_restaurant
     - north_indian_restaurant
     - oyster_bar_restaurant
@@ -413,6 +417,8 @@ venue_kinds:
     - romanian_restaurant
     - russian_restaurant
     - scandinavian_restaurant
+    - salad_shop
+    - sandwich_shop
     - seafood_restaurant
     - shawarma_restaurant
     - soul_food_restaurant
@@ -422,6 +428,7 @@ venue_kinds:
     - southwestern_us_restaurant
     - spanish_restaurant
     - sri_lankan_restaurant
+    - steak_house
     - sushi_restaurant
     - swiss_restaurant
     - taco_restaurant
@@ -494,19 +501,10 @@ venue_kinds:
     color: '#713B92'
     google_types:
     - bar
-    - bar_and_grill
-    - beer_garden
     - brewery
-    - brewpub
-    - cocktail_bar
-    - gastropub
-    - hookah_bar
-    - irish_pub
+    - night_club
     - pub
-    - sports_bar
-    - vineyard
     - wine_bar
-    - winery
     attributes:
       specialty:
         type: string
@@ -528,7 +526,6 @@ venue_kinds:
     color: '#A71D51'
     google_types:
     - dance_hall
-    - night_club
     attributes:
       music:
         type: string
@@ -548,6 +545,7 @@ venue_kinds:
     - bakery
     - cake_shop
     - donut_shop
+    - pastry_shop
     attributes:
       specialty:
         type: string
@@ -663,11 +661,7 @@ venue_kinds:
     - jewelry_store
     - liquor_store
     - market
-    - noodle_shop
-    - pastry_shop
     - pet_store
-    - salad_shop
-    - sandwich_shop
     - shoe_store
     - shopping_mall
     - sporting_goods_store
@@ -964,6 +958,37 @@ venue_kinds:
         type: string
       access:
         type: string
+# Array fallback only when primaryType is absent. Array order never decides.
+venue_type_specificity:
+  - restaurant
+  - cafe
+  - bakery
+  - dessert
+  - bar
+  - nightclub
+  - hotel
+  - culture
+  - outdoors
+  - beach
+  - fitness
+  - wellness
+  - entertainment
+  - attraction
+  - shop
+  - other
+
+category_compatibility:
+  food_context:
+    signals: [restaurant, cafe, bar, bakery, dessert, nightclub]
+    keywords: [food, foodreview, restaurant, cafe, coffee, brunch, dinner, lunch, breakfast, noodles, burger, pancakes]
+    accepts: ['*_restaurant', restaurant, cafe, coffee_shop, coffee_roastery, bar, pub, bakery, food, meal_takeaway, meal_delivery, ice_cream_shop, night_club, brewery, wine_bar, deli, diner, sandwich_shop, steak_house, noodle_shop, salad_shop, bar_and_grill, brewpub, gastropub]
+    rejects: [clothing_store, womens_clothing_store, electronics_store, bank, car_dealer, pharmacy, shoe_store, auto_parts_store, hardware_store, furniture_store, jewelry_store, insurance_agency, real_estate_agency]
+  outdoors_context:
+    signals: [outdoors, beach, attraction]
+    keywords: [hiking, hike, waterfall, trail, beach]
+    accepts: [park, hiking_area, natural_feature, tourist_attraction, beach, national_park, state_park, botanical_garden, wildlife_park, wildlife_refuge]
+    rejects: [clothing_store, electronics_store, bank, car_dealer, pharmacy, insurance_agency, real_estate_agency]
+
 venue_kind_signals:
   restaurant:
     hashtags:

@@ -4,6 +4,7 @@ from dataclasses import dataclass, asdict
 import re
 import unicodedata
 from worker.fetch.http import settings
+from worker.sponsors import SponsorCandidate, sponsors_for, is_sponsor, handle_only, DISCLOSURE, COMMERCIAL, identity as role_identity
 
 ADMIN_TYPES = frozenset('city town village state region county locality sublocality political country postal_code neighborhood route street_address continent archipelago'.split()) | frozenset('administrative_area_level_'+str(n) for n in range(1,5))
 
@@ -49,7 +50,13 @@ class LocationHint:
 class VenueInputs:
     venue_candidates: tuple[VenueCandidate,...]
     location_hints: tuple[LocationHint,...]
-    def payload(self):return {'venue_candidates':[asdict(v) for v in self.venue_candidates], 'location_hints':[asdict(v) for v in self.location_hints]}
+    sponsor_candidates: tuple[SponsorCandidate,...] = ()
+    def __post_init__(self):
+        if any(not isinstance(v, VenueCandidate) or is_sponsor(v.name, self.sponsor_candidates) for v in self.venue_candidates):
+            raise ValueError('Sponsor evidence cannot inhabit venue_candidates')
+        if any(not isinstance(s, SponsorCandidate) for s in self.sponsor_candidates):
+            raise TypeError('sponsor_candidates requires typed sponsorship evidence')
+    def payload(self):return {'venue_candidates':[asdict(v) for v in self.venue_candidates], 'location_hints':[asdict(v) for v in self.location_hints], 'sponsor_candidates':[asdict(v) for v in self.sponsor_candidates]}
 
 # Unicode properties, not a curated list of creator emojis. Symbols, modifiers,
 # variation selectors and joiners cover both single and composed emoji prefixes.
@@ -86,6 +93,7 @@ def caption_lines(text,source='caption'):
 
 def inputs_for(signals):
     venues=[];hints=[]
+    sponsors=sponsors_for(signals)
     poi=signals.get('poi') or {};geotag=signals.get('geotag') or signals.get('platform_geotag')
     if isinstance(geotag,str):geotag={'name':geotag}
     if poi:
@@ -102,7 +110,7 @@ def inputs_for(signals):
             address=match[0].strip()[:200]
             venues.append(VenueCandidate(address,source+'_address',3,.85,address,'address'))
             hints.append(LocationHint(address,'explicit_address',2))
-        for handle in re.findall(r'@([\w.]+)',text):venues.append(VenueCandidate(handle,source+'_handle',4,.65,'@'+handle,'handle'))
+        for handle in re.findall(r'@([\w.]+)',text):venues.append(VenueCandidate(handle,source+'_handle',4,.4,'@'+handle,'handle'))
     caption=str(signals.get('caption') or '')
     caption_prose=re.sub(r'#\w+','',caption)
     for city in sorted(settings()['city_centroids'],key=len,reverse=True):
@@ -117,12 +125,14 @@ def inputs_for(signals):
         hints.append(LocationHint(str(signals['city_hint']),'legacy_location_hint',5))
     actual=[];seen=set()
     for v in sorted(venues,key=lambda v:v.rank):
+        if is_sponsor(v.name,sponsors):continue
+        if v.kind!='address' and (DISCLOSURE.search(v.name) or COMMERCIAL.search(v.name)):continue
         if administrative_name(v.name):hints.append(LocationHint(v.name,v.source+'_administrative',2));continue
         if norm(v.name) not in seen:actual.append(v);seen.add(norm(v.name))
     hints=sorted(hints,key=lambda h:h.rank);unique={}
     for h in hints:
         if h.name or (h.latitude is not None and h.longitude is not None):unique.setdefault((norm(h.name),h.latitude,h.longitude),h)
-    return VenueInputs(tuple(actual[:30]),tuple(list(unique.values())[:12]))
+    return VenueInputs(tuple(actual[:30]),tuple(list(unique.values())[:12]),sponsors)
 
 def infer_kind(signals,name=''):
     from worker.registry import registry_document
@@ -169,12 +179,13 @@ def condition_rows(rows,signals):
     usable=[v for v in venues if v.kind!='handle']
     result=[]
     for row in rows:
+        if is_sponsor(row.get('venue_name') or row.get('title'),typed.sponsor_candidates):continue
         if row['content_type']!='place':result.append(row);continue
         row=dict(row);name=row.get('venue_name') or row['title']
         if administrative_name(name):
             if not usable:continue
             name=usable[0].name;row.update(title=name,venue_name=name)
-        matching=next((v for v in venues if norm(v.name)==norm(name)),None)
+        matching=next((v for v in venues if role_identity(v.name)==role_identity(name)),None)
         if not matching and not any(norm(name) in norm(signals.get(k)) for k in ('caption','ocr','transcript')):
             if not usable:continue
             matching=usable[0];name=matching.name;row.update(title=name,venue_name=name)
@@ -190,6 +201,15 @@ def condition_rows(rows,signals):
         grounded_city=model_city if model_city and norm(model_city) in norm(' '.join(str(signals.get(k) or '') for k in ('caption','ocr','transcript'))) else None
         row.update(attributes=attrs,city_hint=grounded_city or city,**payload,kind_inference=inference,
                    identity_source=matching.source if matching else 'model_source_text')
+        from worker.category_coherence import contexts_for
+        row['category_contexts']=contexts_for(signals,inference)
+        row['reel_kind_inference']=infer_kind(signals)
+        if signals.get('segment_context'):
+            row['segment_signals']={k:signals.get(k,'') for k in ('caption','ocr','transcript')}
+            row['segment_kind_inference']=infer_kind(row['segment_signals'],name)
+        if handle_only(name,signals):
+            row['confidence']=min(row['confidence'],.4)
+            row['review_reasons']=list(dict.fromkeys(row.get('review_reasons',[])+['handle_only','low_confidence']))
         if matching and matching.rank==1:row['poi']=signals.get('poi')
         result.append(row)
     # Deterministic caption lines are independent named venues, including those
@@ -202,9 +222,17 @@ def condition_rows(rows,signals):
             'attributes':{'venue_kind':inference['kind']},'city_hint':city,'address_hint':v.name if v.kind=='address' else None,
             'confidence':v.confidence,'evidence':v.evidence,'review_reasons':[],**payload,'kind_inference':inference,
             'identity_source':v.source,**({'poi':signals['poi']} if v.rank==1 else {})})
+    if not result and typed.sponsor_candidates:
+        result=[{'content_type':'place','title':'Unidentified place','venue_name':None,'city_hint':city,
+            'summary':'A sponsor was identified, but the recommended venue needs review.', 'attributes':{'venue_kind':infer_kind(signals)['kind']},
+            'confidence':.3,'evidence':'Sponsorship disclosure is not venue identity','review_reasons':['sponsor_not_venue','unresolved_place'],**payload}]
     if not result and typed.location_hints and not venues:
         result=[{'content_type':'place','title':'Unidentified place','venue_name':None,'city_hint':city,'address_hint':None,
             'summary':'A location was tagged, but the specific place needs review.','attributes':{'venue_kind':infer_kind(signals)['kind']},
             'confidence':.3,'evidence':'Platform location hint only','identity_source':'platform_geotag',
             'review_reasons':['resolved_to_administrative_area','unresolved_place','low_confidence'],**payload}]
+    from worker.category_coherence import contexts_for
+    for row in result:
+        row.setdefault('category_contexts',contexts_for(signals))
+        row.setdefault('reel_kind_inference',infer_kind(signals))
     return result

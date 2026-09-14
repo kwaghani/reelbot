@@ -52,6 +52,7 @@ def shared_context(signals,opening=''):
     city=hints.get('city_hint') or signals.get('city_hint')
     if re.search(r'new\s+york(?:\s+city)?|\bnyc\b',text,re.I):city='New York'
     return {'title':signals.get('title') or opening,'city_hint':city,
+            'sponsor_candidates':hints.get('sponsor_candidates',[]),
             'venue_kind':'restaurant' if re.search(r'rooftop\s+restaurants?|restaurants?',text,re.I) else None,
             'rooftop':bool(re.search(r'rooftop',text,re.I)),
             'creator_handle':signals.get('creator_handle'),'hashtags':signals.get('hashtags',[]),
@@ -222,6 +223,7 @@ def extract_segments(segments,context,metrics,cache=None):
         key=hashlib.sha256(json.dumps([segment['ocr_text'],segment['transcript_text'],context],sort_keys=True).encode()).hexdigest()
         if key in cache:return cache[key],None
         signals={'caption':'','ocr':'\n'.join(segment['ocr_text']),'transcript':segment['transcript_text'],
+            'sponsor_candidates':context.get('sponsor_candidates',[]),
             'city_hint':context.get('city_hint'),'hashtags':context.get('hashtags',[]),'creator_handle':context.get('creator_handle'),
             'segment_context':{**context,'t_start':segment['t_start'],'t_end':segment['t_end'],'max_venues':1},'unavailable':{}}
         signals.update(inputs_for(signals).payload())
@@ -233,8 +235,8 @@ def extract_segments(segments,context,metrics,cache=None):
             for row in rows:
                 row['city_hint']=row.get('city_hint') or context.get('city_hint')
                 if context.get('venue_kind'):
-                    row['attributes']['venue_kind']=context['venue_kind']
                     row['compilation_context']={'venue_kind':context['venue_kind'],'title':context.get('title',''),'source':'reel_shared_context'}
+                row['segment_signals']={k:signals.get(k,'') for k in ('caption','ocr','transcript')}
                 if context.get('rooftop'):row['attributes']['rooftop']=True
                 row['temporal_segment']={k:segment[k] for k in ('t_start','t_end','sources','frame_refs')}
             cache[key]=rows
