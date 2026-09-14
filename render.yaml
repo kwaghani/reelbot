@@ -9,7 +9,7 @@ services:
     dockerContext: .
     dockerCommand: ./deploy/render/start-personal-api.sh
     healthCheckPath: /healthz
-    preDeployCommand: "sh -c 'python -m db.migrate --dry-run && python -m db.migrate'"
+    preDeployCommand: ./deploy/render/pre-deploy.sh
     maxShutdownDelaySeconds: 60
     envVars:
       - fromGroup: reelbot-shared
@@ -26,7 +26,7 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     dockerCommand: ./deploy/render/start-personal-worker.sh
-    preDeployCommand: "sh -c 'python -m db.migrate --dry-run && python -m db.migrate'"
+    preDeployCommand: ./deploy/render/pre-deploy.sh
     maxShutdownDelaySeconds: 60
     envVars:
       - fromGroup: reelbot-shared

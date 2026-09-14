@@ -9,8 +9,12 @@ diagnostics: it reports Postgres, object storage, and durable queue depth.
 
 Deploy from the configured Render Blueprint. Both services use the shared
 `reelbot-shared` environment group and run the idempotent migration as their
-pre-deploy command: first `python -m db.migrate --dry-run`, then
-`python -m db.migrate`. A missing required runtime variable prevents the
+pre-deploy command: `./deploy/render/pre-deploy.sh`. This script runs
+`python -m db.migrate --dry-run` followed by `python -m db.migrate` and stops
+if either fails. A script avoids Render's Docker command quoting behavior.
+The Blueprint tracks `codex/venue-identity`; auto-sync is paused, so manually
+review and approve configuration syncs. Service code auto-deploys are enabled.
+A missing required runtime variable prevents the
 service from starting and names the variable in its boot log. Do not add
 credentials to `render.yaml` or an app build.
 
@@ -20,7 +24,7 @@ line includes the service ceiling, combined planned ceiling (14), and the
 database's `max_connections`. Worker logs include queue depth and RSS at job
 start, after download, after frame extraction, and job completion.
 
-Backups run daily as the `reelbot-backup` cron service. To restore, use a
+Backups run daily at 03:00 UTC as the `reelbot-backup` cron service. To restore, use a
 fresh scratch database first:
 
 ```sh

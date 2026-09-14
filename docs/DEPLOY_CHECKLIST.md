@@ -1,8 +1,9 @@
 # ReelBot production deployment checklist
 
-This checklist verifies a manual Render deployment. `render.yaml` documents
-the intended configuration, but it does not change services already created in
-the Render dashboard.
+The existing Render services, database, and backup cron are managed by the
+ReelBot Blueprint on `codex/venue-identity`. Blueprint auto-sync is paused:
+review and approve a manual sync after editing `render.yaml`. Service code
+auto-deploys are enabled. A Git push alone does not apply Blueprint settings.
 
 ## Before the deployment finishes
 
@@ -13,9 +14,10 @@ the Render dashboard.
 2. Open `reelbot-api` and set its pre-deploy command to this exact string:
 
    ```sh
-   python -m db.migrate --dry-run && python -m db.migrate
+   ./deploy/render/pre-deploy.sh
    ```
 
+   The script runs the dry-run first, then applies migrations only if it passes.
    Set the identical command on `reelbot-worker` if it is not already set.
    A missing command lets deployment succeed without schema tables, then the
    first API query fails.
@@ -29,10 +31,9 @@ the Render dashboard.
 4. Confirm the API health check path in the dashboard is `/healthz`. It must
    not be `/readyz`, because readiness intentionally queries dependencies.
 
-5. Create or confirm the `reelbot-backup` Render cron job manually. It runs
-   daily with `./scripts/backup.sh`, uses the same `reelbot-shared` group, and
-   needs `postgresql-client` from the supplied Docker image. The Blueprint
-   entry documents it but cannot create it for this manually managed stack.
+5. Confirm the Blueprint-managed `reelbot-backup` cron runs daily at 03:00 UTC
+   with `./scripts/backup.sh` and the same `reelbot-shared` group. The supplied
+   Docker image provides its PostgreSQL client.
 
 ## Watch the deployment
 
