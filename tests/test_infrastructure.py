@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import os
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -54,3 +55,34 @@ class HealthTests(unittest.TestCase):
         from api.main import health
         with patch('api.main.connect', side_effect=AssertionError('database must not be touched')):
             self.assertEqual(health()['status'], 'ok')
+
+
+class BackupSafetyTests(unittest.TestCase):
+    def _upload(self, database_url, object_url, present=True):
+        # Execute the actual upload block used by the shell script with only
+        # its external storage and file inputs replaced.
+        script = (Path(__file__).resolve().parents[1] / 'scripts/backup.sh').read_text()
+        upload = script.split("<<'PY'", 1)[1].split('\nPY', 1)[0]
+        with patch.dict(os.environ, {'DATABASE_URL': database_url}, clear=True), \
+             patch.object(sys, 'argv', ['backup', 'backups/test.sql.gz', '/unused']), \
+             patch.object(Path, 'read_bytes', return_value=b'compressed fixture'), \
+             patch('worker.storage.put'), \
+             patch('worker.storage.get_url', return_value=object_url), \
+             patch('worker.storage.exists', return_value=present):
+            config.reset_for_tests()
+            try:
+                exec(compile(upload, 'backup-upload', 'exec'), {})
+            finally:
+                config.reset_for_tests()
+
+    def test_remote_backup_rejects_local_fallback(self):
+        with self.assertRaisesRegex(RuntimeError, 'not persisted to R2'):
+            self._upload('postgres://user:pass@render-db/reelbot', 'file:///tmp/backup')
+
+    def test_remote_backup_requires_persisted_object(self):
+        with self.assertRaisesRegex(RuntimeError, 'not persisted to R2'):
+            self._upload('postgres://user:pass@render-db/reelbot', 'https://r2.example/backup', False)
+        self._upload('postgres://user:pass@render-db/reelbot', 'https://r2.example/backup')
+
+    def test_loopback_backup_preserves_local_round_trip(self):
+        self._upload('postgres://user:pass@127.0.0.1/reelbot_test', 'file:///tmp/backup')

@@ -26,22 +26,27 @@ auto-deploys are enabled. A Git push alone does not apply Blueprint settings.
    linked and visibly supplies all seven variables: `DATABASE_URL`,
    `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`,
    `GOOGLE_MAPS_API_KEY`, and `ANTHROPIC_API_KEY`. Do not copy values into
-   `render.yaml`.
+   `render.yaml`. Service-level variables override the group: verify that
+   neither service still points at the former Supabase database.
 
 4. Confirm the API health check path in the dashboard is `/healthz`. It must
    not be `/readyz`, because readiness intentionally queries dependencies.
 
 5. Confirm the Blueprint-managed `reelbot-backup` cron runs daily at 03:00 UTC
    with `./scripts/backup.sh` and the same `reelbot-shared` group. The supplied
-   Docker image provides its PostgreSQL client.
+   Docker image provides the PostgreSQL 18 client, matching the Render database.
+   An older client cannot dump a newer server. An R2 write failure must fail
+   the backup job, not report success for a temporary local file.
 
 ## Watch the deployment
 
 6. Watch `reelbot-api` boot logs. A missing setting produces a boot failure
    naming the variable; add or correct that exact name in `reelbot-shared`.
 
-7. Watch the pre-deploy output. The dry run should show zero ownership buckets
-   on this empty database, then the migration should create the schema. If it
+7. Watch the pre-deploy output. On a new database, the dry run should show zero
+   ownership buckets, then the migration should create the schema. On the
+   transferred database, expect the existing migration markers and preserved
+   entries; do not expect an empty database. If it
    fails, do not bypass it—fix the reported SQL error and redeploy.
 
 8. Watch `reelbot-worker` logs. It should start, log its configured pool
@@ -79,7 +84,8 @@ auto-deploys are enabled. A Git push alone does not apply Blueprint settings.
 
 ## After verification passes
 
-11. Re-share four or five reels because the production database begins empty.
-    Confirm the resulting entries have images, coordinates, and the expected
+11. Confirm the existing 14 entries and private folders survived the database
+    transfer. Then test four or five additional reels. Confirm the resulting
+    entries have images, coordinates where applicable, and the expected
     private folders. Then restart each service once and confirm the data and
     queue recover unattended.

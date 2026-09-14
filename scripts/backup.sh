@@ -17,9 +17,14 @@ fi
 python - "$key" "$tmp/backup.sql.gz" <<'PY'
 from pathlib import Path
 import sys
-from worker.storage import put
+from urllib.parse import urlsplit
+from config import settings, psycopg_database_url
+from worker.storage import put, get_url, exists
 key, path = sys.argv[1:]
 put(key, Path(path).read_bytes(), "application/gzip")
+local_database = urlsplit(psycopg_database_url(settings().database_url)).hostname in {"localhost", "127.0.0.1", "::1"}
+if (not local_database and not get_url(key).startswith("https://")) or not exists(key):
+    raise RuntimeError("Backup was not persisted to R2; refusing to report success or prune old backups")
 PY
 
 # Keys are date-addressed; deleting each date older than 30 days is idempotent.
