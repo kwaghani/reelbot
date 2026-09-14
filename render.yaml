@@ -11,9 +11,8 @@ services:
     healthCheckPath: /healthz
     preDeployCommand: "sh -c 'python -m db.migrate --dry-run && python -m db.migrate'"
     maxShutdownDelaySeconds: 60
-    envVarGroups:
-      - reelbot-shared
     envVars:
+      - fromGroup: reelbot-shared
       - key: REELBOT_SERVICE_ROLE
         value: api
       - key: APPLE_BUNDLE_ID
@@ -29,9 +28,8 @@ services:
     dockerCommand: ./deploy/render/start-personal-worker.sh
     preDeployCommand: "sh -c 'python -m db.migrate --dry-run && python -m db.migrate'"
     maxShutdownDelaySeconds: 60
-    envVarGroups:
-      - reelbot-shared
     envVars:
+      - fromGroup: reelbot-shared
       - key: REELBOT_SERVICE_ROLE
         value: worker
       - key: ANTHROPIC_FAST_MODEL
@@ -47,15 +45,14 @@ services:
     runtime: docker
     plan: starter
     region: oregon
-    schedule: "0 9 * * *"
+    schedule: "0 3 * * *"
     dockerfilePath: ./Dockerfile
     dockerContext: .
     dockerCommand: ./scripts/backup.sh
-    envVarGroups:
-      - reelbot-shared
-  - type: pserv
-    name: reelbot-postgres
-    plan: basic-256mb
+    envVars:
+      - fromGroup: reelbot-shared
+
+databases:
+  - name: reelbot-db
+    plan: 0.1c-256mb
     region: oregon
-    databaseName: reelbot
-    user: reelbot
