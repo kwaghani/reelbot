@@ -10,5 +10,8 @@ android/
 out/
 instagram-cookies.txt
 www.instagram.com_cookies.txt
+*cookie*.txt
+*cookie*.json
+.cookies/
 results.json
 reels.txt
