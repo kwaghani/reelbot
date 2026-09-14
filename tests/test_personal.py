@@ -9,6 +9,7 @@ TEST_URL=os.getenv('TEST_DATABASE_URL','')
 if not TEST_URL or urlsplit(TEST_URL).hostname not in {'localhost','127.0.0.1'} or 'test' not in urlsplit(TEST_URL).path:
     raise RuntimeError('TEST_DATABASE_URL must name a disposable loopback test database')
 os.environ['DATABASE_URL']=TEST_URL
+os.environ['REELBOT_GEOGRAPHY_LOOKUPS']='0'
 from fastapi.testclient import TestClient
 from api.main import app
 from worker.db import connect,claim,store_candidate
@@ -25,7 +26,7 @@ class PersonalTests(unittest.TestCase):
         cls.client=TestClient(app)
     def setUp(self):
         with connect() as conn:
-            conn.execute('truncate source_url_cache,fetch_cache,fetch_rate_limits,city_bias_cache,events,jobs,folder_items,folders,entries,saves,devices,users,places cascade')
+            conn.execute('truncate natural_geocode_cache,source_url_cache,fetch_cache,fetch_rate_limits,city_bias_cache,events,jobs,folder_items,folders,entries,saves,devices,users,places cascade')
         self.a=self.register();self.b=self.register()
     def register(self):
         token=uuid4().hex+uuid4().hex
@@ -119,10 +120,11 @@ class PersonalTests(unittest.TestCase):
         from worker.pipeline import collect_signals
         with tempfile.TemporaryDirectory() as directory:
             Path(directory,'signals.json').write_text(json.dumps({'signals':{'caption':'Five hikes: Point Dume, Hollywood Sign, Los Leones, El Matador, Point Mugu','tier_log':[{'tier':1,'outcome':'ok','bytes':20}]},'metrics':{}}))
-            with patch('worker.pipeline.subprocess.Popen') as spawn, patch('worker.pipeline.os.killpg') as kill:
-                spawn.return_value.wait.side_effect=[subprocess.TimeoutExpired('collector',30),0]
+            with patch('worker.pipeline.subprocess.Popen') as spawn, patch('worker.pipeline.os.killpg') as kill, patch('worker.pipeline.time.monotonic',side_effect=[0,100]):
+                spawn.return_value.poll.return_value=None
+                spawn.return_value.wait.return_value=0
                 spawn.return_value.pid=12345
-                signals=collect_signals('https://instagram.com/reel/A/',directory,new_metrics())
+                signals=collect_signals({'canonical_url':'https://instagram.com/reel/A/'},directory,new_metrics())
             self.assertIn('Five hikes',signals['caption'])
             self.assertEqual(signals['fetch_state'],'fetched')
             self.assertIn('collector',signals['unavailable'])

@@ -1,3 +1,4 @@
+import "react-native-gesture-handler";
 import "./src/background";
 import { registerRootComponent } from "expo";
 

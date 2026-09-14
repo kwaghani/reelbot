@@ -1,6 +1,49 @@
 # ReelBot operations
 
-Run API and worker from the same revision against the same migrated database. `/healthz` checks database reachability. `/content-types` exposes the public taxonomy. Library routes derive ownership from a bearer device credential; clients cannot choose an owner in request bodies. Apple sign-in validates signature, issuer, audience, expiry and a one-use nonce before merging private libraries.
+## Production infrastructure
+
+The production API URL is `https://reelbot-api.onrender.com` (confirm the
+service URL in Render before publishing an iOS build). Render polls only
+`/healthz`; it is deliberately dependency-free. Use `/readyz` only for
+diagnostics: it reports Postgres, object storage, and durable queue depth.
+
+Deploy from the configured Render Blueprint. Both services use the shared
+`reelbot-shared` environment group and run the idempotent migration as their
+pre-deploy command: first `python -m db.migrate --dry-run`, then
+`python -m db.migrate`. A missing required runtime variable prevents the
+service from starting and names the variable in its boot log. Do not add
+credentials to `render.yaml` or an app build.
+
+To inspect an outage, first check `/healthz`, then `/readyz`, then the
+`reelbot-api` and `reelbot-worker` logs in Render. A database pool startup
+line includes the service ceiling, combined planned ceiling (14), and the
+database's `max_connections`. Worker logs include queue depth and RSS at job
+start, after download, after frame extraction, and job completion.
+
+Backups run daily as the `reelbot-backup` cron service. To restore, use a
+fresh scratch database first:
+
+```sh
+./scripts/restore.sh backups/YYYY-MM-DD.sql.gz "$SCRATCH_DATABASE_URL"
+```
+
+Compare row counts for every public table between the backup source and the
+scratch database before any production restore. The backup script keeps the
+latest 30 daily date-addressed dumps. Local development uses `docker compose
+up -d postgres`; when R2 is absent, storage uses a logged local temporary
+backend rather than pretending a production write succeeded.
+
+After a Render deployment, a human with a disposable device token runs:
+
+```sh
+REELBOT_VERIFY_TOKEN=... REELBOT_VERIFY_REEL_URL=... ./scripts/verify_production.sh https://reelbot-api.onrender.com
+```
+
+The script checks health, readiness, a durable share, worker completion,
+coordinates, image availability, and the thumbnail byte budget. It exits
+non-zero on any failed step.
+
+Run API and worker from the same revision against the same migrated database. `/healthz` is a liveness response with no dependency calls; `/readyz` checks database reachability, storage, and queue depth. `/content-types` exposes the public taxonomy. Library routes derive ownership from a bearer device credential; clients cannot choose an owner in request bodies. Apple sign-in validates signature, issuer, audience, expiry and a one-use nonce before merging private libraries.
 
 The API uses trusted server database credentials. Direct client table privileges are revoked and RLS is enabled. Composite foreign keys prevent cross-owner folder links. Keep database and provider credentials out of app builds and source control.
 

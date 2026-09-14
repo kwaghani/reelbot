@@ -2,43 +2,60 @@ services:
   - type: web
     name: reelbot-api
     runtime: docker
-    plan: standard
+    plan: starter
+    autoDeployTrigger: commit
     region: oregon
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerCommand: ./deploy/render/start-api.sh
+    dockerCommand: ./deploy/render/start-personal-api.sh
     healthCheckPath: /healthz
+    preDeployCommand: python -m db.migrate --dry-run && python -m db.migrate
     maxShutdownDelaySeconds: 60
+    envVarGroups:
+      - reelbot-shared
     envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: GOOGLE_MAPS_API_KEY
-        sync: false
+      - key: REELBOT_SERVICE_ROLE
+        value: api
       - key: APPLE_BUNDLE_ID
         value: com.krishwaghani.reelbot
   - type: worker
     name: reelbot-worker
     runtime: docker
     plan: standard
+    autoDeployTrigger: commit
     region: oregon
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerCommand: ./deploy/render/start-worker.sh
+    dockerCommand: ./deploy/render/start-personal-worker.sh
+    preDeployCommand: python -m db.migrate --dry-run && python -m db.migrate
     maxShutdownDelaySeconds: 60
+    envVarGroups:
+      - reelbot-shared
     envVars:
-      - key: DATABASE_URL
-        sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
+      - key: REELBOT_SERVICE_ROLE
+        value: worker
       - key: ANTHROPIC_FAST_MODEL
         value: claude-haiku-4-5-20251001
-      - key: GOOGLE_MAPS_API_KEY
-        sync: false
       - key: EMBEDDING_MODEL
         value: BAAI/bge-small-en-v1.5
       - key: REELBOT_ENABLE_VIDEO_DOWNLOAD
         value: "true"
       - key: REELBOT_ENABLE_TRANSCRIPTION
         value: "true"
-      - key: IG_COOKIES_PATH
-        value: ""
+  - type: cron
+    name: reelbot-backup
+    runtime: docker
+    plan: starter
+    region: oregon
+    schedule: "0 9 * * *"
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: ./scripts/backup.sh
+    envVarGroups:
+      - reelbot-shared
+  - type: pserv
+    name: reelbot-postgres
+    plan: basic-256mb
+    region: oregon
+    databaseName: reelbot
+    user: reelbot

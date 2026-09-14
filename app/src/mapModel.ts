@@ -33,3 +33,23 @@ export function clusters(entries: Entry[], latitudeDelta: number, centerLongitud
   } }));
 }
 export const distanceLabel = (km: number) => km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(km < 10 ? 1 : 0)} km`;
+
+/** Screen-space collision clusters also handle co-located entries at maximum zoom. */
+export function collisionClusters(entries: Entry[], region: { latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number }, width: number, height: number) {
+  const points = anchored(entries).map(e => ({ e, x: wrapLongitude(e.lng! - region.longitude) / region.longitudeDelta * width, y: (e.lat! - region.latitude) / region.latitudeDelta * height }));
+  const groups = points.map(p => [p]);
+  // Merge while any points could overlap. Centroids are then checked too, so a cluster
+  // count cannot collide with another cluster formed in the same pass.
+  const center = (g: typeof points) => ({ x: g.reduce((n, p) => n + p.x, 0) / g.length, y: g.reduce((n, p) => n + p.y, 0) / g.length });
+  let changed = true;
+  while (changed) {
+    changed = false;
+    outer: for (let i = 0; i < groups.length; i++) for (let j = i + 1; j < groups.length; j++) {
+      const a = center(groups[i]), b = center(groups[j]);
+      if (Math.hypot(a.x - b.x, a.y - b.y) < 52 || groups[i].some(p => groups[j].some(q => Math.hypot(p.x - q.x, p.y - q.y) < 44))) {
+        groups[i].push(...groups[j]); groups.splice(j, 1); changed = true; break outer;
+      }
+    }
+  }
+  return groups.map(g => { const p = center(g); return { id: g.map(p => p.e.id).sort().join(','), members: g.map(p => p.e), coordinate: { latitude: region.latitude + p.y / height * region.latitudeDelta, longitude: wrapLongitude(region.longitude + p.x / width * region.longitudeDelta) } }; });
+}

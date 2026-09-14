@@ -60,7 +60,7 @@ def normalize_poi(raw):
     if isinstance(address,dict):address=', '.join(str(v) for v in address.values() if isinstance(v,str))
     return {'id':str(lowered.get('id') or lowered.get('poiid') or ''),'name':name.strip()[:200],
         'address':str(address)[:1000],'city':str(lowered.get('city') or ''),
-        'category':str(lowered.get('tttypenametiny') or lowered.get('category') or ''),
+        'category':str(lowered.get('primarytype') or lowered.get('type') or lowered.get('tttypenametiny') or lowered.get('category') or ''),
         'lat':lat,'lng':lng}
 
 def parse_html(document, video_id):
@@ -91,8 +91,10 @@ def parse_html(document, video_id):
                 if isinstance(value,str) and value.strip() and value not in captions:captions.append(value)
             for key,value in node.items():
                 lowered=key.lower()
-                if lowered in ('poi','poiinfo','poi_info','location'):
+                if lowered in ('poi','poiinfo','poi_info'):
                     result['poi']=result['poi'] or normalize_poi(value)
+                if lowered=='location':
+                    result['geotag']=result.get('geotag') or normalize_poi(value)
                 if lowered in ('locationcreated','region') and isinstance(value,str) and len(value)<=8:result['region']=result['region'] or value
                 if lowered=='textextra' and isinstance(value,list):
                     result['hashtags'].extend(str(v.get('hashtagName')) for v in value if isinstance(v,dict) and v.get('hashtagName'))

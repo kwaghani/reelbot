@@ -3,7 +3,7 @@ import * as BackgroundTask from 'expo-background-task';
 import { syncLibrary } from './library';
 const TASK = 'reelbot.personal.refresh';
 TaskManager.defineTask(TASK, async () => {
-  try { await syncLibrary(); return BackgroundTask.BackgroundTaskResult.Success; }
+  try { await syncLibrary('background_refresh'); return BackgroundTask.BackgroundTaskResult.Success; }
   catch { return BackgroundTask.BackgroundTaskResult.Failed; }
 });
 export async function registerRefresh() {

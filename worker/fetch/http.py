@@ -1,6 +1,5 @@
 """Bounded public HTTP, one browser profile, optional proxy, shared rate limits."""
 from __future__ import annotations
-import os
 import random
 import time
 from dataclasses import dataclass
@@ -8,6 +7,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 import httpx
 import yaml
+from config import settings as runtime_settings
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -39,7 +39,7 @@ class FetchError(Exception):
 
 def rate_limit(url, timeout):
     """Reserve platform slots transactionally across worker processes, then sleep unlocked."""
-    if os.getenv('REELBOT_DISABLE_RATE_LIMIT') == '1': return
+    if runtime_settings().disable_rate_limit: return
     from worker.db import connect
     key = platform(url)
     interval = settings()['request_interval_seconds'][key] + random.uniform(0, .25)
@@ -57,7 +57,7 @@ def get(url, *, timeout=8, max_bytes=2_000_000, rate=True, extra_headers=None):
     validate_public_url(url)
     if rate: rate_limit(url, timeout)
     timeout=max(.1,deadline-time.monotonic())
-    proxy = os.getenv('REELBOT_FETCH_PROXY', '').strip() or None
+    proxy = runtime_settings().fetch_proxy
     try:
         with httpx.Client(proxy=proxy, headers={**headers(url), **(extra_headers or {})}, timeout=timeout, follow_redirects=False, trust_env=False) as client:
             with client.stream('GET', url) as response:

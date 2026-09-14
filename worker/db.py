@@ -1,17 +1,46 @@
 """Personal persistence. All library operations require an authenticated owner."""
 from __future__ import annotations
 import hashlib
-import os
-import psycopg
-from dotenv import load_dotenv
+import logging
+from contextlib import contextmanager
+from threading import Lock
+from config import ConfigurationError, psycopg_database_url, settings
+from psycopg_pool import ConnectionPool
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from worker.reel_urls import canonical_reel_url
-load_dotenv()
+LOG = logging.getLogger('reelbot.db')
+_pool: ConnectionPool | None = None
+_pool_lock = Lock()
 
 
 def connect():
-    return psycopg.connect(os.environ['DATABASE_URL'], row_factory=dict_row, connect_timeout=8)
+    """Borrow a bounded, pre-pinged connection from this service's pool."""
+    global _pool
+    if _pool is None:
+        with _pool_lock:
+            if _pool is None:
+                current = settings()
+                if not current.database_url:
+                    raise ConfigurationError('Required configuration variable DATABASE_URL is missing')
+                _pool = ConnectionPool(conninfo=psycopg_database_url(current.database_url), min_size=0,
+                    max_size=current.pool_ceiling, max_idle=300, max_lifetime=1500,
+                    kwargs={'row_factory': dict_row, 'connect_timeout': 8}, open=True)
+    return _pool.connection()
+
+
+def check_pool_capacity():
+    """Fail fast when the planned API+worker connection ceiling is unsafe."""
+    current = settings()
+    with connect() as conn:
+        maximum = int(conn.execute('show max_connections').fetchone()['max_connections'])
+    planned = 14  # API (5 + 5) + worker (2 + 2); one process each.
+    # Keep at least 30% plus administrative headroom available to Postgres.
+    if planned > max(1, int(maximum * .70)):
+        raise RuntimeError(f'Database connection ceiling unsafe: planned={planned}, max_connections={maximum}')
+    LOG.info('database_pool pool_size=%s max_overflow=%s service_ceiling=%s planned_total=%s max_connections=%s',
+             current.pool_size, current.max_overflow, current.pool_ceiling, planned, maximum)
+    return {'max_connections': maximum, 'planned_total': planned, 'service_ceiling': current.pool_ceiling}
 
 
 def vector_literal(values):
@@ -52,7 +81,7 @@ def fail_expired(conn):
     rows = conn.execute('''update saves set status='failed',error_reason='Processing timed out. You can retry.',
         retry_at=case when attempts<2 then now()+interval '15 seconds' else null end,
         attempts=greatest(attempts,1),updated_at=now(),resolved_at=now()
-        where status='processing' and started_at<=now()-interval '150 seconds' returning id''').fetchall()
+        where status='processing' and started_at<=now()-(case when is_compilation or force_dense then interval '360 seconds' else interval '150 seconds' end) returning id''').fetchall()
     for row in rows:
         conn.execute("update jobs set status='failed',error_reason='Processing timed out. You can retry.',updated_at=now() where save_id=%s",(row['id'],))
     return len(rows)
@@ -73,8 +102,10 @@ def claim(conn):
 
 
 ITEMS_SQL = '''select e.*,e.title as name,coalesce(p.city,e.candidate->>'city_hint','') as city,
-    p.name as place_name,p.formatted_address,p.lat,p.lng,p.primary_type,p.google_place_id,
-    s.source_url,s.canonical_url,s.platform_video_id,s.status,s.raw_signals->>'thumbnail' as thumbnail,
+    p.image_source,p.image_acquired_at,p.image_failure_reason,p.image_diagnostics,p.name as place_name,p.formatted_address,p.lat,p.lng,p.primary_type,p.google_place_id,p.resolution_attribution,
+    s.source_url,s.canonical_url,s.platform_video_id,s.status,
+    (select count(*) from entries sibling where sibling.save_id=e.save_id) as save_entry_count,
+    coalesce(nullif(s.raw_signals->>'thumbnail_url',''),s.raw_signals->>'thumbnail') as thumbnail,
     coalesce((select jsonb_agg(jsonb_build_object('id',f.id,'name',f.name,'kind',f.kind,
         'parent_folder_id',f.parent_folder_id,'content_type',f.content_type,'facet_key',f.facet_key,'facet_value',f.facet_value))
       from folder_items fi join folders f on f.id=fi.folder_id
@@ -96,10 +127,27 @@ def prune_auto_folders(conn,owner):
         and not exists(select 1 from folders c where c.parent_folder_id=f.id)''',(owner,))
 
 
-def file_entry(conn,row,place=None,data=None):
+def file_entry(conn,row,place=None,data=None,*,organization=None):
     from worker.registry import registry
     data=data or registry(); spec=data[row['content_type']]
     owner,identifier=row['user_id'],row['id']
+    if 'venue_kind_source' in row:
+        from worker.venue_kinds import classify_entry
+        classify_entry(conn,row,place)
+    if row['content_type']=='place':
+        from worker.geography import normalize_geography
+        cached=(place or {}).get('organization_geography')
+        geo=organization if organization is not None else normalize_geography(cached) if cached is not None else {
+            'city':row.get('organization_city',''),'neighborhood':row['attributes'].get('neighborhood','')}
+        city=geo.get('city') or ''
+        attrs=dict(row['attributes'])
+        neighborhood=geo.get('neighborhood') or ''
+        if row.get('organization_city')==city and attrs.get('neighborhood'):
+            neighborhood=attrs['neighborhood']
+        if neighborhood:attrs['neighborhood']=neighborhood
+        else:attrs.pop('neighborhood',None)
+        conn.execute('update entries set organization_city=%s,attributes=%s where id=%s and user_id=%s',(city,Jsonb(attrs),identifier,owner))
+        row={**row,'organization_city':city,'attributes':attrs}
     conn.execute('update entries set embedding=null,updated_at=now() where id=%s and user_id=%s',(identifier,owner))
     conn.execute('''delete from folder_items fi using folders f where fi.folder_id=f.id
         and fi.entry_id=%s and fi.user_id=%s and f.kind<>'custom' ''',(identifier,owner))
@@ -109,7 +157,7 @@ def file_entry(conn,row,place=None,data=None):
         (owner,spec.get('plural_label',spec['label']),row['content_type'],spec['icon'])).fetchone()['id']
     conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',(parent,identifier,owner))
     facet=spec.get('primary_facet')
-    value=(place or {}).get('city') or row.get('candidate',{}).get('city_hint') if facet=='city' else row['attributes'].get(facet or 'topic')
+    value=row.get('organization_city') if facet=='city' else row['attributes'].get(facet or 'topic')
     values=value if isinstance(value,list) else [value]
     for value in values or [None]:
         display=str(value).strip().replace('_',' ').title() if value else 'Unsorted'
@@ -129,7 +177,11 @@ def entry_key(candidate):
 def store_candidate(conn,save,candidate,place,confidence,reason=None,*,entry_id=None):
     from worker.registry import sync_registry,validate_attributes
     data=sync_registry(conn)
-    attrs,reasons=validate_attributes(candidate['content_type'],candidate['attributes'],data=data)
+    incoming = dict(candidate['attributes'])
+    # Durable jobs from the previous taxonomy can still be replayed.
+    if candidate['content_type'] == 'place' and incoming.get('venue_kind') == 'activity':
+        incoming['venue_kind'] = 'other'
+    attrs,reasons=validate_attributes(candidate['content_type'],incoming,data=data)
     reasons.extend(candidate.get('review_reasons',[]))
     if reason: reasons.append(reason)
     if data[candidate['content_type']]['geo']=='required' and not place and reason!='ambiguous_place': reasons.append('unresolved_place')
@@ -160,4 +212,6 @@ def store_candidate(conn,save,candidate,place,confidence,reason=None,*,entry_id=
          candidate['summary'],Jsonb(attrs),confidence,bool(review_reason),review_reason,Jsonb(candidate),key)).fetchone()
     effective_place=conn.execute('select * from places where id=%s',(row['place_id'],)).fetchone() if row['place_id'] else None
     file_entry(conn,row,effective_place,data)
+    if effective_place:
+        conn.execute('insert into photo_jobs(place_id) values(%s) on conflict do nothing',(effective_place['id'],))
     return row

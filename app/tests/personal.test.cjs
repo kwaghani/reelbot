@@ -9,7 +9,7 @@ function environment(){
  const connection=new DatabaseSync(':memory:');let chain=Promise.resolve(),queue=[],failAck=false;
  const sqlite={execAsync:async sql=>connection.exec(sql),runAsync:async(sql,...args)=>connection.prepare(sql).run(...args),getFirstAsync:async(sql,...args)=>connection.prepare(sql).get(...args),withExclusiveTransactionAsync:fn=>{const run=chain.then(async()=>{connection.exec('BEGIN IMMEDIATE');try{await fn(sqlite);connection.exec('COMMIT')}catch(e){connection.exec('ROLLBACK');throw e}});chain=run.catch(()=>{});return run}};
  class ApiError extends Error{}
- const mocks={'expo-sqlite':{openDatabaseAsync:async()=>sqlite},'expo-crypto':{randomUUID:crypto.randomUUID},'./reelUrls':urls,'./libraryModel':model,'./api':{ApiError,connectDevice:async()=>{throw Error('offline')},request:async()=>{throw Error('offline')}},'./identity':{resetIdentity:async()=>{}},'./sharedGroup':{readSharedQueue:async()=>queue,acknowledgeSharedEntry:async id=>{if(failAck)throw Error('interrupted');queue=queue.filter(e=>e.id!==id)}}};
+ const mocks={'./config':{visualFixture:false},'expo-sqlite':{openDatabaseAsync:async()=>sqlite},'expo-crypto':{randomUUID:crypto.randomUUID},'./reelUrls':urls,'./libraryModel':model,'./api':{ApiError,connectDevice:async()=>{throw Error('offline')},request:async()=>{throw Error('offline')}},'./identity':{resetIdentity:async()=>{}},'./sharedGroup':{recordDrain:async()=>{},quarantineSharedEntry:async id=>{queue=queue.filter(e=>e.id!==id)},readSharedQueue:async()=>queue,acknowledgeSharedEntry:async id=>{if(failAck)throw Error('interrupted');queue=queue.filter(e=>e.id!==id)}}};
  return {load:()=>load('library',mocks),mocks,setQueue:value=>{queue=value},getQueue:()=>queue,failAck:value=>{failAck=value},close:()=>connection.close()};
 }
 test('offline first launch persists a reel without identity or network and survives runtime restart',async()=>{
@@ -83,4 +83,65 @@ test('manual source entry and later note survive offline restart and server ID r
  await lib.queueOperation({kind:'note',target:'local-entry',method:'PATCH',path:'/items/local-entry',body:{note:'Try this weekend'}});await lib.syncLibrary();let state=await env.load().loadLibrary();assert.equal(state.items[0].note,'Try this weekend');assert.equal(state.outbox.length,2);
  const paths=[];env.mocks['./api'].connectDevice=async()=>{};env.mocks['./api'].request=async(path)=>{paths.push(path);if(path.endsWith('/source-info'))return{id:'server-entry'};if(path==='/sync')return{items:[],saves:[],folders:[],registry:{},apple_linked:false};return{ok:true}};
  await env.load().syncLibrary();assert.ok(paths.includes('/items/server-entry'));assert.equal((await lib.loadLibrary()).outbox.length,0);env.close();
+});
+
+const organization=load('organizationModel',{'./libraryModel':model,'./venueModel':load('venueModel',{})});
+const demoRegistry={place:{label:'Place',plural_label:'Places',primary_facet:'city'},recipe:{label:'Recipe',plural_label:'Recipes',primary_facet:'cuisine'},workout:{label:'Workout',plural_label:'Workouts',primary_facet:'muscle_group'}};
+const demoEntry=(i,type='place')=>({id:String(i),created_at:new Date(2026,0,30-i).toISOString(),content_type:type,title:'Entry '+i,attributes:{cuisine:'Thai',neighborhood:i%2?'Venice Beach':'Silver Lake'},city:'Venice Beach',organization_city:'Los Angeles',note:'',folders:[{id:'places'}],needs_review:false});
+test('library tiers show no machinery at zero, flat four, and shortcuts at twenty-five',()=>{
+ for(const [count,tier,chips] of [[0,'empty',false],[4,'small',false],[25,'large',true]]){const view=organization.libraryProjection(Array.from({length:count},(_,i)=>demoEntry(i)),[],demoRegistry);assert.equal(view.tier,tier);assert.equal(view.showTypeChips,chips);assert.equal(view.items.length,count)}
+ assert.equal(organization.entryCount(0),'0 entries');assert.equal(organization.entryCount(1),'1 entry');assert.equal(organization.entryCount(2),'2 entries');
+});
+test('one projection deduplicates counts, omits empty types and clears stale filters',()=>{
+ const entries=[demoEntry(0),demoEntry(1,'recipe'),demoEntry(2,'recipe')];
+ const view=organization.libraryProjection([...entries,entries[0]],[],demoRegistry,{type:'workout'});
+ assert.equal(view.all.length,3);assert.equal(view.folderCounts.places,3);assert.equal(view.type,null);assert.equal(view.typeCounts.workout,undefined);
+ for(const type of Object.keys(view.typeCounts))assert.ok(organization.libraryProjection(entries,[],demoRegistry,{type}).items.length>0);
+ assert.equal(organization.libraryProjection(entries,[],demoRegistry,{type:'place',query:'Entry 1'}).items.length,1);
+});
+test('folder context uses geographic facets and review clears when its queue empties',()=>{
+ const entries=[demoEntry(0),{...demoEntry(1),needs_review:true}];const folders=[{id:'places',name:'Los Angeles',kind:'auto_facet',content_type:'place'}];
+ let view=organization.libraryProjection(entries,folders,demoRegistry,{folderId:'places',type:'recipe'});
+ assert.equal(view.showTypeChips,false);assert.equal(view.type,null);assert.equal(view.facetCounts['Venice Beach'],1);assert.equal(view.facetCounts['Silver Lake'],1);
+ assert.equal(organization.libraryProjection(entries,folders,demoRegistry,{folderId:'places',facet:'Venice Beach'}).items.length,1);
+ view=organization.libraryProjection(entries,folders,demoRegistry,{review:true});assert.equal(view.items.length,1);
+ view=organization.libraryProjection(entries.map(e=>({...e,needs_review:false})),folders,demoRegistry,{review:true});assert.equal(view.review,false);assert.equal(view.reviewCount,0);assert.equal(view.items.length,2);
+});
+test('semantic search matches remain visible with counts from the same library snapshot',()=>{
+ const entries=[demoEntry(0),demoEntry(1,'recipe')];
+ const view=organization.libraryProjection(entries,[],demoRegistry,{query:'weekend inspiration',semanticIds:['0']});
+ assert.equal(view.items.map(e=>e.id).join(','),'0');assert.equal(JSON.stringify(view.typeCounts),JSON.stringify({place:1}));assert.equal(view.all.length,2);
+});
+test('grouping and unit choices survive offline restart and remain queued for the owner',async()=>{
+ const env=environment(),lib=env.load();await lib.setPreference('groupBy','type');await lib.setPreference('distanceUnits','imperial');await lib.syncLibrary();const state=await env.load().loadLibrary();assert.equal(state.preferences.groupBy,'type');assert.equal(state.preferences.distanceUnits,'imperial');assert.equal(state.outbox.filter(o=>o.kind==='preferences').length,2);env.close();
+});
+test('failed sync preserves last success and local changes instead of recording a new success',async()=>{
+ const env=environment(),lib=env.load();env.mocks['./api'].connectDevice=async()=>{};env.mocks['./api'].request=async()=>({items:[],saves:[],folders:[],registry:{},apple_linked:false});
+ await lib.syncLibrary();const last=(await lib.loadLibrary()).last_synced;assert.ok(last);
+ await lib.queueOperation({kind:'folder_create',method:'POST',path:'/folders',body:{id:'pending-folder',name:'Offline review'}});
+ env.mocks['./api'].connectDevice=async()=>{throw Error('Connection timed out')};await lib.syncLibrary();const failed=await lib.loadLibrary();assert.equal(failed.last_synced,last);assert.equal(failed.sync_error,'Connection timed out');assert.equal(failed.outbox.length,1);assert.equal(failed.folders[0].name,'Offline review');env.close();
+});
+test('request timeouts and network failures explain that saves remain local',async()=>{
+ const mocks={'./config':{appConfig:{apiUrl:'http://example.test'},visualFixture:false},'./identity':{getIdentity:async()=>({token:'test'})}};
+ let api=load('api',mocks,{fetch:(_,options)=>new Promise((_,reject)=>options.signal.addEventListener('abort',()=>reject(Error('Aborted'))))});
+ await assert.rejects(api.request('/sync','GET',undefined,5),/processing service did not respond.*saves are still/);
+ api=load('api',mocks,{fetch:async()=>{throw new TypeError('Network request failed')}});await assert.rejects(api.request('/sync'),/Could not connect.*saves are still/);
+});
+
+test('cold launch drains a force-quit share before any network access and survives a second launch',async()=>{
+ const env=environment();let reports=[];env.mocks['./sharedGroup'].recordDrain=async report=>reports.push(report);
+ env.setQueue([{id:'cold',url:'https://vm.tiktok.com/Ab123/',timestamp:123}]);
+ const state=await env.load().coldStartLibrary();assert.equal(state.saves.length,1);assert.equal(state.saves[0].local,true);assert.equal(env.getQueue().length,0);assert.equal(reports[0].trigger,'cold_launch');assert.equal(reports[0].successes,1);
+ const again=await env.load().coldStartLibrary();assert.equal(again.saves.length,1);env.close();
+});
+test('one failed acknowledgement does not block later queue items and replay deduplicates',async()=>{
+ const env=environment();env.setQueue([{id:'a',url:'https://youtu.be/abcdefghijk',timestamp:1},{id:'b',url:'https://instagram.com/reel/ABC/',timestamp:2}]);let failures=1;const ack=env.mocks['./sharedGroup'].acknowledgeSharedEntry;
+ env.mocks['./sharedGroup'].acknowledgeSharedEntry=async id=>{if(id==='a'&&failures-- >0)throw Error('interrupted');await ack(id)};
+ const lib=env.load();await assert.rejects(lib.drainContainer());assert.equal((await lib.loadLibrary()).saves.length,2);assert.equal(env.getQueue().length,1);await lib.drainContainer();assert.equal((await lib.loadLibrary()).saves.length,2);assert.equal(env.getQueue().length,0);env.close();
+});
+test('invalid shared URL is quarantined while later valid items commit',async()=>{
+ const env=environment();env.setQueue([{id:'bad',url:'file:///photo.png',timestamp:1},{id:'ok',url:'https://youtu.be/abcdefghijk',timestamp:2}]);let report;env.mocks['./sharedGroup'].recordDrain=async value=>{report=value};const lib=env.load();await assert.rejects(lib.drainContainer());assert.equal(report.quarantined,1);assert.equal(report.successes,1);assert.equal(env.getQueue().length,0);assert.equal((await lib.loadLibrary()).saves.length,1);env.close();
+});
+test('overlapping drains share one run and produce one durable save',async()=>{
+ const env=environment();env.setQueue([{id:'q',url:'https://youtu.be/abcdefghijk',timestamp:1}]);const lib=env.load();const a=lib.drainContainer('manual'),b=lib.drainContainer('foreground');assert.equal(a,b);await Promise.all([a,b]);assert.equal((await lib.loadLibrary()).saves.length,1);env.close();
 });

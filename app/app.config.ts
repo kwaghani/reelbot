@@ -3,7 +3,10 @@ import type { ExpoConfig } from "expo/config";
 const fs = require('node:fs');
 const path = require('node:path');
 const yaml = require('js-yaml');
-const contentTypes = yaml.load(fs.readFileSync(path.resolve(__dirname, '../config/content_types.yaml'), 'utf8'));
+const { venue_kinds: venueKinds, venue_kind_signals: _signals, ...contentTypes } = yaml.load(fs.readFileSync(path.resolve(__dirname, '../config/content_types.yaml'), 'utf8'));
+
+contentTypes.place.attributes.venue_kind.values = Object.keys(venueKinds);
+contentTypes.place.kind_attributes = Object.fromEntries(Object.entries(venueKinds).map(([key, value]: [string, any]) => [key, value.attributes || {}]));
 
 const bundleIdentifier =
   process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER || "com.krishwaghani.reelbot";
@@ -21,13 +24,13 @@ const config: ExpoConfig = {
   orientation: "portrait",
   icon: "./assets/icon.png",
   scheme: "reelbot",
-  userInterfaceStyle: "light",
+  userInterfaceStyle: "automatic",
   newArchEnabled: false,
   ios: {
     supportsTablet: false,
     usesAppleSignIn: true,
     bundleIdentifier,
-    buildNumber: "21",
+    buildNumber: "30",
     ...(appleTeamId ? { appleTeamId } : {}),
     infoPlist: {
       AppGroupIdentifier: appGroupIdentifier,
@@ -86,7 +89,8 @@ const config: ExpoConfig = {
   ],
   extra: {
     contentTypes,
-    apiUrl: process.env.EXPO_PUBLIC_API_URL || "",
+    venueKinds,
+    apiUrl: process.env.EXPO_PUBLIC_API_URL || "https://reelbot-api.onrender.com",
     appGroupIdentifier,
     appleTeamId,
     eas: {

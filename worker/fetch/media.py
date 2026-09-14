@@ -3,7 +3,6 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import os
 import random
 import subprocess
 import time
@@ -11,6 +10,8 @@ from pathlib import Path
 import anthropic
 import yt_dlp
 from worker.fetch.http import FetchError, headers, settings, platform
+from config import settings as runtime_settings
+from worker.observability import log_rss
 
 MAX_BYTES=50_000_000
 MAX_SECONDS=90
@@ -36,8 +37,8 @@ def vision_text(frames,metrics,checkpoint=None):
     metrics['vision_requests_pending']=metrics.get('vision_requests_pending',0)+1
     if checkpoint:checkpoint()
     try:
-        with anthropic.Anthropic(timeout=12,max_retries=0) as client:
-            response=client.messages.create(model=os.getenv('ANTHROPIC_VISION_MODEL',os.getenv('ANTHROPIC_FAST_MODEL','claude-haiku-4-5-20251001')),max_tokens=1200,messages=[{'role':'user','content':blocks}])
+        with anthropic.Anthropic(api_key=runtime_settings().anthropic_api_key, timeout=12,max_retries=0) as client:
+            response=client.messages.create(model=runtime_settings().anthropic_vision_model,max_tokens=1200,messages=[{'role':'user','content':blocks}])
         text=''.join(b.text for b in response.content if b.type=='text')
         metrics['vision_tokens_in']=metrics.get('vision_tokens_in',0)+response.usage.input_tokens
         metrics['vision_tokens_out']=metrics.get('vision_tokens_out',0)+response.usage.output_tokens
@@ -56,7 +57,7 @@ def bounded_media_file(url,target,request_url):
     from worker.media import validate_public_url
     from worker.fetch.http import check_response,Response
     start=time.monotonic();total=0
-    with httpx.Client(proxy=os.getenv('REELBOT_FETCH_PROXY') or None,trust_env=False,timeout=6,follow_redirects=False,
+    with httpx.Client(proxy=runtime_settings().fetch_proxy,trust_env=False,timeout=6,follow_redirects=False,
                       headers={**headers(request_url),'Range':f'bytes=0-{MAX_BYTES-1}','Accept-Encoding':'identity'}) as client:
         for _ in range(5):
             validate_public_url(url)
@@ -73,10 +74,11 @@ def bounded_media_file(url,target,request_url):
     raise FetchError('needs_source_info','Media redirect limit exceeded.')
 
 
-def collect_media(url,directory,metrics,checkpoint=None):
+def collect_media(url,directory,metrics,checkpoint=None,context=None):
     from worker.media import ytdlp_options,extract_caption,stage_transcript,clean_ocr_text
     from worker.fetch.http import rate_limit
     from PIL import Image
+    from worker.compilations import classify,collect_compilation
     import pytesseract
     directory=Path(directory);directory.mkdir(parents=True,exist_ok=True)
     result={'caption':'','ocr':'','transcript':'','unavailable':{},'metadata':{}}
@@ -100,7 +102,7 @@ def collect_media(url,directory,metrics,checkpoint=None):
     opts=ytdlp_options(url,directory)
     opts.update({'http_headers':headers(url),'max_filesize':MAX_BYTES,'logger':QuietLog(),
         'socket_timeout':6,'retries':0,'fragment_retries':0,'extractor_retries':0})
-    if os.getenv('REELBOT_FETCH_PROXY'):opts['proxy']=os.environ['REELBOT_FETCH_PROXY']
+    if runtime_settings().fetch_proxy:opts['proxy']=runtime_settings().fetch_proxy
     try:
         with LimitedDL(opts) as ydl:
             try:info=ydl.extract_info(url,download=False)
@@ -111,9 +113,13 @@ def collect_media(url,directory,metrics,checkpoint=None):
         if result['caption'].lower().startswith('youtube video #'):raise FetchError('fetch_not_found','The video is unavailable.')
         result['creator_handle']=str(info.get('uploader_id') or '');result['hashtags']=info.get('tags') or []
         duration=float(info.get('duration') or 0);result['metadata']={'duration':duration,'caption_source':'yt-dlp'}
+        shared={**(context or {}),**{k:v for k,v in result.items() if v},'title':info.get('title','')}
+        classification=classify(shared,duration=duration)
+        dense=bool((context or {}).get('force_dense') or classification['is_compilation'])
+        result.update(is_compilation=dense,expected_venue_count=classification['expected_venue_count'])
         if checkpoint:checkpoint(result)
-        if len(result['caption'])>20:return result
-        if os.getenv('REELBOT_ENABLE_VIDEO_DOWNLOAD','true').lower() not in ('true','1','yes','on'):
+        if len(result['caption'])>20 and not dense:return result
+        if not runtime_settings().enable_video_download:
             result['unavailable'].update(frames='Media downloading is disabled.',transcript='Media downloading is disabled.');return result
         formats=[f for f in info.get('formats',[]) if f.get('vcodec') not in ('none',None)
             and f.get('protocol') in ('https','http') and str(f.get('url','')).startswith('https://')]
@@ -121,26 +127,38 @@ def collect_media(url,directory,metrics,checkpoint=None):
         chosen=formats[0] if formats else info
         source=chosen.get('url')
         if not source or chosen.get('protocol') not in ('https','http',None):raise FetchError('needs_source_info','Bounded video frames are unavailable for this stream.')
-        video=directory/'source.mp4';downloaded,truncated=bounded_media_file(source,video,url)
+        video=directory/'source.mp4';downloaded,truncated=bounded_media_file(source,video,url);log_rss('after_download', url)
         if not duration:
             try:
                 probe=subprocess.run(['ffprobe','-v','error','-show_entries','format=duration','-of','default=noprint_wrappers=1:nokey=1',str(video)],capture_output=True,text=True,timeout=4,check=True)
                 duration=float(probe.stdout.strip())
             except Exception:result['unavailable']['duration']='Video duration could not be read.'
-        oversized=duration>MAX_SECONDS or truncated
+        if not dense and duration:
+            from worker.compilations import scene_cuts
+            try:dense=classify(shared,duration=duration,cuts=len(scene_cuts(video,duration)))['is_compilation']
+            except Exception:pass
+            result['is_compilation']=dense
+            if checkpoint:checkpoint(result)
+        oversized=duration>(180 if dense else MAX_SECONDS) or truncated
         if oversized:
-            result['unavailable']['transcript']='Audio skipped for media beyond 90 seconds or 50 MB.'
+            result['unavailable']['transcript']='Audio skipped because the duration or 50 MB media budget was exceeded.'
             result['metadata']['frames_only']=True
         elif not duration:result['unavailable']['transcript']='Audio skipped because video duration could not be verified.'
         elif info.get('music_only') is True and info.get('has_speech') is False:
             result['metadata']['audio_skipped']='explicitly identified music without speech'
         elif chosen.get('acodec')=='none':result['unavailable']['transcript']='No accessible audio track.'
-        elif os.getenv('REELBOT_ENABLE_TRANSCRIPTION','true').lower() not in ('true','1','yes','on'):result['unavailable']['transcript']='Speech transcription is disabled.'
+        elif not runtime_settings().enable_transcription:result['unavailable']['transcript']='Speech transcription is disabled.'
         else:
             at=time.monotonic()
             try:result['transcript']=stage_transcript(video,directory)[:24000]
             except Exception:result['unavailable']['transcript']='Speech transcription failed.'
             metrics['transcription_seconds']+=time.monotonic()-at
+        if dense:
+            timed=directory/'transcript-segments.json'
+            result['transcript_segments']=json.loads(timed.read_text()) if timed.exists() else []
+            result.update(collect_compilation(video,directory,duration,shared,metrics,result['transcript_segments'],checkpoint))
+            return result
+        metrics['reel_class']='standard'
         for index,point in enumerate(frame_times(duration)):
             if time.monotonic()-start>74:
                 result['unavailable']['frames']='Frame sampling reached its time limit.';break
@@ -151,6 +169,7 @@ def collect_media(url,directory,metrics,checkpoint=None):
                 if not target.exists() or not target.stat().st_size:raise RuntimeError('No frame at this timestamp')
                 frames.append(target)
             except Exception:result['unavailable']['frames']='Some sampled frames could not be read.'
+        log_rss('after_frame_extraction', url)
         texts=[];at=time.monotonic()
         for frame in frames:
             try:

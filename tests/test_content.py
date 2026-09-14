@@ -27,6 +27,7 @@ class ContentTests(unittest.TestCase):
         for key,spec in data.items():
             self.assertTrue(any(f.get('required') for f in spec['attributes'].values()))
             if key=='other': self.assertEqual(set(spec['attributes']),{'topic'})
+            elif key=='place': self.assertEqual(len(spec['kind_attributes']),16)
             else: self.assertTrue(3<=len(spec['attributes'])<=5)
         with self.assertRaises(ValueError): validate_attributes('workout',{'muscle_group':['chest'],'surprise':'no'})
         with self.assertRaises(ValueError): validate_attributes('workout',{'muscle_group':['not_a_muscle']})

@@ -1,13 +1,15 @@
-export type AttributeSpec = { type: 'enum' | 'string' | 'integer'; multi?: boolean; required?: boolean; values?: string[] };
-export type ContentType = { label: string; plural_label?: string; icon: string; geo: 'required' | 'optional' | 'never'; primary_facet: string | null; attributes: Record<string, AttributeSpec> };
+export type AttributeSpec = { type: 'enum' | 'string' | 'integer' | 'number' | 'boolean'; multi?: boolean; required?: boolean; values?: string[] };
+export type ContentType = { label: string; plural_label?: string; icon: string; geo: 'required' | 'optional' | 'never'; primary_facet: string | null; attributes: Record<string, AttributeSpec>; kind_attributes?: Record<string, Record<string, AttributeSpec>> };
+export type VenueKinds = Record<string, { label: string; plural_label?: string; icon: string; color: string; google_types: string[]; attributes?: Record<string, AttributeSpec> }>;
+export type Preferences = { notifications: boolean; locationRationaleSeen: boolean; groupBy: 'city' | 'type'; distanceUnits: 'auto' | 'imperial' | 'metric' };
 export type Registry = Record<string, ContentType>;
-export type SaveStatus = 'queued' | 'processing' | 'resolved' | 'needs_review' | 'no_content_found' | 'failed' | 'resolve_failed' | 'fetch_blocked' | 'fetch_not_found' | 'fetch_ok_no_content' | 'extraction_empty' | 'needs_source_info';
-export type Save = { id: string; source_url: string; canonical_url?: string; platform_video_id?: string; source_info_hint?: string; retry_at?: string | null; status: SaveStatus; created_at: string; error_reason?: string | null; cost?: Record<string, number>; local?: boolean };
+export type SaveStatus = 'partial_extraction' | 'queued' | 'processing' | 'resolved' | 'needs_review' | 'no_content_found' | 'failed' | 'resolve_failed' | 'fetch_blocked' | 'fetch_not_found' | 'fetch_ok_no_content' | 'extraction_empty' | 'needs_source_info';
+export type Save = { is_compilation?: boolean; expected_venue_count?: number; extracted_venue_count?: number; id: string; source_url: string; canonical_url?: string; platform_video_id?: string; source_info_hint?: string; retry_at?: string | null; status: SaveStatus; created_at: string; error_reason?: string | null; cost?: Record<string, number>; local?: boolean };
 export type Folder = { id: string; name: string; kind: 'custom' | 'auto_type' | 'auto_facet'; content_type?: string; facet_key?: string; facet_value?: string; parent_folder_id?: string | null; icon?: string; hidden?: boolean; sort_order: number };
-export type Entry = { id: string; save_id: string; content_type: string; title: string; summary: string; attributes: Record<string, any>; name: string; city: string; note: string; needs_review: boolean; review_reason?: string | null; verified_at?: string | null; confidence: number; created_at: string; source_url: string; place_id?: string | null; place_name?: string; thumbnail?: string; formatted_address?: string; lat?: number | null; lng?: number | null; folders: Pick<Folder, 'id' | 'name' | 'kind' | 'parent_folder_id'>[]; candidate?: { place_candidates?: { place: { id: string; displayName: { text: string }; formattedAddress: string; location: { latitude: number; longitude: number } }; score: number }[]; venue_name?: string; city_hint?: string; attributes?: Record<string, any> } };
-export type Operation = { id: string; method: string; path: string; body?: any; error?: string; kind: 'folder_create' | 'folder_edit' | 'folder_delete' | 'assign' | 'note' | 'entry_edit' | 'dismiss_review' | 'item_delete' | 'delete_all' | 'source_info' | 'choose_place'; target?: string };
-export type Library = { saves: Save[]; items: Entry[]; folders: Folder[]; registry: Registry; outbox: Operation[]; apple_linked: boolean; sync_error: string | null; last_synced?: string; preferences: { notifications: boolean; locationRationaleSeen: boolean } };
-export const emptyLibrary = (): Library => ({ saves: [], items: [], folders: [], registry: {}, outbox: [], apple_linked: false, sync_error: null, preferences: { notifications: false, locationRationaleSeen: false } });
+export type Entry = { image_source?: string; image_acquired_at?: string; image_failure_reason?: string; id: string; save_id: string; content_type: string; title: string; summary: string; attributes: Record<string, any>; name: string; city: string; organization_city?: string; venue_kind?: string; venue_kind_source?: 'provider' | 'user'; note: string; needs_review: boolean; review_reason?: string | null; verified_at?: string | null; confidence: number; created_at: string; source_url: string; place_id?: string | null; place_name?: string; resolution_attribution?: { label: string; url: string } | null; google_place_id?: string | null; thumbnail?: string; save_entry_count?: number; image_choice?: string; image_selection?: { selected: string; runner_up: string | null; reason: string; cover_rejection?: string | null }; formatted_address?: string; lat?: number | null; lng?: number | null; folders: Pick<Folder, 'id' | 'name' | 'kind' | 'parent_folder_id'>[]; candidate?: { place_candidates?: { place: { id: string; displayName: { text: string }; formattedAddress: string; location: { latitude: number; longitude: number } }; score: number; distance_m?: number | null }[]; venue_name?: string; city_hint?: string; attributes?: Record<string, any> } };
+export type Operation = { id: string; method: string; path: string; body?: any; error?: string; kind: 'preferences' | 'folder_create' | 'folder_edit' | 'folder_delete' | 'assign' | 'note' | 'entry_edit' | 'dismiss_review' | 'item_delete' | 'delete_all' | 'source_info' | 'choose_place'; target?: string };
+export type Library = { saves: Save[]; items: Entry[]; folders: Folder[]; registry: Registry; venue_kinds: VenueKinds; outbox: Operation[]; apple_linked: boolean; sync_error: string | null; last_synced?: string; preferences: Preferences };
+export const emptyLibrary = (): Library => ({ saves: [], items: [], folders: [], registry: {}, venue_kinds: {}, outbox: [], apple_linked: false, sync_error: null, preferences: { notifications: false, locationRationaleSeen: false, groupBy: 'city', distanceUnits: 'auto' } });
 export function upgradeLibrary(raw: any): Library {
   const state = { ...emptyLibrary(), ...raw, preferences: { ...emptyLibrary().preferences, ...raw?.preferences } };
   state.items = state.items.map((p: any) => ({ content_type: 'place', title: p.name || 'Saved entry', summary: '', attributes: {}, ...p }));
@@ -16,6 +18,7 @@ export function upgradeLibrary(raw: any): Library {
 }
 export function applyOperation(state: Library, operation: Operation): void {
   const { body, target, kind } = operation;
+  if (kind === 'preferences') state.preferences = { ...state.preferences, ...body };
   if (kind === 'source_info') {
     if (!state.items.some(e => e.id === body.entry_id)) state.items.unshift({ id: body.entry_id, save_id: target!, content_type: body.content_type, title: body.title, name: body.title, summary: 'Saved from your description.', attributes: body.content_type === 'place' ? { venue_kind: 'other' } : {}, city: body.city || '', note: '', needs_review: true, confidence: 1, created_at: new Date().toISOString(), source_url: state.saves.find(v => v.id === target)?.source_url || '', folders: [] });
     state.saves = state.saves.map(v => v.id === target ? { ...v, status: 'needs_review', error_reason: null, retry_at: null } : v);
@@ -30,6 +33,7 @@ export function applyOperation(state: Library, operation: Operation): void {
   if (kind === 'entry_edit') state.items = state.items.map(p => {
     if (p.id !== target) return p;
     const next = { ...p, ...body, name: body.title || p.title }, type = state.registry[next.content_type];
+    if (body.venue_kind || body.attributes?.venue_kind && body.attributes.venue_kind !== p.attributes.venue_kind) { next.venue_kind = body.venue_kind || body.attributes.venue_kind; next.venue_kind_source = 'user'; next.attributes = { ...next.attributes, venue_kind: next.venue_kind }; }
     if (type) {
       const missing = Object.entries(type.attributes).filter(([key, spec]) => spec.required && (next.attributes[key] == null || next.attributes[key] === '' || Array.isArray(next.attributes[key]) && !next.attributes[key].length)).map(([key]) => 'missing_required:' + key);
       if (type.geo === 'required' && !next.place_id) missing.push('unresolved_place');
@@ -48,9 +52,9 @@ export function applyOperation(state: Library, operation: Operation): void {
     });
   }
 }
-export function searchLocal(items: Entry[], query: string) {
+export function searchLocal(items: Entry[], query: string, kinds: VenueKinds = {}) {
   const tokens = query.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
-  return items.filter(p => tokens.every(t => [p.title, p.summary, JSON.stringify(p.attributes), p.place_name, p.name, p.city, p.note, ...p.folders.map(f => f.name)].join(' ').toLocaleLowerCase().includes(t)));
+  return items.filter(p => tokens.every(t => [p.title, p.summary, kinds[p.venue_kind || p.attributes?.venue_kind]?.label, kinds[p.venue_kind || p.attributes?.venue_kind]?.plural_label, JSON.stringify(p.attributes), p.place_name, p.name, p.city, p.note, ...p.folders.map(f => f.name)].join(' ').toLocaleLowerCase().includes(t)));
 }
 export const humanize = (value: unknown): string => String(value ?? '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 export function facetValues(entry: Entry, registry: Registry): string[] {
@@ -63,8 +67,11 @@ export function reviewQuestion(entry: Entry): string {
   if (reasons.includes('ambiguous_place')) return 'Is this the right place?';
   if (reasons.includes('unresolved_place')) return "Couldn't find this place";
   if (reason.startsWith('missing_required:')) return `Which ${reason.split(':')[1].replace(/_/g, ' ')}?`;
+  if (reasons.includes('low_confidence')) return entry.content_type === 'place' ? 'Check the venue name' : 'Check the extracted details';
   return 'Does this match the reel?';
 }
-export const statusLabels: Record<SaveStatus, string> = { queued: 'Waiting to sort', processing: 'Sorting your reel', resolved: 'Saved', needs_review: 'Saved', no_content_found: 'Add a venue or topic', failed: 'Processing was interrupted', resolve_failed: "Couldn't open this link", fetch_blocked: 'Waiting for platform access', fetch_not_found: 'This post was deleted or is private', fetch_ok_no_content: 'This post has no caption, text or speech to read', extraction_empty: "Couldn't find anything to save here", needs_source_info: 'Add a venue or topic' };
-export const canRetrySave = (save: Save) => ['failed', 'resolve_failed', 'no_content_found'].includes(save.status);
-export const canAddSourceInfo = (save: Save) => ['needs_source_info', 'fetch_ok_no_content', 'extraction_empty', 'no_content_found'].includes(save.status) || save.status === 'fetch_blocked' && !save.retry_at;
+export const statusLabels: Record<SaveStatus, string> = { partial_extraction: 'Some places found', queued: 'Waiting to sort', processing: 'Sorting your reel', resolved: 'Saved', needs_review: 'Saved', no_content_found: 'Add a venue or topic', failed: 'Processing was interrupted', resolve_failed: "Couldn't open this link", fetch_blocked: 'Waiting for platform access', fetch_not_found: 'This post was deleted or is private', fetch_ok_no_content: 'This post has no caption, text or speech to read', extraction_empty: "Couldn't find anything to save here", needs_source_info: 'Add a venue or topic' };
+export const canRetrySave = (save: Save) => ['failed', 'resolve_failed', 'no_content_found', 'partial_extraction', 'extraction_empty'].includes(save.status);
+export const canAddSourceInfo = (save: Save) => ['needs_source_info', 'fetch_ok_no_content', 'extraction_empty', 'no_content_found', 'partial_extraction'].includes(save.status) || save.status === 'fetch_blocked' && !save.retry_at;
+
+export const fieldLabel = (key: string) => ({ venue_kind: 'Venue type', price_level: 'Price range' }[key] || key.replace(/_/g, ' ').replace(/^./, letter => letter.toUpperCase()));

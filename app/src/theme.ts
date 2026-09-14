@@ -1,134 +1,46 @@
-import type { TextStyle, ViewStyle } from "react-native";
-
-// ReelBot's palette is intentionally closer to ink on paper than a typical
-// pastel SaaS theme. One saturated blue carries every interactive state.
-export const colors = {
-  background: "#F4F1EA",
-  card: "#FFFDF8",
-  cardMuted: "#ECE9E1",
-  border: "#D7D2C8",
-  borderStrong: "#B9B3A8",
-  textPrimary: "#191915",
-  textSecondary: "#605E57",
-  accent: "#2454D3",
-  accentPressed: "#173DA7",
-  accentSoft: "#E4E9F7",
-  ink: "#111A3D",
-  inkText: "#FFFDF8",
-  red: "#D85C48",
-  success: "#23704A",
-  successSoft: "#E1ECE5",
-  warningBackground: "#F4E9D5",
-  warningBorder: "#D6BE98",
-  warningText: "#71501D",
-  danger: "#A94435",
-  dangerSoft: "#F2E2DE",
-} as const;
-
-// Category colors stay muted and print-like so content, rather than color,
-// creates the visual hierarchy.
-export const folderTints = [
-  { background: "#E3E7F2", foreground: "#294681" },
-  { background: "#E7E3DA", foreground: "#5B5549" },
-  { background: "#DEE8E1", foreground: "#315E47" },
-  { background: "#EEE1DC", foreground: "#7A453B" },
-  { background: "#E8E1EA", foreground: "#5D4966" }
-] as const;
-
-export const spacing = {
-  xxs: 4,
-  xs: 8,
-  sm: 12,
-  md: 16,
-  lg: 24,
-  xl: 32
-} as const;
-
-export const radius = {
-  card: 12,
-  tile: 8,
-  button: 8,
-  chip: 5
-} as const;
-
-export const fonts = {
-  regular: "Inter_400Regular",
-  semibold: "Inter_600SemiBold",
-  bold: "Inter_700Bold",
-  display: "Georgia"
-} as const;
-
-export const typography = {
-  heroTitle: {
-    color: colors.textPrimary,
-    fontFamily: fonts.display,
-    fontSize: 28,
-    fontWeight: "700",
-    letterSpacing: -0.55,
-    lineHeight: 34
-  },
-  screenTitle: {
-    color: colors.textPrimary,
-    fontFamily: fonts.display,
-    fontSize: 27,
-    fontWeight: "700",
-    letterSpacing: -0.45,
-    lineHeight: 33
-  },
-  cardTitle: {
-    color: colors.textPrimary,
-    fontFamily: fonts.semibold,
-    fontSize: 16,
-    fontWeight: "600",
-    lineHeight: 22
-  },
-  body: {
-    color: colors.textPrimary,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    fontWeight: "400",
-    lineHeight: 22
-  },
-  meta: {
-    color: colors.textSecondary,
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    fontWeight: "400",
-    lineHeight: 17
-  }
-} satisfies Record<string, TextStyle>;
-
-export const shadow = {
-  shadowColor: "#191915",
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.035,
-  shadowRadius: 5,
-  elevation: 1
-} satisfies ViewStyle;
-
-export const shadowSoft = {
-  shadowColor: "#191915",
-  shadowOffset: { width: 0, height: 1 },
-  shadowOpacity: 0.025,
-  shadowRadius: 2,
-  elevation: 0
-} satisfies ViewStyle;
-
-export function folderTint(name: string): (typeof folderTints)[number] {
-  let hash = 0;
-  for (let index = 0; index < name.length; index += 1) {
-    hash = (hash * 31 + name.charCodeAt(index)) >>> 0;
-  }
-  return folderTints[hash % folderTints.length];
+import { useSyncExternalStore } from 'react';
+import { AccessibilityInfo, useColorScheme } from 'react-native';
+export const lightColors = {
+  background: '#E9EDE7', card: '#F7F9F4', cardMuted: '#DCE3DA', border: '#BEC9BE', borderStrong: '#718577',
+  textPrimary: '#12211B', textSecondary: '#526157', accent: '#C0316B', accentPressed: '#882044', accentSoft: '#F3D9E4',
+  ink: '#12211B', inkText: '#FFFFFF', red: '#A63242', success: '#315E41', successSoft: '#D7E5D7',
+  warningBackground: '#E8E1CC', warningBorder: '#A59764', warningText: '#60502B', danger: '#9E293D', dangerSoft: '#F4DDE2', water: '#9FBFC9',
+};
+export const darkColors: typeof lightColors = {
+  background: '#15231E', card: '#1C2D26', cardMuted: '#2B4035', border: '#3B5144', borderStrong: '#839E8D',
+  textPrimary: '#E4EBE1', textSecondary: '#ABBCAF', accent: '#F08AB2', accentPressed: '#F6B2CB', accentSoft: '#45273A',
+  ink: '#E4EBE1', inkText: '#15231E', red: '#F1A3B0', success: '#A5D7B0', successSoft: '#243E2C',
+  warningBackground: '#3E3829', warningBorder: '#A99B6D', warningText: '#E2D2A0', danger: '#F4A5B4', dangerSoft: '#452832', water: '#243E47',
+};
+export const colors = lightColors;
+export function useTheme() { return useColorScheme() === 'dark' ? darkColors : lightColors; }
+let reducedMotion = true;
+const motionListeners = new Set<() => void>();
+let motionSubscription: ReturnType<typeof AccessibilityInfo.addEventListener> | undefined;
+function updateMotion(value: boolean) { reducedMotion = value; motionListeners.forEach(listener => listener()); }
+function subscribeMotion(listener: () => void) {
+  motionListeners.add(listener);
+  if (!motionSubscription) { motionSubscription = AccessibilityInfo.addEventListener('reduceMotionChanged', updateMotion); void AccessibilityInfo.isReduceMotionEnabled().then(updateMotion).catch(() => {}); }
+  return () => { motionListeners.delete(listener); if (!motionListeners.size) { motionSubscription?.remove(); motionSubscription = undefined; } };
 }
-
-export const theme = {
-  colors,
-  spacing,
-  radius,
-  fonts,
-  typography,
-  shadow,
-  shadowSoft,
-  folderTint
+export function useReducedMotion() { return useSyncExternalStore(subscribeMotion, () => reducedMotion, () => true); }
+export const fonts = { regular: 'Switzer-Regular', semibold: 'Switzer-Semibold', bold: 'Switzer-Semibold', display: 'CabinetGrotesk-Bold' };
+export const spacing = { xxs: 4, xs: 8, sm: 12, md: 16, lg: 24, xl: 32 };
+export const radius = { card: 3, tile: 2, button: 3, chip: 6 };
+export const folderTints = [
+  { background: '#CEDDE0', foreground: '#254651' },
+  { background: '#D8DFCD', foreground: '#3D5130' },
+  { background: '#E4D6DC', foreground: '#68364C' },
+];
+export function folderTint(name: string, palette = lightColors) { let hash = 0; for (const letter of name) hash = (hash * 31 + letter.charCodeAt(0)) >>> 0; return palette === darkColors ? [{ background: '#243E47', foreground: '#BDD3DB' }, { background: '#30442D', foreground: '#D0DDC6' }, { background: '#452F3B', foreground: '#E6C8D5' }][hash % 3] : folderTints[hash % folderTints.length]; }
+export const typeScale = {
+  large: { fontFamily: fonts.display, fontSize: 34, letterSpacing: -.6, lineHeight: 39 },
+  title: { fontFamily: fonts.display, fontSize: 23, letterSpacing: -.25, lineHeight: 29 },
+  section: { fontFamily: fonts.display, fontSize: 20, letterSpacing: -.15, lineHeight: 26 },
+  navigation: { fontFamily: fonts.semibold, fontSize: 17, letterSpacing: 0, lineHeight: 23 },
+  body: { fontFamily: fonts.regular, fontSize: 16, letterSpacing: 0, lineHeight: 23 },
+  card: { fontFamily: fonts.semibold, fontSize: 15, letterSpacing: 0, lineHeight: 21 },
+  label: { fontFamily: fonts.semibold, fontSize: 13, letterSpacing: 0, lineHeight: 18 },
+  meta: { fontFamily: fonts.regular, fontSize: 12, letterSpacing: 0, lineHeight: 17 },
+  legend: { fontFamily: fonts.semibold, fontSize: 11, letterSpacing: .1, lineHeight: 15 },
 };

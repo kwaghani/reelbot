@@ -3,5 +3,13 @@
   "compilerOptions": {
     "strict": true
   },
-  "include": ["**/*.ts", "**/*.tsx", "**/*.d.ts"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "ios"
+  ]
 }

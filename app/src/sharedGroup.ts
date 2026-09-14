@@ -21,3 +21,13 @@ export async function readSharedQueue(): Promise<SharedEntry[]> {
   return bridge.read();
 }
 export async function acknowledgeSharedEntry(id: string) { await bridge.acknowledge(id); }
+export async function quarantineSharedEntry(id: string, reason: string) { await bridge.quarantine(id, reason); }
+export async function recordDrain(report: Record<string, unknown>) { return bridge.recordDrain(report); }
+export async function readShareDiagnostics() {
+  if (!bridge?.diagnostics) throw new Error('Share diagnostics are unavailable in this installed build. Install the diagnostics build.');
+  return bridge.diagnostics();
+}
+export async function runContainerCanary() {
+  if (!bridge?.canary) throw new Error('The native canary test is unavailable in this installed build.');
+  return bridge.canary();
+}

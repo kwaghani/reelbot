@@ -10,7 +10,6 @@ import socket
 import shutil
 import json
 import logging
-import os
 import re
 import subprocess
 import sys
@@ -18,6 +17,7 @@ import time
 import wave
 from dataclasses import dataclass
 from pathlib import Path
+from config import settings
 from typing import Any
 from urllib.parse import urlparse
 from html.parser import HTMLParser
@@ -162,7 +162,7 @@ def ytdlp_options(url: str, workdir: Path | None = None) -> dict[str, Any]:
                 "merge_output_format": "mp4",
             }
         )
-    cookies_source = os.getenv("IG_COOKIES_PATH", "").strip()
+    cookies_source = settings().cookie_file_path or ''
     if cookies_source and is_instagram_url(url):
         browser = cookies_from_browser(cookies_source)
         if browser:
@@ -188,13 +188,11 @@ def strip_ansi(text: str) -> str:
 
 
 def metadata_only_ingest_enabled() -> bool:
-    value = os.getenv("REELBOT_ALLOW_METADATA_ONLY_INGEST", "1").strip().lower()
-    return value not in {"0", "false", "no", "off"}
+    return settings().allow_metadata_only_ingest
 
 
 def video_download_enabled() -> bool:
-    value = os.getenv("REELBOT_ENABLE_VIDEO_DOWNLOAD", "true").strip().lower()
-    return value in {"1", "true", "yes", "on"}
+    return settings().enable_video_download
 
 
 def request_headers() -> dict[str, str]:
@@ -347,7 +345,7 @@ def download_thumbnail(info: dict[str, Any], workdir: Path) -> Path | None:
 def ingest_hint(url: str, message: str) -> str | None:
     lowered = message.lower()
     if is_instagram_url(url) and "empty media response" in lowered:
-        cookies_source = os.getenv("IG_COOKIES_PATH", "").strip()
+        cookies_source = settings().cookie_file_path or ''
         if cookies_from_browser(cookies_source):
             return "Instagram still returned no media with browser cookies. Make sure you are logged into Instagram in that browser, then retry."
         if cookies_source:
@@ -534,8 +532,12 @@ def extract_audio(video_path: Path, workdir: Path) -> Path | None:
         "-loglevel",
         "error",
         "-y",
+        "-protocol_whitelist",
+        "file,pipe",
         "-i",
         str(video_path),
+        "-t",
+        "180",
         "-map",
         "0:a:0?",
         "-vn",
@@ -565,8 +567,7 @@ def extract_audio(video_path: Path, workdir: Path) -> Path | None:
 
 
 def transcription_enabled() -> bool:
-    value = os.getenv("REELBOT_ENABLE_TRANSCRIPTION", "true").strip().lower()
-    return value in {"1", "true", "yes", "on"}
+    return settings().enable_transcription
 
 
 def download_audio_only(url: str, workdir: Path) -> Path | None:
@@ -627,10 +628,12 @@ def stage_transcript(video_path: Path, workdir: Path) -> str:
         segments, _info = model.transcribe(str(audio_path), vad_filter=True)
         # Preserve Whisper's segment boundaries so downstream quality filters
         # can remove noisy music without throwing away nearby useful speech.
-        lines = []
+        lines = []; timed = []
         for segment in segments:
             if segment.text:
                 lines.append(segment.text.strip())
+                timed.append({"start":float(segment.start),"end":float(segment.end),"text":segment.text.strip()})
+                (workdir / "transcript-segments.json").write_text(json.dumps(timed), encoding="utf-8")
                 (workdir / "transcript.txt").write_text("\n".join(lines), encoding="utf-8")
         transcript = "\n".join(lines)
     except StageError:

@@ -2,13 +2,12 @@
 from __future__ import annotations
 import argparse
 import json
-import os
 from pathlib import Path
 import psycopg
-from dotenv import load_dotenv
 from psycopg import sql
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
+from config import ConfigurationError, psycopg_database_url, settings
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = "001_single_user"
@@ -98,6 +97,14 @@ def migrate_legacy(database_url, dry_run=False):
 
 
 def harden_registry(conn):
+    venue_version='20260908090846_venue_kinds'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(venue_version,)).fetchone():
+        from worker.registry import sync_registry
+        from worker.venue_kinds import backfill
+        conn.execute((ROOT/'db/migrations'/f'{venue_version}.sql').read_text(),prepare=False)
+        sync_registry(conn)
+        report=backfill(conn)
+        conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(venue_version,Jsonb(report)))
     ingestion_version='20260908014221_ingestion_ladder'
     if not conn.execute('select 1 from schema_migrations where id=%s',(ingestion_version,)).fetchone():
         conn.execute((ROOT/'db/migrations/20260908014221_ingestion_ladder.sql').read_text(),prepare=False)
@@ -106,6 +113,24 @@ def harden_registry(conn):
     if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
         conn.execute((ROOT/'db/migrations/003_registry_function_path.sql').read_text(),prepare=False)
         conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(version,Jsonb({'validation_search_path_fixed':True})))
+    version='20260908074706_organization_geography'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
+        conn.execute((ROOT/'db/migrations/20260908074706_organization_geography.sql').read_text(),prepare=False)
+        from worker.registry import sync_registry
+        from worker.geography import migrate_folders
+        sync_registry(conn)
+        conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(version,Jsonb(migrate_folders(conn))))
+    version='20260910102343_compilation_and_photo_jobs'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
+        conn.execute((ROOT/'db/migrations'/f'{version}.sql').read_text(),prepare=False)
+        conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(version,Jsonb({'additive_compilation_and_photos':True})))
+    version='20260911150000_shared_image_cache'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
+        conn.execute((ROOT/'db/migrations'/f'{version}.sql').read_text(),prepare=False)
+        conn.execute('insert into schema_migrations(id,report) values(%s,%s)',(version,Jsonb({'shared_non_google_image_cache':True})))
+    from db.identity_migrate import VERSION as identity_version, run as migrate_identity
+    if not conn.execute('select 1 from schema_migrations where id=%s',(identity_version,)).fetchone():
+        migrate_identity(conn)
 
 
 def run(database_url, dry_run=False):
@@ -153,11 +178,10 @@ def run(database_url, dry_run=False):
 
 
 if __name__ == "__main__":
-    load_dotenv(ROOT/".env")
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
-    parser.add_argument("--database-env", default="DATABASE_URL")
     args = parser.parse_args()
-    if not os.getenv(args.database_env):
-        raise SystemExit(f"{args.database_env} is missing")
-    print(json.dumps(run(os.environ[args.database_env], args.dry_run), indent=2, default=str))
+    database_url = settings().database_url
+    if not database_url:
+        raise SystemExit("DATABASE_URL is missing")
+    print(json.dumps(run(psycopg_database_url(database_url), args.dry_run), indent=2, default=str))

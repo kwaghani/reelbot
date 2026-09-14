@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import os
 import threading
 from typing import Any
 
-from dotenv import load_dotenv
+from config import settings
 
-load_dotenv()
-
-MODEL_NAME = os.getenv("EMBEDDING_MODEL", "BAAI/bge-small-en-v1.5").strip() or "BAAI/bge-small-en-v1.5"
+MODEL_NAME = settings().embedding_model
 QUERY_INSTRUCTION = "Represent this sentence for searching relevant passages: "
 
 _MODEL: Any | None = None

@@ -37,3 +37,31 @@ city_centroids:
   Mumbai: [19.0760, 72.8777]
   Tokyo: [35.6762, 139.6503]
   Kyoto: [35.0116, 135.7681]
+administrative_names:
+  - California
+  - Texas
+  - Florida
+  - New York State
+  - Hawaii
+  - Washington
+  - United States
+  - United States of America
+  - USA
+  - Canada
+  - Mexico
+  - United Kingdom
+  - England
+  - Scotland
+  - France
+  - Germany
+  - Spain
+  - Italy
+  - India
+  - Japan
+  - China
+  - Australia
+  - Europe
+  - Asia
+  - North America
+  - South America
+  - Africa
