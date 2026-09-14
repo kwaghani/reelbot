@@ -29,23 +29,28 @@ the Render dashboard.
 4. Confirm the API health check path in the dashboard is `/healthz`. It must
    not be `/readyz`, because readiness intentionally queries dependencies.
 
+5. Create or confirm the `reelbot-backup` Render cron job manually. It runs
+   daily with `./scripts/backup.sh`, uses the same `reelbot-shared` group, and
+   needs `postgresql-client` from the supplied Docker image. The Blueprint
+   entry documents it but cannot create it for this manually managed stack.
+
 ## Watch the deployment
 
-5. Watch `reelbot-api` boot logs. A missing setting produces a boot failure
+6. Watch `reelbot-api` boot logs. A missing setting produces a boot failure
    naming the variable; add or correct that exact name in `reelbot-shared`.
 
-6. Watch the pre-deploy output. The dry run should show zero ownership buckets
+7. Watch the pre-deploy output. The dry run should show zero ownership buckets
    on this empty database, then the migration should create the schema. If it
    fails, do not bypass it—fix the reported SQL error and redeploy.
 
-7. Watch `reelbot-worker` logs. It should start, log its configured pool
+8. Watch `reelbot-worker` logs. It should start, log its configured pool
    ceiling and queue depth, then poll without repeated restarts. Restarts while
    processing usually mean the worker is still on Starter or its memory limit
    is too low.
 
 ## Verify the deployed service
 
-8. Run this from a trusted terminal using a disposable device token and a
+9. Run this from a trusted terminal using a disposable device token and a
    known-good public reel:
 
    ```sh
@@ -57,7 +62,7 @@ the Render dashboard.
    coordinates, image availability, and thumbnail size. It exits non-zero on
    the first failed category.
 
-9. Resolve failures as follows:
+10. Resolve failures as follows:
 
    - A boot error naming a variable means it is absent or misspelled in the
      environment group.
@@ -73,7 +78,7 @@ the Render dashboard.
 
 ## After verification passes
 
-10. Re-share four or five reels because the production database begins empty.
+11. Re-share four or five reels because the production database begins empty.
     Confirm the resulting entries have images, coordinates, and the expected
     private folders. Then restart each service once and confirm the data and
     queue recover unattended.
