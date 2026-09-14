@@ -3,7 +3,7 @@ import type { ExpoConfig } from "expo/config";
 const fs = require('node:fs');
 const path = require('node:path');
 const yaml = require('js-yaml');
-const { venue_kinds: venueKinds, venue_kind_signals: _signals, ...contentTypes } = yaml.load(fs.readFileSync(path.resolve(__dirname, '../config/content_types.yaml'), 'utf8'));
+const { venue_kinds: venueKinds, venue_kind_signals: _signals, category_compatibility: _compatibility, venue_type_specificity: _specificity, ...contentTypes } = yaml.load(fs.readFileSync(path.resolve(__dirname, '../config/content_types.yaml'), 'utf8'));
 
 contentTypes.place.attributes.venue_kind.values = Object.keys(venueKinds);
 contentTypes.place.kind_attributes = Object.fromEntries(Object.entries(venueKinds).map(([key, value]: [string, any]) => [key, value.attributes || {}]));

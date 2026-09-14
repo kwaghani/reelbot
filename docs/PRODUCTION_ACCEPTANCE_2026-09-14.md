@@ -76,6 +76,11 @@ were tested directly through the production API.
 
 ## Overall result
 
+Update: the subsequent [identity-safety deployment and repair](IDENTITY_SAFETY_REPORT.md)
+fixes the sponsor/category defect described below and passes all five live
+regressions. The paragraphs in this report retain the original testing-only
+result for audit history.
+
 Infrastructure, native share delivery, imagery, and the demonstrated locality
 refresh passed. Content-quality acceptance is **not fully passing** because
 the sponsor/venue/category-mismatch defect remains. This report records test

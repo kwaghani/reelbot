@@ -5,6 +5,8 @@ import secrets
 import time
 import uuid
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 CASES=[
  ('Four Barrel Coffee','https://www.instagram.com/reel/DKcN5chRxm2/','375 Valencia St, San Francisco, CA 94103, USA'),
@@ -21,6 +23,9 @@ def main():
     base=args.base_url.rstrip('/')
     if not base.startswith('https://'):raise ValueError('Use an explicit HTTPS service URL')
     client=requests.Session()
+    # Retry only idempotent reads/cleanup after transient connection outages.
+    client.mount('https://', HTTPAdapter(max_retries=Retry(total=3,backoff_factor=1,
+        allowed_methods={'GET','DELETE'},status_forcelist=[502,503,504])))
     token=secrets.token_hex(32)
     client.headers['Authorization']='Bearer '+token
     def api(method,path,**kwargs):
@@ -51,9 +56,11 @@ def main():
                 passed=passed and any(s['name'].casefold()=='toast' for s in signals.get('sponsor_candidates',[]))
                 passed=passed and not any(v['name'].casefold()=='toast' for v in signals.get('venue_candidates',[]))
             report={'case':name,'passed':passed,'status':state['status'],'job_id':created['job_id'],
+                    'signals':{k:signals.get(k) for k in ('caption','ocr','transcript','paid_partnerships','kind_inference','category_contexts')},
                     'sponsors':signals.get('sponsor_candidates',[]),'venues':signals.get('venue_candidates',[]),
                     'entries':[{k:e.get(k) for k in ('title','place_id','formatted_address','venue_kind','needs_review','review_reason')} for e in entries],
                     'geocoding_candidates':saved.get('diagnostics',{}).get('places_queries',[]),
+                    'category_vetoes':saved.get('metrics',{}).get('category_vetoes',[]),
                     'error_reason':saved.get('error_reason')}
             emit('REGRESSION',report)
             if not passed:failures.append(name)
