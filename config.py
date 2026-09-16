@@ -82,6 +82,12 @@ class RuntimeConfig:
     llm_input_usd_per_million: float
     llm_output_usd_per_million: float
     places_search_usd_per_call: float
+    coords_batch_size: int
+    coords_max_places_per_run: int
+    coords_retries: int
+    coords_backoff_seconds: float
+    coords_rate_seconds: float
+    coords_usd_per_call: float
 
     @property
     def has_r2(self) -> bool:
@@ -130,6 +136,12 @@ def settings() -> RuntimeConfig:
         llm_input_usd_per_million=float(_value("LLM_INPUT_USD_PER_MILLION", "1") or "1"),
         llm_output_usd_per_million=float(_value("LLM_OUTPUT_USD_PER_MILLION", "5") or "5"),
         places_search_usd_per_call=float(_value("PLACES_SEARCH_USD_PER_CALL", "0.032") or "0.032"),
+        coords_batch_size=max(1,min(1000,int(_value('COORDS_BATCH_SIZE','100') or '100'))),
+        coords_max_places_per_run=max(1,min(10000,int(_value('COORDS_MAX_PLACES_PER_RUN','2000') or '2000'))),
+        coords_retries=max(1,min(3,int(_value('COORDS_RETRIES','3') or '3'))),
+        coords_backoff_seconds=max(0,float(_value('COORDS_BACKOFF_SECONDS','1') or '1')),
+        coords_rate_seconds=max(0.2,float(_value('COORDS_RATE_SECONDS','0.2') or '0.2')),
+        coords_usd_per_call=float(_value('COORDS_USD_PER_CALL','0.005') or '0.005'),
     )
 
 
