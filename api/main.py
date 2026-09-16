@@ -1,5 +1,6 @@
 """ReelBot API: anonymous personal libraries with optional Apple sync."""
 from __future__ import annotations
+from fastapi.encoders import jsonable_encoder
 import hashlib
 import logging
 import os
@@ -16,6 +17,7 @@ from worker.registry import registry, registry_version, sync_registry, validate_
 from worker.db import file_entry, prune_auto_folders
 from worker.db import connect, enqueue, items, fail_expired, save_hash, store_candidate
 from worker.db import check_pool_capacity
+from worker.retention_policy import safe_candidate
 from config import settings, validate_service_config
 
 LOG = logging.getLogger('reelbot.api')
@@ -23,12 +25,31 @@ LOG = logging.getLogger('reelbot.api')
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    import asyncio
+    from worker.operations import run as monitor
     validate_service_config()
     check_pool_capacity()
-    yield
+    async def watchdog():
+        while True:
+            try: await asyncio.to_thread(monitor)
+            except Exception: LOG.error('retention_watchdog_unavailable')
+            await asyncio.sleep(60)
+    task=asyncio.create_task(watchdog())
+    try: yield
+    finally:
+        task.cancel()
+        try: await task
+        except asyncio.CancelledError: pass
 
 
 app = FastAPI(title='ReelBot',version='3.0.0', lifespan=lifespan)
+
+@app.middleware('http')
+async def no_provider_response_cache(request: Request, call_next):
+    response=await call_next(request)
+    response.headers['Cache-Control']='private, no-store'
+    response.headers['Pragma']='no-cache'
+    return response
 
 class Input(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -49,7 +70,7 @@ class EntryEdit(Input):
 class ImageryRequest(Input):
     entry_ids: list[UUID] = Field(min_length=1,max_length=8)
     gallery: bool = False
-    context: str = Field(default='library',pattern=r'^(library|map)$')
+    context: str = Field(default='library',pattern=r'^(library|map|detail)$')
 class UIPreferences(Input):
     groupBy: str | None = None
     distanceUnits: str | None = None
@@ -85,6 +106,8 @@ class SyncMutation(Input):
     body: dict | None = None
     resolution: str | None = Field(default=None,pattern=r'^(mine|theirs)$')
     expected_updated_at: datetime | None = None
+class CoordinateReconciliation(Input):
+    entry_ids: list[UUID] = Field(min_length=1,max_length=200)
 class SyncBatch(Input):
     mutations: list[SyncMutation] = Field(min_length=1,max_length=50)
 class SourceInfo(Input):
@@ -159,8 +182,14 @@ def ready():
     except Exception as exc:
         LOG.error('readyz_storage_failed type=%s', type(exc).__name__)
         result['storage']['error'] = type(exc).__name__
-    code = 200 if all(result[name]['healthy'] for name in ('database', 'storage', 'queue')) else 503
-    return JSONResponse({'status': 'ready' if code == 200 else 'degraded', 'dependencies': result}, status_code=code)
+    from worker.operations import snapshot as operational_snapshot
+    operational = dict.fromkeys(('worker_heartbeat_age_seconds','queue_depth','oldest_coords_fetched_at','last_sweep_at'))
+    try: operational = operational_snapshot()
+    except Exception: LOG.error('readyz_operations_unavailable')
+    heartbeat_age=operational.get('worker_heartbeat_age_seconds')
+    healthy_worker=heartbeat_age is not None and heartbeat_age<600
+    code = 200 if healthy_worker and all(result[name]['healthy'] for name in ('database', 'storage', 'queue')) else 503
+    return JSONResponse(jsonable_encoder({'status': 'ready' if code == 200 else 'degraded', 'dependencies': result,'operations':operational}), status_code=code)
 
 @app.post('/imagery/resolve')
 def imagery(body:ImageryRequest,user=Depends(require_user)):
@@ -169,39 +198,16 @@ def imagery(body:ImageryRequest,user=Depends(require_user)):
     except PermissionError as exc: raise HTTPException(404,'An entry is not in your library.') from exc
     return JSONResponse(result,headers={'Cache-Control':'private, no-store','Pragma':'no-cache'})
 
-class MapThumbnailRequest(BaseModel):
-    jpeg: str = Field(max_length=140000)
-
 @app.get('/items/{entry_id}/map-thumbnail')
 def map_thumbnail(entry_id:UUID,user=Depends(require_user)):
-    import base64,re
-    from worker.imagery import cached_thumb
-    with connect() as conn:
-        entry=owned(conn,'entries',entry_id,user)
-        row=conn.execute('select map_thumbnail->%s as map_thumbnail from places where id=%s',(str(user),entry['place_id'])).fetchone() if entry['place_id'] else None
-    asset=((row or {}).get('map_thumbnail') or {}).get('asset','')
-    data=cached_thumb(asset)
-    value='data:image/jpeg;base64,'+base64.b64encode(data).decode() if data else None
-    return JSONResponse({'uri':value},headers={'Cache-Control':'private, no-store'})
+    with connect() as conn: owned(conn,'entries',entry_id,user)
+    return JSONResponse({'uri':None},headers={'Cache-Control':'private, no-store'})
 
 @app.post('/items/{entry_id}/map-thumbnail')
-def cache_map_thumbnail(entry_id:UUID,body:MapThumbnailRequest,user=Depends(require_user)):
-    import base64,io
-    from PIL import Image
-    from worker.imagery import store_thumb,stamp
-    with connect() as conn:
-        entry=owned(conn,'entries',entry_id,user)
-        if not entry['place_id']:raise HTTPException(409,'Resolve this place before adding a map preview.')
-        try:
-            raw=base64.b64decode(body.jpeg,validate=True)
-            if len(raw)>100000:raise ValueError()
-            with Image.open(io.BytesIO(raw)) as image:
-                if image.format!='JPEG' or image.width>540 or image.height>675:raise ValueError()
-                image.verify()
-        except Exception as exc:raise HTTPException(422,'Invalid map preview.') from exc
-        record={'asset':store_thumb(raw),'source':'MapKit snapshot','acquired_at':stamp(),'version':1}
-        conn.execute("update places set map_thumbnail=jsonb_set(map_thumbnail,%s,%s) where id=%s and not (map_thumbnail ? %s)",([str(user)],Jsonb(record),entry['place_id'],str(user)))
-    return {'stored':True}
+def cache_map_thumbnail(entry_id:UUID,user=Depends(require_user)):
+    with connect() as conn: owned(conn,'entries',entry_id,user)
+    # Legacy clients must stop uploading snapshots; typographic fallbacks remain.
+    return JSONResponse({'stored':False},headers={'Cache-Control':'private, no-store'})
 
 @app.post('/items/{entry_id}/image/retry')
 def retry_image(entry_id:UUID,user=Depends(require_user)):
@@ -267,7 +273,9 @@ def sync(background_tasks:BackgroundTasks,since:str|None=Query(default=None,max_
 @app.post('/sync')
 def sync_batch(body:SyncBatch,user=Depends(require_user)):
     from api.sync import mutate
-    return mutate(user,body.mutations)
+    from pydantic import ValidationError
+    try:return mutate(user,body.mutations)
+    except ValidationError as exc:raise HTTPException(422,'This change is malformed. Your local version is retained.') from exc
 
 @app.patch('/preferences')
 def ui_preferences(body:UIPreferences,user=Depends(require_user)):
@@ -321,12 +329,13 @@ def source_info(save_id:UUID,body:SourceInfo,user=Depends(require_user)):
 
 @app.post('/items/{item_id}/choose-place')
 def choose_place(item_id:UUID,body:PlaceChoice,user=Depends(require_user)):
-    from worker.places import persist_google
+    from worker.places import persist_google, display_details
     with connect() as conn:
         item=owned(conn,'entries',item_id,user)
-        options=item['candidate'].get('place_candidates',[])
-        selected=next((v['place'] for v in options if v.get('place',{}).get('id')==body.place_id),None)
-        if not selected:raise HTTPException(422,'Choose one of the places offered for this entry.')
+        options=item['candidate'].get('place_candidate_ids',[])
+        if body.place_id not in options:raise HTTPException(422,'Choose one of the places offered for this entry.')
+        try: selected=display_details(body.place_id,'id,displayName,formattedAddress,location,primaryType,types')
+        except Exception as exc:raise HTTPException(503,'Place lookup is temporarily unavailable.') from exc
         try:
             place=persist_google(conn,selected,{'name':item['candidate'].get('venue_name') or item['title'],'city_hint':item['candidate'].get('city_hint')},manual=True)
         except ValueError:
@@ -437,25 +446,25 @@ def confirm(item_id:UUID,body:Review,user=Depends(require_user)):
         row=conn.execute("""update entries set candidate=candidate || %s,place_id=%s,confidence=%s,needs_review=%s,
             review_reason=%s,verified_at=case when %s then null else now() end,
             embedding=null,updated_at=now() where id=%s and user_id=%s returning *""",
-            (Jsonb({'venue_name':body.name,'city_hint':body.city,'place_candidates':candidate.get('place_candidates',[])}),place['id'] if place else None,confidence,bool(reasons),
+            (Jsonb({'venue_name':body.name,'city_hint':body.city,'place_candidate_ids':[v['place']['id'] for v in candidate.get('place_candidates',[]) if v.get('place',{}).get('id')]}),place['id'] if place else None,confidence,bool(reasons),
              ';'.join(reasons) or None,bool(reasons),item_id,user)).fetchone()
         file_entry(conn,row,place,data);update_save_review(conn,item['save_id'],user)
         conn.execute("insert into events(user_id,save_id,kind,detail) values(%s,%s,'owner_confirmation',%s)",
-                     (user,item['save_id'],Jsonb(price_metrics(metrics))))
+                     (user,item['save_id'],Jsonb(safe_candidate(price_metrics(metrics)))))
     row.pop('embedding',None)
     return row
 
 @app.get('/export')
 def export_data(user=Depends(require_user)):
     with connect() as conn:
-        return {'format':'reelbot.entries.v1','entries':items(conn,user),
+        return {'format':'reelbot.entries.v1','entries':[{k:v for k,v in row.items() if k not in ('lat','lng','coords_fetched_at')} for row in items(conn,user)],
             'folders':conn.execute('select * from folders where user_id=%s',(user,)).fetchall(),
             'saves':conn.execute('select id,source_url,canonical_url,platform_video_id,status,created_at,error_reason from saves where user_id=%s',(user,)).fetchall()}
 
 def erase_owner(conn,user):
     # Only administrative retention and a completed transactional account merge.
     conn.execute("select set_config('reelbot.hard_delete','on',true)")
-    conn.execute("update places set map_thumbnail=map_thumbnail-%s where map_thumbnail ? %s",(str(user),str(user)))
+
     conn.execute('delete from events where user_id=%s',(user,))
     conn.execute('delete from jobs where user_id=%s',(user,))
     conn.execute('delete from folders where user_id=%s',(user,))
@@ -556,7 +565,7 @@ def cost(user=Depends(require_user)):
 
 def require_apple_sign_in_enabled():
     if os.environ.get('REELBOT_APPLE_SIGN_IN_ENABLED', '').lower() != 'true':
-        raise HTTPException(503,'Apple sign-in is unavailable in this release. Your anonymous library remains available.')
+        raise HTTPException(503, 'Apple sign-in is unavailable in this release. Your anonymous library remains available.')
 
 
 @app.get('/auth/apple/challenge')
@@ -672,7 +681,53 @@ def place_details(item_id:UUID,user=Depends(require_user)):
     from worker.places import details
     with connect() as conn:
         item=owned(conn,'entries',item_id,user)
-        if not item['place_id']: return {}
-        place=conn.execute('select * from places where id=%s',(item['place_id'],)).fetchone()
-        try: return details(conn,place)
-        except Exception as exc: raise HTTPException(503,'Extra place details are unavailable. Your saved address is still available.') from exc
+        place=conn.execute('select * from places where id=%s',(item['place_id'],)).fetchone() if item['place_id'] else None
+    try: result=details(None,place) if place else {}
+    except Exception: result={}
+    return JSONResponse(result,headers={'Cache-Control':'private, no-store','Pragma':'no-cache'})
+
+@app.post('/items/{item_id}/coordinates')
+def repair_coordinates(item_id:UUID,user=Depends(require_user)):
+    from worker.coordinate_refresh import refresh_place
+    from worker.retention_policy import valid_coordinates
+    with connect() as conn:
+        item=owned(conn,'entries',item_id,user)
+        place=conn.execute('select * from places where id=%s',(item['place_id'],)).fetchone() if item['place_id'] else None
+    if place and place.get('google_place_id'): refresh_place(item['place_id'])
+    elif place and not valid_coordinates(place):
+        # Non-Google leases are conservative too. Re-resolve from retained
+        # extraction on demand; do not overwrite the original opaque place ID.
+        from worker.noncommercial import resolve_natural
+        from worker.pipeline import new_metrics
+        with connect() as conn:
+            locked=conn.execute('select pg_try_advisory_xact_lock(hashtextextended(%s,9)) ok',('coordinates:'+str(place['id']),)).fetchone()['ok']
+            fresh=conn.execute('select * from places where id=%s',(place['id'],)).fetchone()
+            if locked and not valid_coordinates(fresh):
+                try:
+                    candidate={'name':place['extracted_name'] or item['title'],'city_hint':place['extracted_city'],'venue_kind':place['venue_kind']}
+                    resolved,_=resolve_natural(conn,candidate,new_metrics(),[])
+                    if resolved and resolved['id']==place['id']:
+                        conn.execute("select set_config('reelbot.seed_sync','on',true)")
+                        conn.execute('update entries set updated_at=now() where place_id=%s and deleted_at is null',(place['id'],))
+                except Exception: LOG.warning('non_google_coordinate_repair_unavailable')
+    with connect() as conn:
+        result=next((r for r in items(conn,user) if str(r['id'])==str(item_id)),None)
+    return JSONResponse(jsonable_encoder(result),headers={'Cache-Control':'private, no-store'})
+
+@app.post('/coordinates/reconcile')
+def reconcile_coordinates(body:CoordinateReconciliation,background:BackgroundTasks,user=Depends(require_user)):
+    # A single owner-scoped, set-based read, independent of the cursor. Do not
+    # make the phone wait through a provider request for each missing place.
+    from worker.coordinate_refresh import refresh_place
+    with connect() as conn:
+        rows=items(conn,user,body.entry_ids)
+        points=[{key:row.get(key) for key in ('id','place_id','lat','lng','coords_fetched_at')} for row in rows]
+        missing=list(dict.fromkeys(row['place_id'] for row in rows if row.get('google_place_id') and row.get('lat') is None))
+    for identifier in missing[:20]: background.add_task(refresh_place,identifier)
+    LOG.info('coordinate_reconciliation requested=%s returned=%s refresh_scheduled=%s',len(body.entry_ids),len(points),min(20,len(missing)))
+    return JSONResponse(jsonable_encoder({'coordinates':points}),headers={'Cache-Control':'private, no-store'})
+
+@app.get('/diagnostics/retention')
+def retention_diagnostics(user=Depends(require_user)):
+    from worker.retention_monitor import snapshot
+    return JSONResponse(jsonable_encoder(snapshot()),headers={'Cache-Control':'private, no-store'})

@@ -49,7 +49,8 @@ def check_pool_capacity():
         maximum = int(conn.execute('show max_connections').fetchone()['max_connections'])
     # API ceiling 10; supervisor, active extraction child, indexer, photo worker
     # and account cleanup each have a bounded ceiling of four connections.
-    planned = 30
+    # Three independent retention processes add four connections each.
+    planned = 42
     # Keep at least 30% plus administrative headroom available to Postgres.
     if planned > max(1, int(maximum * .70)):
         raise RuntimeError(f'Database connection ceiling unsafe: planned={planned}, max_connections={maximum}')
@@ -118,8 +119,12 @@ def claim(conn):
     return row
 
 
-ITEMS_SQL = '''select e.*,e.title as name,coalesce(p.city,e.candidate->>'city_hint','') as city,
-    p.image_source,p.image_acquired_at,p.image_failure_reason,p.image_diagnostics,p.name as place_name,p.formatted_address,p.lat,p.lng,p.primary_type,p.google_place_id,p.resolution_attribution,
+ITEMS_SQL = '''select e.*,e.title as name,coalesce(nullif(e.candidate->>'city_hint',''),p.extracted_city,'') as city,
+    p.image_source,p.image_acquired_at,p.image_failure_reason,p.image_diagnostics,p.extracted_name,p.extracted_city,p.extracted_name as place_name,
+    null::text as formatted_address,
+    case when p.coords_fetched_at>now()-interval '30 days' and p.coords_fetched_at<=now() then p.lat end as lat,
+    case when p.coords_fetched_at>now()-interval '30 days' and p.coords_fetched_at<=now() then p.lng end as lng,
+    p.coords_fetched_at,p.google_place_id,p.resolution_attribution,
     s.source_url,s.canonical_url,s.platform_video_id,s.status,
     (select count(*) from entries sibling where sibling.save_id=e.save_id and sibling.deleted_at is null) as save_entry_count,
     coalesce(nullif(s.raw_signals->>'thumbnail_url',''),s.raw_signals->>'thumbnail') as thumbnail,
@@ -155,9 +160,9 @@ def file_entry(conn,row,place=None,data=None,*,organization=None):
         classify_entry(conn,row,place)
     if row['content_type']=='place':
         from worker.geography import normalize_geography
-        cached=(place or {}).get('organization_geography')
+        cached=None
         geo=organization if organization is not None else normalize_geography(cached) if cached is not None else {
-            'city':row.get('organization_city',''),'neighborhood':row['attributes'].get('neighborhood','')}
+            'city':(row.get('candidate') or {}).get('city_hint') or (place or {}).get('extracted_city') or '', 'neighborhood':row['attributes'].get('neighborhood','')}
         city=geo.get('city') or ''
         attrs=dict(row['attributes'])
         neighborhood=geo.get('neighborhood') or ''
@@ -195,6 +200,8 @@ def entry_key(candidate):
 
 def store_candidate(conn,save,candidate,place,confidence,reason=None,*,entry_id=None):
     from worker.registry import sync_registry,validate_attributes
+    from worker.retention_policy import safe_candidate
+    candidate={**safe_candidate(candidate), **({'place_candidate_ids':[r['place']['id'] for r in candidate.get('place_candidates',[]) if r.get('place',{}).get('id')]} if candidate.get('place_candidates') else {})}
     data=sync_registry(conn)
     incoming = dict(candidate['attributes'])
     # Durable jobs from the previous taxonomy can still be replayed.

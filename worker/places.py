@@ -6,6 +6,7 @@ import re
 import unicodedata
 from urllib.request import Request, urlopen
 from config import settings
+from worker.retention_policy import place_values, valid_coordinates
 
 FIELDS = ("id", "displayName", "formattedAddress", "location", "primaryType", "types")
 FIELD_MASK = ",".join("places."+field for field in FIELDS)
@@ -97,17 +98,7 @@ def city_bias(conn,city,metrics,search):
     key=normalized(city)
     for name,point in settings()['city_centroids'].items():
         if normalized(name)==key:return {'latitude':point[0],'longitude':point[1]}
-    cached=conn.execute("select lat,lng from city_bias_cache where city_key=%s and fetched_at>now()-interval '365 days'",(key,)).fetchone()
-    if cached:return {'latitude':cached['lat'],'longitude':cached['lng']}
-    results=search({'name':city,'text_query':city,'city_hint':None},metrics)
-    metrics.setdefault('places_queries',[]).append({'purpose':'city_centroid','query':city,'location_bias':None,'results':results})
-    for place in results:
-        if valid_location(place.get('location')) and normalized(place.get('displayName',{}).get('text')) in (key,normalized(city.split(',')[0])):
-            loc=place['location']
-            conn.execute("""insert into city_bias_cache(city_key,lat,lng) values(%s,%s,%s)
-                on conflict(city_key) do update set lat=excluded.lat,lng=excluded.lng,fetched_at=now()""",(key,loc['latitude'],loc['longitude']))
-            return loc
-    return None
+    return None  # Unknown city bias is not a permanent Google centroid cache.
 
 
 def persist_google(conn,place,candidate,*,manual=False):
@@ -117,13 +108,18 @@ def persist_google(conn,place,candidate,*,manual=False):
     target_key='choice:'+place['id'] if manual else lookup_key(candidate)
     conn.execute('update places set lookup_key=null where lookup_key=%s and google_place_id is distinct from %s',(target_key,place['id']))
     loc=place['location'];city=str(candidate.get('city_hint') or '')
-    row=conn.execute("""insert into places(google_place_id,name,formatted_address,lat,lng,primary_type,city,lookup_key,resolution_types)
-        values(%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(google_place_id) do update set
-        name=excluded.name,formatted_address=excluded.formatted_address,lat=excluded.lat,lng=excluded.lng,
-        primary_type=excluded.primary_type,city=excluded.city,lookup_key=excluded.lookup_key,resolution_types=excluded.resolution_types,last_refreshed_at=now() returning *""",
-        (place['id'],place['displayName']['text'],place['formattedAddress'],loc['latitude'],loc['longitude'],
-         place.get('primaryType') or '',city,'choice:'+place['id'] if manual else lookup_key(candidate),place.get('types',[]))).fetchone()
-    return dict(row)
+    from worker.venue_kinds import provider_kind
+    kind,_,source=provider_kind(place)
+    row=conn.execute("""insert into places(google_place_id,extracted_name,extracted_city,extracted_neighborhood,lat,lng,coords_fetched_at,venue_kind,venue_kind_source,lookup_key)
+        values(%s,%s,%s,%s,%s,%s,now(),%s,%s,%s) on conflict(google_place_id) do update set
+        extracted_name=case when places.extracted_name='' then excluded.extracted_name else places.extracted_name end,
+        extracted_city=case when places.extracted_city='' then excluded.extracted_city else places.extracted_city end,
+        lat=excluded.lat,lng=excluded.lng,coords_fetched_at=now(),coords_retry_at=null,
+        venue_kind=excluded.venue_kind,venue_kind_source=excluded.venue_kind_source,
+        lookup_key=excluded.lookup_key,needs_reextraction=false,last_refreshed_at=now() returning *""",
+        (place['id'],candidate.get('name') or candidate.get('venue_name') or '',city,
+         candidate.get('neighborhood') or (candidate.get('attributes') or {}).get('neighborhood') or '',loc['latitude'],loc['longitude'],kind,source,target_key)).fetchone()
+    return place_values(row)
 
 
 def resolution_guard(place,candidate,biases=()):
@@ -132,7 +128,7 @@ def resolution_guard(place,candidate,biases=()):
     if verdict['reason']:return verdict['reason']
     from worker.venue_identity import administrative_type,administrative_name
     primary=place.get('primaryType') or place.get('primary_type') or place.get('category')
-    title=(place.get('displayName') or {}).get('text') or place.get('name','')
+    title=(place.get('displayName') or {}).get('text') or place.get('extracted_name') or place.get('name','')
     if administrative_type(place) or administrative_name(title):return 'resolved_to_administrative_area'
     loc=place.get('location') or {'latitude':place.get('lat'),'longitude':place.get('lng')}
     if not valid_location(loc):return 'invalid_coordinates'
@@ -191,22 +187,20 @@ def resolve(conn,candidate,metrics,search=text_search):
             import hashlib
             provider=poi.get('platform') or 'tiktok'
             identifier=str(poi.get('id') or hashlib.sha256(json.dumps(poi,sort_keys=True).encode()).hexdigest())
-            row=conn.execute("""insert into places(provider,provider_place_id,name,formatted_address,lat,lng,primary_type,city,lookup_key)
-                values(%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(provider,provider_place_id) where provider_place_id is not null
-                do update set name=excluded.name,formatted_address=excluded.formatted_address,lat=excluded.lat,lng=excluded.lng,
-                primary_type=excluded.primary_type,city=excluded.city,last_refreshed_at=now() returning *""",
-                (provider,identifier,poi['name'],poi.get('address') or '',loc['latitude'],loc['longitude'],poi.get('category') or 'other',poi.get('city') or city or '','poi:'+provider+':'+identifier)).fetchone()
+            from worker.noncommercial import persist_external
+            row=persist_external(conn,{'provider':provider,'provider_place_id':identifier,'lat':loc['latitude'],'lng':loc['longitude'],
+                'primary_type':poi.get('category') or 'other','resolution_attribution':None},candidate)
             metrics.setdefault('places_queries',[]).append({'purpose':'platform_poi','query':None,'results':[poi],'accepted':True,'score':.95})
             return dict(row),min(.95,candidate['confidence']),None
         rejected.append(reason)
     radius=150000 if candidate.get('venue_kind') in {'outdoors','beach','attraction'} else 20000
-    cached=conn.execute('select * from places where lookup_key=%s',(cache_key,)).fetchone()
-    if cached:
+    cached=place_values(conn.execute('select * from places where lookup_key=%s',(cache_key,)).fetchone())
+    if cached and valid_coordinates(cached) and not (poi.get('platform')=='instagram' and cached.get('provider')!='google'):
         reason=resolution_guard(cached,candidate,biases)
         if reason=='category_mismatch':log_veto(cached,candidate,assess(cached,candidate),metrics)
         score=name_similarity(candidate['name'],cached['name'])
         inside=not city or (bias is not None and distance_m(bias,{'latitude':cached['lat'],'longitude':cached['lng']})<=radius)
-        if not reason and score>.7 and inside and (cached.get('primary_type') not in {'other',''} or cached.get('resolution_types')):
+        if not reason and score>.7 and inside and cached.get('venue_kind') not in {'other',''}:
             metrics['cache_hits']+=1
             return dict(cached),min(float(candidate['confidence']),score),None
         if reason:rejected.append(reason)
@@ -255,19 +249,13 @@ def resolve(conn,candidate,metrics,search=text_search):
     return None,float(candidate['confidence']),reason or ('ambiguous_place' if ranked else 'unresolved_place')
 
 
-def details(conn,place):
-    """Explicit detail views only; never called during ingestion. Cache for 30 days."""
-    from datetime import datetime,timezone,timedelta
-    from psycopg.types.json import Jsonb
+def display_details(identifier, fields='rating,regularOpeningHours,attributions'):
+    """Class C: response exists only for this display request. Never writes SQL."""
     from urllib.parse import quote
-    if not place.get('google_place_id'):return {}
-    conn.execute('select pg_advisory_xact_lock(hashtextextended(%s,0))',('details:'+str(place['id']),))
-    current=conn.execute('select * from places where id=%s',(place['id'],)).fetchone()
-    if current['details'] is not None and current['details_refreshed_at'] and datetime.now(timezone.utc)-current['details_refreshed_at']<timedelta(days=30):
-        return current['details']
-    request=Request('https://places.googleapis.com/v1/places/'+quote(place['google_place_id'],safe=''),
-        headers={'X-Goog-Api-Key':settings().google_maps_api_key or '',
-                 'X-Goog-FieldMask':'rating,regularOpeningHours'})
-    with urlopen(request,timeout=10) as response: result=json.load(response)
-    conn.execute('update places set details=%s,details_refreshed_at=now() where id=%s',(Jsonb(result),place['id']))
-    return result
+    request=Request('https://places.googleapis.com/v1/places/'+quote(identifier,safe=''),
+        headers={'X-Goog-Api-Key':settings().google_maps_api_key or '', 'X-Goog-FieldMask':fields})
+    with urlopen(request,timeout=8) as response:return json.load(response)
+
+
+def details(conn,place):
+    return display_details(place['google_place_id']) if place.get('google_place_id') else {}

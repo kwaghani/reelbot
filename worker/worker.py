@@ -18,6 +18,7 @@ from worker.reel_urls import canonical_reel_url
 from worker.observability import log_rss, queue_depth
 from worker.db import check_pool_capacity
 from config import validate_service_config
+from worker.retention_policy import safe_candidate
 LOG = logging.getLogger('reelbot.worker')
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -28,7 +29,7 @@ def checkpoint(save_id,metrics,signals=None,diagnostics=None):
             conn.execute('update saves set is_compilation=%s,expected_venue_count=%s,extracted_venue_count=%s where id=%s and status=\'processing\'',(bool(signals.get('is_compilation')),signals.get('expected_venue_count'),len(signals.get('compilation_candidates',[])),save_id))
         conn.execute("""update saves set cost=%s,raw_signals=coalesce(%s,raw_signals),
             diagnostics=diagnostics || %s,updated_at=now() where id=%s and status='processing' """,
-            (Jsonb(price_metrics(metrics)),Jsonb(signals) if signals else None,Jsonb(diagnostics or {}),save_id))
+            (Jsonb(safe_candidate(price_metrics(metrics))),Jsonb(safe_candidate(signals)) if signals else None,Jsonb(safe_candidate(diagnostics or {})),save_id))
 
 
 def finish(save_id,status,metrics,error=None):
@@ -45,12 +46,12 @@ def finish(save_id,status,metrics,error=None):
         if status not in ('resolved','needs_review') and not error:error=message(status,saved['platform'],retrying=delay is not None)
         conn.execute("""update saves set status=%s,error_reason=%s,resolved_at=now(),updated_at=now(),cost=%s,
             blocked_attempts=%s,retry_at=case when %s::int is null then null else now()+(%s * interval '1 second') end
-            where id=%s""",(status,error,Jsonb(price_metrics(metrics)),blocked,delay,delay,save_id))
+            where id=%s""",(status,error,Jsonb(safe_candidate(price_metrics(metrics))),blocked,delay,delay,save_id))
         conn.execute("""update jobs set status=s.status,error_reason=s.error_reason,updated_at=now()
             from saves s where jobs.save_id=s.id and s.id=%s""",(save_id,))
         conn.execute("insert into events(user_id,save_id,kind,detail) select user_id,id,'save_finished',%s from saves where id=%s",
-                     (Jsonb({'status':status,'cost':metrics}),save_id))
-    LOG.info('save_result %s',json.dumps({'save_id':str(save_id),'status':status,'cost':metrics}))
+                     (Jsonb({'status':status,'cost':safe_candidate(metrics)}),save_id))
+    LOG.info('save_result %s',json.dumps({'save_id':str(save_id),'status':status,'cost':safe_candidate(metrics)}))
 
 
 def process(save_id):
@@ -136,6 +137,8 @@ def process(save_id):
                     continue
                 if (datetime.now(timezone.utc)-save['started_at']).total_seconds()>(340 if signals.get('is_compilation') else 133):break
                 before=metrics['places_calls']
+                assert policy in {'required','optional'}, 'A geo: never entry reached place resolution'
+                assert candidate['content_type']!='workout', 'Workout reached place resolution'
                 lookup={'name':candidate['venue_name'],'city_hint':candidate.get('city_hint') or signals.get('city_hint'),
                         'country_hint':None,'confidence':candidate['confidence'],'poi':candidate.get('poi') or {},
                         'venue_kind':candidate['attributes'].get('venue_kind','other'),
@@ -227,8 +230,20 @@ def main():
         signal.signal(signal.SIGALRM,lambda *_: os._exit(124))
         signal.alarm(359)
         process(sys.argv[2]); return
+    # Separate heartbeat while the supervisor waits on a bounded extraction.
+    import threading
+    from worker.operations import heartbeat
+    heartbeat_stop=threading.Event()
+    def pulse():
+        while not heartbeat_stop.is_set():
+            try:heartbeat()
+            except Exception:LOG.error('worker_heartbeat_unavailable')
+            heartbeat_stop.wait(30)
+    threading.Thread(target=pulse,daemon=True).start()
+    operations=subprocess.Popen([sys.executable,'-m','worker.operations'],cwd=ROOT)
     photos=subprocess.Popen([sys.executable,'-m','worker.photo_jobs'],cwd=ROOT)
     indexer=subprocess.Popen([sys.executable,'-m','worker.worker','--index'],cwd=ROOT)
+    retention=[subprocess.Popen([sys.executable,'-m',module,flag],cwd=ROOT) for module,flag in [('worker.coordinate_sweep','--daily'),('worker.coordinate_refresh','--daily'),('worker.retention_monitor','--watch')]]
     cleanup=subprocess.Popen([sys.executable,'-m','api.account_deletion'],cwd=ROOT)
     def stop(*_):
         raise SystemExit(0)
@@ -238,6 +253,9 @@ def main():
     try:
         while True:
             try:
+                if operations.poll() is not None:operations=subprocess.Popen([sys.executable,'-m','worker.operations'],cwd=ROOT)
+                for i,(module,flag) in enumerate([('worker.coordinate_sweep','--daily'),('worker.coordinate_refresh','--daily'),('worker.retention_monitor','--watch')]):
+                    if retention[i].poll() is not None:retention[i]=subprocess.Popen([sys.executable,'-m',module,flag],cwd=ROOT)
                 if cleanup.poll() is not None:cleanup=subprocess.Popen([sys.executable,'-m','api.account_deletion'],cwd=ROOT)
                 if time.monotonic() - last_queue_log >= 30:
                     LOG.info('worker_queue_depth depth=%s concurrency=1', queue_depth()); last_queue_log=time.monotonic()
@@ -249,6 +267,14 @@ def main():
                 LOG.exception('Worker unavailable; durable queue retained')
                 time.sleep(3)
     finally:
+        heartbeat_stop.set()
+        operations.terminate()
+        try:operations.wait(timeout=5)
+        except subprocess.TimeoutExpired:operations.kill();operations.wait()
+        for process in retention:
+            process.terminate()
+            try:process.wait(timeout=5)
+            except subprocess.TimeoutExpired:process.kill();process.wait()
         cleanup.terminate()
         try:cleanup.wait(timeout=5)
         except subprocess.TimeoutExpired:cleanup.kill();cleanup.wait()

@@ -53,47 +53,8 @@ def fetch_geography(identifier):
 
 
 def enrich_owner(owner, fetch=fetch_geography, *, enabled=None):
-    """At most two cached metadata lookups after sync; no extraction/geocoding work."""
-    from worker.db import connect, file_entry
-    if enabled is None:
-        enabled = runtime_settings().geography_lookups and bool(runtime_settings().google_maps_api_key)
-    metrics = {'provider_calls': 0, 'estimated_usd': 0.0, 'refiled_entries': 0}
-    try:
-        with connect() as conn:
-            if enabled:
-                candidates = conn.execute('''select p.* from places p where p.google_place_id is not null
-                    and exists(select 1 from entries e where e.place_id=p.id and e.user_id=%s and e.content_type='place')
-                    and (p.organization_checked_at is null or p.organization_checked_at < now() -
-                      case when p.organization_geography is null then %s * interval '1 hour' else %s * interval '1 day' end)
-                    order by p.organization_checked_at nulls first,p.id limit %s for update skip locked''',
-                    (owner, settings()['failed_lookup_retry_hours'], settings()['locality_cache_days'], settings()['max_lookups_per_sync'])).fetchall()
-                for place in candidates:
-                    metrics['provider_calls'] += 1
-                    metrics['estimated_usd'] += settings()['google_details_essentials_usd']
-                    try:
-                        geography = fetch(place['google_place_id'])
-                    except Exception:
-                        geography = None  # A failed lookup never invents a locality or changes the pin.
-                    conn.execute('''update places set organization_geography=coalesce(%s,organization_geography),
-                        organization_checked_at=now(),organization_calls=organization_calls+1,
-                        organization_cost_usd=organization_cost_usd+%s where id=%s''',
-                        (Jsonb(geography) if geography is not None else None, settings()['google_details_essentials_usd'], place['id']))
-            rows = conn.execute('''select e.*,p.organization_geography as cached_geography from entries e join places p on p.id=e.place_id
-                where e.user_id=%s and e.content_type='place' and p.organization_geography is not null''', (owner,)).fetchall()
-            for entry in rows:
-                place = {'organization_geography': entry.pop('cached_geography')}
-                geo = normalize_geography(place['organization_geography'])
-                neighborhood = geo.get('neighborhood', '')
-                if entry.get('organization_city') == geo.get('city') and entry['attributes'].get('neighborhood'):
-                    neighborhood = entry['attributes']['neighborhood']
-                if entry.get('organization_city', '') != geo.get('city', '') or entry['attributes'].get('neighborhood', '') != neighborhood:
-                    file_entry(conn, entry, place)
-                    metrics['refiled_entries'] += 1
-    except Exception:
-        # Background organization must never make /sync or durable saving fail.
-        import logging
-        logging.getLogger(__name__).exception('Organization refresh failed')
-    return metrics
+    """Google locality caching is disabled; organization uses extraction only."""
+    return {'provider_calls':0,'estimated_usd':0.0,'refiled_entries':0}
 
 
 def migrate_folders(conn):
@@ -110,7 +71,8 @@ def migrate_folders(conn):
                     legacy[str(row['entry_id'])] = {'city': metro['city'], 'neighborhood': folder['name'], 'source': 'legacy_folder_migration'}
     for entry in conn.execute("select * from entries where content_type='place'").fetchall():
         place = conn.execute('select * from places where id=%s', (entry['place_id'],)).fetchone() if entry['place_id'] else None
-        geo = normalize_geography((place or {}).get('organization_geography'))
+        geo = {'city':(entry.get('candidate') or {}).get('city_hint') or (place or {}).get('extracted_city') or '',
+               'neighborhood':entry['attributes'].get('neighborhood','')}
         prior = legacy.get(str(entry['id']))
         if prior:
             if not geo.get('city'): geo = prior

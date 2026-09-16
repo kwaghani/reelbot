@@ -32,6 +32,8 @@ place:
     rooftop:
       type: boolean
 workout:
+  color: '#7043A0'
+  card_fields: [duration_minutes, difficulty]
   label: Workout
   plural_label: Workouts
   icon: barbell
@@ -80,6 +82,8 @@ workout:
       - intermediate
       - advanced
 recipe:
+  color: '#A64421'
+  card_fields: [prep_minutes, dietary]
   label: Recipe
   plural_label: Recipes
   icon: chef-hat
@@ -113,6 +117,7 @@ recipe:
       - dairy_free
       - high_protein
 product:
+  color: '#25647B'
   label: Product
   plural_label: Products
   icon: shopping-bag
@@ -140,6 +145,7 @@ product:
     use_case:
       type: string
 travel:
+  color: '#24685D'
   label: Travel
   description: General destination advice or an itinerary without individually named venues. A named park, trail,
     beach, restaurant, landmark or hotel is a place instead.
@@ -172,6 +178,7 @@ travel:
       - winter
       - year_round
 home:
+  color: '#81622B'
   label: Home
   plural_label: Home
   icon: home
@@ -205,6 +212,7 @@ home:
     style:
       type: string
 style:
+  color: '#94395F'
   label: Style
   plural_label: Style
   icon: shirt
@@ -246,6 +254,7 @@ style:
       - winter
       - year_round
 media:
+  color: '#4C57A0'
   label: Media
   plural_label: Media
   icon: film
@@ -270,6 +279,7 @@ media:
     release_year:
       type: integer
 learning:
+  color: '#39704B'
   label: Learning
   plural_label: Learning
   icon: book-open
@@ -298,6 +308,7 @@ learning:
       type: string
       multi: true
 other:
+  color: '#62626B'
   label: Other
   plural_label: Other
   icon: bookmark

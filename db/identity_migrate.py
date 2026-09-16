@@ -14,6 +14,7 @@ def repair(conn):
     for entry in conn.execute('select * from entries order by id').fetchall():
         place=conn.execute('select * from places where id=%s',(entry['place_id'],)).fetchone() if entry['place_id'] else None
         reason=resolution_guard(place,{'venue_kind':entry['venue_kind']}) if place else None
+        if reason=='invalid_coordinates' and 'coords_fetched_at' in (place or {}): reason=None
         if reason:
             conn.execute('insert into venue_identity_repairs(entry_id,previous_place_id,previous_candidate,reason) values(%s,%s,%s,%s) on conflict do nothing',
                 (entry['id'],entry['place_id'],Jsonb(entry['candidate']),reason))

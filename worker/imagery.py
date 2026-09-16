@@ -25,6 +25,7 @@ from PIL import Image, ImageOps
 from psycopg.types.json import Jsonb
 from worker.db import connect
 from config import settings
+from worker.retention_policy import place_values
 
 log = logging.getLogger(__name__)
 MAX_THUMB = 64_000  # Base64 plus JSON still fits below 100KB per displayed image.
@@ -306,9 +307,9 @@ def metrics():
 
 def venue_candidates(place,kind,stats,*,skip_google=False):
     cached=(place.get('imagery') or {}).get('map',{}) if skip_google else place.get('imagery') or {}
-    if cached.get('retry_at','')>stamp():
+    if cached.get('strategy')=='cover-first-v1' and cached.get('retry_at','')>stamp():
         candidates=cached.get('candidates',[])
-        if candidates and all(c.get('source')=='commons' and cached_thumb(c['asset']) is not None for c in candidates):
+        if kind in COMMONS_KINDS and candidates and all(c.get('source')=='commons' and cached_thumb(c['asset']) is not None for c in candidates):
             stats['venue_cache_hits']+=1;return candidates
         if cached.get('negative'):
             stats['venue_cache_hits']+=1;return []
@@ -320,7 +321,7 @@ def venue_candidates(place,kind,stats,*,skip_google=False):
             except Exception as exc:
                 stats['failures'].append('site_cache:'+failure(exc));trace(stats,'site','cached_image_failed',failure(exc))
     result=[]
-    sources=[('site',lambda:site_candidate(place,stats)),('commons',lambda:commons_candidates(place,kind,stats))]
+    sources=[('commons',lambda:commons_candidates(place,kind,stats)),('site',lambda:site_candidate(place,stats))]
     if not skip_google:sources.insert(0,('google',lambda:google_candidates(place,stats)))
     for name,source in sources:
         try:
@@ -337,7 +338,7 @@ def venue_candidates(place,kind,stats,*,skip_google=False):
             result=[];stats['failures'].append(name+':'+failure(exc));trace(stats,name,'failed',failure(exc))
         trace(stats,name,'usable' if result else 'empty',None if result else 'not_applicable' if name=='commons' and kind not in COMMONS_KINDS else 'no_usable_image')
         if result: break
-    record={'checked_at':stamp(),'provider':result[0]['source'] if result else 'none'}
+    record={'checked_at':stamp(),'strategy':'cover-first-v1','provider':result[0]['source'] if result else 'none'}
     if result and result[0]['source']=='google':
         # No photo names, attribution, URIs or image bytes are written to a durable store.
         record['retry_at']=stamp()
@@ -398,37 +399,39 @@ def load_entries(user,ids):
             s.cover_imagery,p.google_place_id,(select count(*) from entries x where x.save_id=e.save_id and x.deleted_at is null) save_entry_count
             from entries e join saves s on s.id=e.save_id and s.deleted_at is null left join places p on p.id=e.place_id
             where e.user_id=%s and e.deleted_at is null and e.id=any(%s::uuid[])''',(user,[str(x) for x in ids])).fetchall()
-        places={str(p['id']):p for p in conn.execute('select * from places where id=any(%s::uuid[])',([str(e['place_id']) for e in entries if e['place_id']],)).fetchall()}
+        places={str(p['id']):place_values(p) for p in conn.execute('select * from places where id=any(%s::uuid[])',([str(e['place_id']) for e in entries if e['place_id']],)).fetchall()}
     return entries,places
 
 
-def resolve_batch(user,ids,*,gallery=False,context='library'):
+def resolve_batch(user,ids,*,gallery=False,context='library',refresh_covers=False):
     entries,places=load_entries(user,ids)
     if len(entries)!=len(set(map(str,ids))):raise PermissionError('An entry is not in your library')
     stats=metrics();shared={};results={};google_hashes={};rendered={}
     for entry in entries:
-        if entry['content_type']!='place':continue
+        if refresh_covers:entry={**entry,'cover_imagery':{}}
         started=time.monotonic();entry_id=str(entry['id']);place=places.get(str(entry['place_id']))
-        cover=None;rejection=None
+        cover,rejection=cover_candidate(entry,stats)
+        trace(stats,'cover','usable' if cover else 'rejected',rejection)
         candidates=[]
-        if place:
+        # Covers lead every card. Only place details may request live Google
+        # photos; non-place imagery never enters a venue/provider lookup.
+        if entry['content_type']=='place' and place and (not cover or gallery or entry.get('image_choice','auto').split(':')[0] in {'site','commons'}):
             key=str(place['id'])
-            if key not in shared:shared[key]=acquire(place,entry.get('venue_kind','other'),stats,skip_google=context=='map')
+            if key not in shared:shared[key]=acquire(place,entry.get('venue_kind','other'),stats,skip_google=context!='detail' or not gallery)
             else:stats['venue_cache_hits']+=1
-            candidates=[dict(c) for c in shared[key] if context!='map' or c['source']!='google']
-        # The explicit ladder avoids unnecessary cover downloads when a venue photo works.
-        if not candidates or gallery or entry.get('image_choice')=='cover':
-            cover,rejection=cover_candidate(entry,stats)
-            trace(stats,'cover','usable' if cover else 'rejected',rejection)
+            candidates=[dict(c) for c in shared[key] if context=='detail' or c['source']!='google']
         if cover:candidates.append(cover)
         for c in candidates:c['score']=score(c)
-        candidates.sort(key=lambda c:c['score'],reverse=True)
+        # Source precedence is a policy, not a resolution/aspect weighted vote.
+        order={'google':0,'cover':1,'commons':2,'site':3} if gallery else {'cover':0,'commons':1,'site':2,'google':99}
+        candidates.sort(key=lambda c:(order[c['source']],-c['score']))
         choice=entry.get('image_choice','auto')
         if choice!='auto':candidates.sort(key=lambda c:c['key']!=choice)
         shown=[];choice_keys=[{'key':c['key'],'source':c['source'],'score':c['score']} for c in candidates]
         for candidate in candidates:
             try:
-                image_key=(str(entry.get('place_id') or entry['save_id']),candidate['key'])
+                # Different reels at the same venue must retain different covers.
+                image_key=(str(entry['save_id'] if candidate['source']=='cover' else entry.get('place_id') or entry['save_id']),candidate['key'])
                 if image_key not in rendered:rendered[image_key]=image_bytes(candidate,stats)
                 raw=rendered[image_key]
                 if not claim_image(candidate,entry):
@@ -443,7 +446,11 @@ def resolve_batch(user,ids,*,gallery=False,context='library'):
                 public={k:v for k,v in candidate.items() if not k.startswith('_') and k not in ('asset','url','content_hash')}
                 if candidate['source'] != 'google':
                     from worker.storage import _thumbnail, get_url
-                    thumb_key, thumb_data, thumb_type = _thumbnail(raw, entry_id)
+                    # A gallery may contain both cover and venue image. A shared
+                    # entry-only object key would overwrite one with the other.
+                    variant=candidate['source']
+                    if variant=='commons':variant+='-'+str(sorted(c['key'] for c in candidates if c['source']=='commons').index(candidate['key']))
+                    thumb_key, thumb_data, thumb_type = _thumbnail(raw, entry_id+'-'+variant)
                     # R2 URLs keep grid traffic off full originals. Local data URIs
                     # preserve the existing offline development/test behavior.
                     uri = get_url(thumb_key) if settings().has_r2 else 'data:'+thumb_type+';base64,'+base64.b64encode(thumb_data).decode()
@@ -454,7 +461,7 @@ def resolve_batch(user,ids,*,gallery=False,context='library'):
                 if not gallery:break
             except Exception as exc:stats['failures'].append(candidate['source']+':'+failure(exc));trace(stats,candidate['source'],'render_failed',failure(exc))
         selected=shown[0] if shown else None
-        reason=('Owner choice retained' if choice!='auto' and selected and selected['key']==choice else 'Highest weighted score' if selected else 'No usable image; venue placeholder')
+        reason=('Owner choice retained' if choice!='auto' and selected and selected['key']==choice else 'Source precedence' if selected else 'No usable image; typographic placeholder')
         summary={'selected':selected['key'] if selected else 'placeholder','runner_up':next((c['key'] for c in candidates if not selected or c['key']!=selected['key']),None),'reason':reason,'cover_rejection':rejection,'scores':{c['key']:c['score'] for c in candidates}}
         with connect() as conn:
             conn.execute('update entries set image_selection=%s where id=%s and user_id=%s',(Jsonb(summary),entry['id'],user))

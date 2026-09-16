@@ -15,7 +15,11 @@ from config import settings, psycopg_database_url
 ROOT = Path(__file__).parent / 'migrations'
 ACCOUNT_VERSION = '20260914150000_accounts_sync'
 ACCOUNT_EXPAND = ACCOUNT_VERSION + '_expand'
-RETENTION_EXPAND = '20260915000000_google_retention_expand'
+RETENTION_VERSION = '20260915000000_google_retention'
+RETENTION_EXPAND = RETENTION_VERSION + '_expand'
+# The additive expansion records its own marker; the runtime that reads those
+# columns requires the release marker, so activation is a separate step.
+RETENTION_COLUMNS = ('coords_fetched_at', 'coords_retry_at', 'extracted_name', 'venue_kind_source')
 
 
 def apply(conn, phase):
@@ -26,7 +30,7 @@ def apply(conn, phase):
     if '20260911150000_shared_image_cache' not in versions:
         raise RuntimeError('Expected the verified production baseline; stop and review the migration ledger')
     marker = {'accounts-expand': ACCOUNT_EXPAND, 'accounts-activate': ACCOUNT_VERSION,
-              'retention-expand': RETENTION_EXPAND}[phase]
+              'retention-expand': RETENTION_EXPAND, 'retention-activate': RETENTION_VERSION}[phase]
     if marker in versions:
         return {'phase': phase, 'already_applied': True}
     if phase == 'accounts-expand':
@@ -51,6 +55,25 @@ def apply(conn, phase):
         if ACCOUNT_VERSION not in versions:
             raise RuntimeError('Verify the accounts release before retention expansion')
         conn.execute((ROOT / '20260915000000_google_retention.sql').read_text(), prepare=False)
+    elif phase == 'retention-activate':
+        # Records the release marker only. It scrubs nothing and drops nothing;
+        # contraction stays in db.retention_migrate and is a later release.
+        if RETENTION_EXPAND not in versions:
+            raise RuntimeError('Ship and verify retention expansion before activation')
+        present = {row['column_name'] for row in conn.execute(
+            """select column_name from information_schema.columns
+               where table_schema='public' and table_name='places'""").fetchall()}
+        missing = [name for name in RETENTION_COLUMNS if name not in present]
+        if missing:
+            raise RuntimeError('Retention expansion is incomplete; missing ' + ', '.join(missing))
+        for table in ('retention_runs', 'retention_events', 'retention_object_purge'):
+            if not conn.execute('select to_regclass(%s) is not null ok', ('public.' + table,)).fetchone()['ok']:
+                raise RuntimeError('Retention expansion is incomplete; missing table ' + table)
+        if conn.execute("select attnotnull from pg_attribute where attrelid='places'::regclass and attname='lat'").fetchone()['attnotnull']:
+            raise RuntimeError('Coordinates must be nullable before the lease runtime starts')
+        return {'phase': phase, 'applied': True, 'recorded': RETENTION_VERSION} if conn.execute(
+            'insert into schema_migrations(id,report) values(%s,%s) returning id',
+            (RETENTION_VERSION, Jsonb({'phase': phase, 'expansion_only': True}))).fetchone() else {}
     conn.execute('insert into schema_migrations(id,report) values(%s,%s)',
                  (marker, Jsonb({'phase': phase, 'expansion_only': True})))
     return {'phase': phase, 'applied': True}
@@ -58,7 +81,7 @@ def apply(conn, phase):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('accounts-expand', 'accounts-activate', 'retention-expand'))
+    parser.add_argument('phase', choices=('accounts-expand', 'accounts-activate', 'retention-expand', 'retention-activate'))
     parser.add_argument('--apply', action='store_true', help='Without this flag, execute and roll back a rehearsal')
     args = parser.parse_args()
     with psycopg.connect(psycopg_database_url(settings().database_url), row_factory=dict_row) as conn:

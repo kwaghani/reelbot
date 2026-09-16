@@ -1,3 +1,5 @@
+-- HISTORICAL BOOTSTRAP ONLY. Run through db.migrate, whose final retention
+-- migration removes Class C columns. Never reapply this file to a live database.
 create extension if not exists pgcrypto;
 create extension if not exists vector;
 create table if not exists users (

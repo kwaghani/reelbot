@@ -13,16 +13,9 @@ def request_deletion(user):
         account=conn.execute('select * from users where id=%s for update',(user,)).fetchone()
         keys=[]
         for row in conn.execute('select id from entries where user_id=%s',(user,)).fetchall():
-            keys.extend('thumbs/'+str(row['id'])+'.'+suffix for suffix in ('webp','jpg'))
-        # Map thumbnails are content-addressed. Remove only this owner's references;
-        # shared public provider photos are not owned by this account.
-        maps=conn.execute('select id,map_thumbnail->%s as asset from places where map_thumbnail ? %s',(str(user),str(user))).fetchall()
-        conn.execute('update places set map_thumbnail=map_thumbnail-%s where map_thumbnail ? %s',(str(user),str(user)))
-        for row in maps:
-            asset=(row['asset'] or {}).get('asset','')
-            if re.fullmatch(r'[0-9a-f]{64}',asset) and not conn.execute("select 1 from places,jsonb_each(map_thumbnail) v where v.value->>'asset'=%s limit 1",(asset,)).fetchone():
-                keys.append('thumbs/'+asset+'.jpg')
-                conn.execute('delete from image_assets where content_hash=%s',(asset,))
+            # Bounded per-source keys, including the legacy entry-only object.
+            keys.extend('thumbs/'+str(row['id'])+variant+'.'+suffix
+                for variant in ('','-cover','-site','-commons-0','-commons-1','-commons-2') for suffix in ('webp','jpg'))
         conn.execute('''insert into account_deletions(user_id,apple_refresh_ciphertext,object_keys,apple_required)
             values(%s,%s,%s,%s) on conflict do nothing''',(user,account['apple_refresh_ciphertext'],Jsonb(keys),bool(account['apple_user_id'])))
         conn.execute('update users set deleted_at=now(),apple_refresh_ciphertext=null where id=%s',(user,))

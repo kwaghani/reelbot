@@ -18,6 +18,7 @@ def kind_for(primary_type, kinds=None):
 
 
 def provider_kind(place):
+    if (place or {}).get('venue_kind') in venue_kinds(): return place['venue_kind'],None,place.get('venue_kind_source','extraction')
     primary=(place or {}).get('primary_type') or (place or {}).get('primaryType')
     if primary:
         return kind_for(primary), primary, 'primary_type'
@@ -61,18 +62,14 @@ def classify_entry(conn, entry, place=None):
         kind = entry['venue_kind']
     else:
         kind,source=derive_kind(entry,place)
-        if provider == 'other' and entry.get('venue_kind_primary_type') != primary:
-            LOG.warning('venue_kind_unmapped primary_type=%s', primary)
-            conn.execute('''insert into venue_kind_unmapped(primary_type) values(%s)
-                on conflict(primary_type) do update set occurrences=venue_kind_unmapped.occurrences+1,last_seen_at=now()''', (primary,))
     from worker.registry import attribute_fields
     fields=attribute_fields('place',kind)
     attrs = {**{k:v for k,v in entry['attributes'].items() if k in fields}, 'venue_kind': kind}
     source='user' if entry.get('venue_kind_source')=='user' else source
-    candidate={**(entry.get('candidate') or {}),'venue_kind_derivation':{'source':source,'primary_type':primary,'kind':kind}}
-    conn.execute('''update entries set venue_kind=%s,venue_kind_primary_type=%s,attributes=%s,candidate=%s,updated_at=now(),embedding=null
-        where id=%s and user_id=%s''', (kind, primary, Jsonb(attrs), Jsonb(candidate), entry['id'], entry['user_id']))
-    entry.update(venue_kind=kind, venue_kind_primary_type=primary, attributes=attrs)
+    candidate={**(entry.get('candidate') or {}),'venue_kind_derivation':{'source':source,'kind':kind}}
+    conn.execute('''update entries set venue_kind=%s,attributes=%s,candidate=%s,updated_at=now(),embedding=null
+        where id=%s and user_id=%s''', (kind, Jsonb(attrs), Jsonb(candidate), entry['id'], entry['user_id']))
+    entry.update(venue_kind=kind, attributes=attrs)
     return entry
 
 
@@ -89,18 +86,7 @@ def backfill(conn, fetch=fetch_primary_type, *, max_lookups=2, enabled=False):
     before = conn.execute('select id,user_id,save_id,place_id,note from entries order by id').fetchall()
     links = conn.execute('select * from folder_items order by folder_id,entry_id').fetchall()
     calls = 0
-    if enabled:
-        rows = conn.execute('''select p.* from places p where coalesce(p.primary_type,'') in ('','other')
-            and p.google_place_id is not null and p.venue_primary_checked_at is null
-            and exists(select 1 from entries e where e.place_id=p.id and e.content_type='place')
-            order by p.id limit %s for update skip locked''', (max_lookups,)).fetchall()
-        for place in rows:
-            calls += 1
-            try: primary = fetch(place['google_place_id'])
-            except Exception: primary = None
-            conn.execute('''update places set primary_type=coalesce(%s,primary_type),venue_primary_checked_at=now(),
-                venue_kind_calls=venue_kind_calls+1,venue_kind_cost_usd=venue_kind_cost_usd+%s where id=%s''',
-                (primary, DETAILS_ESTIMATED_USD, place['id']))
+    # Metadata-only background primaryType caching is disabled.
     for entry in conn.execute("select * from entries where content_type='place'").fetchall():
         place = conn.execute('select * from places where id=%s', (entry['place_id'],)).fetchone() if entry['place_id'] else None
         classify_entry(conn, entry, place)
@@ -109,4 +95,4 @@ def backfill(conn, fetch=fetch_primary_type, *, max_lookups=2, enabled=False):
     return {'entries_before': len(before), 'entries_after': len(before), 'pins_notes_ownership_memberships_preserved': True,
         'provider_calls': calls, 'estimated_usd': calls * DETAILS_ESTIMATED_USD,
         'by_kind': conn.execute("select venue_kind,count(*) as entries from entries where content_type='place' group by venue_kind order by venue_kind").fetchall(),
-        'unmapped': conn.execute('select primary_type,occurrences from venue_kind_unmapped order by occurrences desc,primary_type').fetchall()}
+        'unmapped': []}

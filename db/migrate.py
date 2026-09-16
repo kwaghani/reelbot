@@ -96,7 +96,14 @@ def migrate_legacy(database_url, dry_run=False):
         return report
 
 
+def ensure_sync_columns(conn):
+    # Older migrations invoke today's filing code before the change-feed migration.
+    # Add its harmless nullable columns first; install triggers after backfills.
+    for table in ('saves','entries','folders','folder_items'):
+        conn.execute(sql.SQL('alter table {} add column if not exists updated_at timestamptz not null default now(), add column if not exists deleted_at timestamptz').format(sql.Identifier(table)))
+
 def harden_registry(conn):
+    ensure_sync_columns(conn)
     venue_version='20260908090846_venue_kinds'
     if not conn.execute('select 1 from schema_migrations where id=%s',(venue_version,)).fetchone():
         from worker.registry import sync_registry
@@ -131,6 +138,12 @@ def harden_registry(conn):
     from db.identity_migrate import VERSION as identity_version, run as migrate_identity
     if not conn.execute('select 1 from schema_migrations where id=%s',(identity_version,)).fetchone():
         migrate_identity(conn)
+    version='20260914150000_accounts_sync'
+    if not conn.execute('select 1 from schema_migrations where id=%s',(version,)).fetchone():
+        conn.execute((ROOT/'db/migrations'/f'{version}.sql').read_text(),prepare=False)
+
+    from db.retention_migrate import run as retention_migration
+    retention_migration(conn)
 
 
 def run(database_url, dry_run=False):
@@ -161,6 +174,7 @@ def run(database_url, dry_run=False):
         before=len(ownership_before)
         if not already_entries: conn.execute((ROOT/'db/migrations/002_content_entries.sql').read_text(),prepare=False)
         conn.execute((ROOT/'db/schema.sql').read_text(),prepare=False)
+        ensure_sync_columns(conn)
         from worker.db import file_entry
         rows=conn.execute('select * from entries').fetchall()
         for row in rows:

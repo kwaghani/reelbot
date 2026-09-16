@@ -48,6 +48,8 @@ def registry():
         facet = spec.get('primary_facet')
         if facet and facet != 'city' and facet not in spec['attributes']:
             raise ValueError(f'Unknown primary facet for {key}')
+        if any(field not in spec['attributes'] for field in spec.get('card_fields',[])):
+            raise ValueError(f'Unknown card field for {key}')
         for name, field in spec['attributes'].items():
             if field.get('type') not in {'enum', 'string', 'integer', 'number', 'boolean'}:
                 raise ValueError(f'Invalid attribute type: {key}.{name}')

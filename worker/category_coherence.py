@@ -24,6 +24,15 @@ def assess(place, candidate):
     matched = False
     for context in contexts:
         rule = rules.get(context, {})
+        if not primary and place.get('venue_kind'):
+            # The retained inference can still veto incompatible cached anchors;
+            # never recover or persist the raw Google primaryType.
+            kinds=registry_document().get('venue_kinds',{})
+            types=kinds.get(place['venue_kind'],{}).get('google_types',[])
+            rejected=any(fnmatchcase(t,p) for t in types for p in rule.get('rejects',[]))
+            accepted=any(fnmatchcase(t,p) for t in types for p in rule.get('accepts',[]))
+            if rejected and not accepted:return {'reason':'category_mismatch','context':context,'primary_type':'','type_match':0}
+            matched |= accepted
         if any(fnmatchcase(primary, pattern) for pattern in rule.get('rejects', [])):
             return {'reason': 'category_mismatch', 'context': context, 'primary_type': primary, 'type_match': 0}
         matched |= any(fnmatchcase(primary, pattern) for pattern in rule.get('accepts', []))
@@ -34,6 +43,6 @@ def log_veto(place, candidate, verdict, metrics=None):
     name = (place.get('displayName') or {}).get('text') or place.get('name', '')
     record = {'candidate': name, 'type': verdict['primary_type'], 'context': verdict['context'],
               'name_score': round(name_similarity(candidate.get('name', ''), name), 5), 'reason': 'category_mismatch'}
-    LOG.warning('category_veto %s', record)
+    LOG.warning('category_veto reason=category_mismatch')
     if metrics is not None:
         metrics.setdefault('category_vetoes', []).append(record)

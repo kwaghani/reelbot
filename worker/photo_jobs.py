@@ -2,6 +2,7 @@
 from __future__ import annotations
 import logging,time
 from worker.db import connect
+from worker.retention_policy import place_values
 from worker.imagery import acquire,metrics,failure
 LOG=logging.getLogger(__name__)
 
@@ -18,11 +19,11 @@ def run_one():
             where place_id=(select place_id from photo_jobs where status in ('queued','failed') and attempts<3 and retry_at<=now()
             order by retry_at for update skip locked limit 1) returning *""").fetchone()
         if not job:return False
-        place=conn.execute('select * from places where id=%s',(job['place_id'],)).fetchone()
+        place=place_values(conn.execute('select * from places where id=%s',(job['place_id'],)).fetchone())
         kind=conn.execute("select venue_kind from entries where deleted_at is null and place_id=%s order by created_at limit 1",(job['place_id'],)).fetchone()
     stats=metrics();error=None
     try:
-        result=acquire(place,(kind or {}).get('venue_kind') or 'other',stats)
+        result=acquire(place,(kind or {}).get('venue_kind') or 'other',stats,skip_google=True)
         if not result:error=';'.join(stats['failures']) or 'no_usable_venue_image'
     except Exception as exc:error=failure(exc)
     with connect() as conn:

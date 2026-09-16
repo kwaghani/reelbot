@@ -49,11 +49,14 @@ def osm_place(row):
 
 def persist_external(conn,place,candidate):
     conn.execute('update places set lookup_key=null where lookup_key=%s and (provider is distinct from %s or provider_place_id is distinct from %s)',(lookup_key(candidate),place['provider'],place['provider_place_id']))
-    return dict(conn.execute("""insert into places(provider,provider_place_id,name,formatted_address,lat,lng,primary_type,city,lookup_key,resolution_attribution)
-        values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(provider,provider_place_id) where provider_place_id is not null
-        do update set name=excluded.name,formatted_address=excluded.formatted_address,lat=excluded.lat,lng=excluded.lng,
-        primary_type=excluded.primary_type,lookup_key=excluded.lookup_key,resolution_attribution=excluded.resolution_attribution,last_refreshed_at=now() returning *""",
-        (place['provider'],place['provider_place_id'],place['name'],place['formatted_address'],place['lat'],place['lng'],place['primary_type'],candidate.get('city_hint') or '',lookup_key(candidate),Jsonb(place['resolution_attribution']))).fetchone())
+    from worker.retention_policy import place_values
+    from worker.venue_kinds import provider_kind
+    kind,_,source = provider_kind(place)
+    return place_values(conn.execute("""insert into places(provider,provider_place_id,extracted_name,lat,lng,coords_fetched_at,extracted_city,lookup_key,resolution_attribution,venue_kind,venue_kind_source)
+        values(%s,%s,%s,%s,%s,now(),%s,%s,%s,%s,%s) on conflict(provider,provider_place_id) where provider_place_id is not null
+        do update set extracted_name=excluded.extracted_name,lat=excluded.lat,lng=excluded.lng,coords_fetched_at=now(),
+        lookup_key=excluded.lookup_key,resolution_attribution=excluded.resolution_attribution,venue_kind=excluded.venue_kind,venue_kind_source=excluded.venue_kind_source returning *""",
+        (place['provider'],place['provider_place_id'],candidate.get('name') or candidate.get('venue_name') or '',place['lat'],place['lng'],candidate.get('city_hint') or '',lookup_key(candidate),Jsonb(place['resolution_attribution']),kind,source)).fetchone())
 
 def web_candidates(candidate,metrics):
     """A bounded public search fallback, requiring identity and explicit coordinates.
@@ -82,30 +85,7 @@ def web_candidates(candidate,metrics):
                 'formatted_address':candidate.get('city_hint') or '', 'lat':float(pair[1]),'lng':float(pair[2]),
                 'primary_type':'natural_feature','resolution_attribution':{'label':urlparse(url).hostname,'url':url}})
             break
-        # A named venue page may provide an address instead of coordinates.
-        # Search that address with the venue name, and still reject bare address
-        # or administrative results. An address alone never creates a venue.
-        from worker.fetch.parsing import Page,walk
-        address=None
-        for _,document in Page(html).scripts:
-            for node in walk(document):
-                if not isinstance(node.get('name'),str) or name_similarity(candidate['name'],node['name'])<.8:continue
-                value=node.get('address')
-                if isinstance(value,dict):address=', '.join(str(value[k]) for k in ('streetAddress','addressLocality','addressRegion','postalCode') if value.get(k))
-                elif isinstance(value,str):address=value
-                if address:break
-        if address:
-            from worker.places import text_search
-            try:matches=text_search({**candidate,'text_query':candidate['name']+' '+address},metrics)
-            except Exception:matches=[]
-            for match in matches:
-                if resolution_guard(match,candidate,[candidate.get('location_bias')]) or name_similarity(candidate['name'],match.get('displayName',{}).get('text',''))<.8:continue
-                loc=match['location']
-                results.append({'provider':'web','provider_place_id':hashlib.sha256(url.encode()).hexdigest(),'name':match['displayName']['text'],
-                    'formatted_address':match['formattedAddress'],'lat':loc['latitude'],'lng':loc['longitude'],
-                    'primary_type':match.get('primaryType') or 'natural_feature','resolution_attribution':{'label':urlparse(url).hostname,'url':url}})
-                break
-            if results:break
+        # Do not relabel Google geocoding results as website-owned evidence.
     return results
 
 def resolve_natural(conn,candidate,metrics,biases):
