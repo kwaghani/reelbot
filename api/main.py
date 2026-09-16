@@ -509,6 +509,7 @@ def cost(user=Depends(require_user)):
 
 @app.get('/auth/apple/challenge')
 def apple_challenge(user=Depends(require_user)):
+    raise HTTPException(503,'Apple sign-in is unavailable in this release. Your anonymous library remains available.')
     nonce=secrets.token_hex(32)
     with connect() as conn:
         conn.execute("delete from events where kind='apple_nonce' and (user_id=%s or created_at<now()-interval '10 minutes')",(user,))
@@ -553,6 +554,7 @@ def merge_library(conn,source,target):
 
 @app.post('/auth/apple')
 def apple(body:Apple,user=Depends(require_user)):
+    raise HTTPException(503,'Apple sign-in is unavailable in this release. Your anonymous library remains available.')
     import jwt
     digest=hashlib.sha256(body.nonce.encode()).hexdigest()
     try:

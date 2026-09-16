@@ -1,0 +1,50 @@
+-- Additive half; db.retention_migrate scrubs provenance before dropping old fields.
+alter table places add column if not exists extracted_name text not null default '';
+alter table places add column if not exists extracted_city text not null default '';
+alter table places add column if not exists extracted_neighborhood text not null default '';
+alter table places add column if not exists venue_kind text not null default 'other';
+alter table places add column if not exists venue_kind_source text not null default 'unknown';
+alter table places add column if not exists created_at timestamptz not null default now();
+alter table places add column if not exists coords_fetched_at timestamptz;
+alter table places add column if not exists coords_retry_at timestamptz;
+alter table places add column if not exists needs_reextraction boolean not null default false;
+alter table places alter column lat drop not null;
+alter table places alter column lng drop not null;
+comment on table places is 'Class A: own extraction and opaque IDs. Class B: 30-day coordinates. Class C Google response fields must never be persisted.';
+comment on column places.id is 'Class A permanent: internal identifier.';
+comment on column places.google_place_id is 'Class A permanent identifier exception: Google ID, not customer-authored content; A.3.';
+comment on column places.extracted_name is 'Class A permanent: reel/user evidence only; never Google displayName.';
+comment on column places.extracted_city is 'Class A permanent: reel/user evidence only; never Google address components.';
+comment on column places.extracted_neighborhood is 'Class A permanent: reel/user evidence only.';
+comment on column places.venue_kind is 'Class A requested inference: legal review required for inference from Google primaryType; raw primaryType is never stored.';
+comment on column places.venue_kind_source is 'Class A permanent: provenance of the app inference, without raw provider content.';
+comment on column places.created_at is 'Class A permanent: local operational timestamp.';
+comment on column places.lat is 'Class B leased: delete at 30 days; unknown fetch time is expired.';
+comment on column places.lng is 'Class B leased: delete at 30 days; unknown fetch time is expired.';
+comment on column places.coords_fetched_at is 'Class B lease clock: actual successful coordinate request time, never an access timestamp.';
+comment on column places.coords_retry_at is 'Class A operational retry time; does not extend a coordinate lease.';
+comment on column places.needs_reextraction is 'Class A operational flag: no verified customer-owned name available.';
+comment on column places.provider is 'Class A operational provider identifier, not response content.';
+comment on column places.provider_place_id is 'Class A opaque non-Google identifier; separate provider licence applies.';
+comment on column places.lookup_key is 'Class A query identity derived from reel/user input or opaque place ID.';
+comment on column places.last_refreshed_at is 'Class A operational timestamp; never used to extend coordinate retention.';
+comment on column places.imagery is 'Class A non-Google image references under their own licences, or provider/attempt timestamps only. Never Google photo content or metadata.';
+comment on column places.resolution_attribution is 'Class A attribution for separately licensed non-Google sources; never a saved Google API response.';
+create index if not exists places_coords_refresh on places(coords_fetched_at,coords_retry_at) where google_place_id is not null;
+create table if not exists retention_runs(id bigint generated always as identity primary key,job text not null,finished_at timestamptz not null,stats jsonb not null);
+create index if not exists retention_runs_latest on retention_runs(job,finished_at desc);
+create table if not exists retention_events(id bigint generated always as identity primary key,kind text not null,place_id uuid,detail jsonb not null default '{}',created_at timestamptz not null default now());
+create index if not exists retention_events_time on retention_events(kind,created_at);
+create table if not exists retention_object_purge(object_key text primary key,bytes bigint not null,reason text not null,deleted_at timestamptz,error_type text);
+comment on table retention_object_purge is 'Class A operational object deletion manifest; contains keys, sizes and provenance category, no Google photo bytes or metadata.';
+alter table retention_runs enable row level security;
+alter table retention_events enable row level security;
+alter table retention_object_purge enable row level security;
+revoke all on retention_runs,retention_events,retention_object_purge from public;
+do $$ declare client_role text; begin
+ foreach client_role in array array['anon','authenticated'] loop
+  if exists(select 1 from pg_roles where rolname=client_role) then
+   execute format('revoke all on retention_runs,retention_events,retention_object_purge from %I',client_role);
+  end if;
+ end loop;
+end $$;
