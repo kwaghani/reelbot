@@ -89,6 +89,13 @@ def restore(conn,payload):
     for name in TABLES:
         rows=payload['tables'].get(name,[])
         if not rows:continue
+        if name=='folders':
+            pending=list(rows);rows=[];parents=set()
+            while pending:
+                ready=[row for row in pending if not row.get('parent_folder_id') or str(row['parent_folder_id']) in parents]
+                if not ready:raise RuntimeError('Recovery has a missing or cyclic folder parent')
+                rows.extend(ready);parents.update(str(row['id']) for row in ready)
+                pending=[row for row in pending if str(row['id']) not in parents]
         types={r['column_name']:r['data_type'] for r in conn.execute("select column_name,data_type from information_schema.columns where table_schema='public' and table_name=%s",(name,))}
         for row in rows:
             columns=[k for k in row if k in types]
