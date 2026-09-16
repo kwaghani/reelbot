@@ -2,10 +2,12 @@
 from __future__ import annotations
 import hashlib
 import logging
+import os
 import secrets
 from contextlib import asynccontextmanager
 from uuid import UUID, uuid4
-from fastapi import FastAPI, BackgroundTasks, Depends, Header, HTTPException, Query
+from datetime import datetime
+from fastapi import FastAPI, BackgroundTasks, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, ConfigDict
 from psycopg.types.json import Jsonb
@@ -68,6 +70,23 @@ class Assignment(Input):
 class Apple(Input):
     identity_token: str = Field(min_length=20,max_length=20000)
     nonce: str = Field(min_length=32,max_length=200)
+    authorization_code: str | None = Field(default=None,max_length=5000)
+    full_name: dict | None = None
+    email: str | None = Field(default=None,max_length=320)
+class AppleNonce(Input):
+    nonce: str = Field(min_length=32,max_length=200)
+class Refresh(Input):
+    refresh_token: str = Field(pattern=r'^[a-f0-9]{64}$')
+class SyncMutation(Input):
+    id: UUID
+    client_timestamp: datetime
+    path: str = Field(max_length=200)
+    method: str = Field(pattern=r'^(POST|PATCH|DELETE)$')
+    body: dict | None = None
+    resolution: str | None = Field(default=None,pattern=r'^(mine|theirs)$')
+    expected_updated_at: datetime | None = None
+class SyncBatch(Input):
+    mutations: list[SyncMutation] = Field(min_length=1,max_length=50)
 class SourceInfo(Input):
     entry_id: UUID
     title: str = Field(min_length=1,max_length=200)
@@ -84,17 +103,18 @@ class Review(Input):
 def require_user(authorization: str = Header(default='')):
     if not authorization.startswith('Bearer '):
         raise HTTPException(401,'This device has not connected yet.')
-    token = authorization[7:]
-    if len(token)!=64: raise HTTPException(401,'Invalid device credentials.')
-    with connect() as conn:
-        row = conn.execute('select user_id from devices where token_hash=%s',(hashlib.sha256(token.encode()).hexdigest(),)).fetchone()
-    if not row: raise HTTPException(401,'Invalid device credentials.')
-    return row['user_id']
+    from api.accounts import authenticate
+    return authenticate(authorization[7:])['user_id']
+
+def require_apple_actor(authorization: str = Header(default='')):
+    from api.accounts import authenticate
+    if not authorization.startswith('Bearer '):raise HTTPException(401,'Connect this device first.')
+    return authenticate(authorization[7:],allow_device_linked=True)['user_id']
 
 
 def owned(conn,table,identifier,user):
     if table not in {'saves','entries','folders','jobs'}: raise ValueError('Invalid relation')
-    row = conn.execute(f'select * from {table} where id=%s and user_id=%s',(identifier,user)).fetchone()
+    row = conn.execute(f'select * from {table} where id=%s and user_id=%s'+(' and deleted_at is null' if table!='jobs' else ''),(identifier,user)).fetchone()
     if not row: raise HTTPException(404,'This item is not in your library.')
     return row
 
@@ -207,6 +227,7 @@ def register(body:Device):
         existing = conn.execute('select * from devices where id=%s',(body.device_id,)).fetchone()
         if existing:
             if not secrets.compare_digest(existing['token_hash'],digest): raise HTTPException(409,'Device identity is already registered.')
+            if existing['revoked_at']: raise HTTPException(401,'This device session was signed out.')
             return {'user_id':existing['user_id'],'device_id':body.device_id}
         if conn.execute('select id from users where device_id=%s',(str(body.device_id),)).fetchone():
             raise HTTPException(409,'Device identity is already registered.')
@@ -228,16 +249,25 @@ def library(q:str=Query(default='',max_length=500),user=Depends(require_user)):
     with connect() as conn: return {'items':items(conn,user)}
 
 @app.get('/sync')
-def sync(background_tasks:BackgroundTasks,user=Depends(require_user)):
+def sync(background_tasks:BackgroundTasks,since:str|None=Query(default=None,max_length=1000),limit:int=Query(default=200,ge=1,le=200),authorization:str=Header(default=''),user=Depends(require_user)):
+    if since is not None:
+        from api.accounts import authenticate
+        from api.sync import changes
+        return changes(user,since,limit,authenticate(authorization[7:])['device_id'])
     from worker.geography import enrich_owner
     background_tasks.add_task(enrich_owner,str(user))
     with connect() as conn:
         fail_expired(conn)
         return {'registry':registry(),'venue_kinds':venue_kinds(),'preferences':conn.execute('select ui_preferences from users where id=%s',(user,)).fetchone()['ui_preferences'],'items':items(conn,user),
             'saves':conn.execute('''select id,source_url,canonical_url,platform,platform_video_id,status,created_at,error_reason,retry_at,is_compilation,expected_venue_count,extracted_venue_count,
-                coalesce(raw_signals->'deterministic_candidates'->0->>'name','') as source_info_hint from saves where user_id=%s order by created_at desc''',(user,)).fetchall(),
-            'folders':conn.execute('select * from folders where user_id=%s order by sort_order,name',(user,)).fetchall(),
+                coalesce(raw_signals->'deterministic_candidates'->0->>'name','') as source_info_hint from saves where user_id=%s and deleted_at is null order by created_at desc''',(user,)).fetchall(),
+            'folders':conn.execute('select * from folders where user_id=%s and deleted_at is null order by sort_order,name',(user,)).fetchall(),
             'apple_linked':bool(conn.execute('select apple_user_id from users where id=%s',(user,)).fetchone()['apple_user_id'])}
+
+@app.post('/sync')
+def sync_batch(body:SyncBatch,user=Depends(require_user)):
+    from api.sync import mutate
+    return mutate(user,body.mutations)
 
 @app.patch('/preferences')
 def ui_preferences(body:UIPreferences,user=Depends(require_user)):
@@ -423,6 +453,8 @@ def export_data(user=Depends(require_user)):
             'saves':conn.execute('select id,source_url,canonical_url,platform_video_id,status,created_at,error_reason from saves where user_id=%s',(user,)).fetchall()}
 
 def erase_owner(conn,user):
+    # Only administrative retention and a completed transactional account merge.
+    conn.execute("select set_config('reelbot.hard_delete','on',true)")
     conn.execute("update places set map_thumbnail=map_thumbnail-%s where map_thumbnail ? %s",(str(user),str(user)))
     conn.execute('delete from events where user_id=%s',(user,))
     conn.execute('delete from jobs where user_id=%s',(user,))
@@ -430,11 +462,23 @@ def erase_owner(conn,user):
     conn.execute('delete from saves where user_id=%s',(user,))
     conn.execute('delete from devices where user_id=%s',(user,))
     conn.execute('delete from users where id=%s',(user,))
+    conn.execute("select set_config('reelbot.hard_delete','off',true)")
 
 @app.delete('/account')
-def delete_account(user=Depends(require_user)):
-    with connect() as conn: erase_owner(conn,user)
-    return {'deleted':True}
+def delete_account(authorization: str=Header(default='')):
+    # Lost responses may be retried with the just-revoked credential, but only to
+    # acknowledge an already deleted owner. It grants no library access.
+    from api.accounts import digest
+    if not authorization.startswith('Bearer '):raise HTTPException(401,'Connect this device first.')
+    with connect() as conn:
+        deleted=conn.execute('''select u.id from users u where u.deleted_at is not null and
+          (exists(select 1 from account_sessions s where s.user_id=u.id and s.access_hash=%s)
+           or exists(select 1 from devices d where d.user_id=u.id and d.token_hash=%s))''',
+          (digest(authorization[7:]),digest(authorization[7:]))).fetchone()
+        if deleted:return {'deleted':True,'purge_after_days':30,'cleanup':'queued'}
+    user=require_user(authorization)
+    from api.account_deletion import request_deletion
+    return request_deletion(user)
 
 @app.post('/folders')
 def create_folder(body:Folder,user=Depends(require_user)):
@@ -478,10 +522,13 @@ def assign(body:Assignment,user=Depends(require_user)):
         for identifier in body.item_ids:
             owned(conn,'entries',identifier,user)
             conn.execute('update entries set embedding=null,updated_at=now() where id=%s and user_id=%s',(identifier,user))
-            conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',
+            conn.execute('''insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s)
+                on conflict(folder_id,entry_id) do update set deleted_at=null
+                where folder_items.updated_at<=excluded.updated_at''',
                          (body.destination_id,identifier,user))
             if body.move and source and source['kind']=='custom' and body.source_id!=body.destination_id:
-                conn.execute('delete from folder_items where folder_id=%s and entry_id=%s and user_id=%s',
+                conn.execute('''update folder_items set deleted_at=clock_timestamp() where folder_id=%s and entry_id=%s and user_id=%s
+                    and updated_at<=coalesce(nullif(current_setting('reelbot.client_timestamp',true),'')::timestamptz,clock_timestamp())''',
                              (body.source_id,identifier,user))
     return {'saved':True}
 
@@ -507,10 +554,20 @@ def cost(user=Depends(require_user)):
             'usage_unavailable_requests':unknown,
             'basis':('Known usage only; some request usage was unavailable. ' if unknown else '')+'Measured provider usage × configured rates; mixed saves allocated by entry count. Uncached equivalent is a counterfactual; excludes local compute.'}
 
+def require_apple_sign_in_enabled():
+    if os.environ.get('REELBOT_APPLE_SIGN_IN_ENABLED', '').lower() != 'true':
+        raise HTTPException(503,'Apple sign-in is unavailable in this release. Your anonymous library remains available.')
+
+
 @app.get('/auth/apple/challenge')
-def apple_challenge(user=Depends(require_user)):
-    raise HTTPException(503,'Apple sign-in is unavailable in this release. Your anonymous library remains available.')
+def apple_challenge(user=Depends(require_apple_actor)):
     nonce=secrets.token_hex(32)
+    return apple_nonce(AppleNonce(nonce=nonce),user)
+
+@app.post('/auth/apple/challenge')
+def apple_nonce(body:AppleNonce,user=Depends(require_apple_actor)):
+    require_apple_sign_in_enabled()
+    nonce=body.nonce
     with connect() as conn:
         conn.execute("delete from events where kind='apple_nonce' and (user_id=%s or created_at<now()-interval '10 minutes')",(user,))
         conn.execute("insert into events(user_id,kind,detail) values(%s,'apple_nonce',%s)",
@@ -521,18 +578,23 @@ def apple_challenge(user=Depends(require_user)):
 def merge_library(conn,source,target):
     """Merge into a verified Apple account without losing entry edits or custom folders."""
     folder_map={}
-    for folder in conn.execute("select * from folders where user_id=%s and kind='custom'",(source,)).fetchall():
+    for folder in conn.execute("select * from folders where user_id=%s and kind='custom' and deleted_at is null",(source,)).fetchall():
         row=conn.execute("""insert into folders(user_id,name,kind,icon,sort_order,hidden) values(%s,%s,'custom',%s,%s,%s)
             on conflict(user_id,kind,content_type,parent_folder_id,name) do update set name=excluded.name returning id""",
             (target,folder['name'],folder['icon'],folder['sort_order'],folder['hidden'])).fetchone()
         folder_map[folder['id']]=row['id']
-    for saved in conn.execute('select * from saves where user_id=%s',(source,)).fetchall():
-        copied=enqueue(conn,target,saved['source_url'])
+    for saved in conn.execute('select * from saves where user_id=%s and deleted_at is null',(source,)).fetchall():
+        copied=enqueue(conn,target,saved.get('canonical_url') or saved['source_url'])
+        if copied.get('deleted_at'): continue  # Account deletion of a save wins over an offline duplicate.
+        conn.execute('''insert into save_source_urls(save_id,user_id,source_url)
+            select %s::uuid,%s::uuid,source_url from save_source_urls where save_id=%s
+            union select %s::uuid,%s::uuid,%s on conflict do nothing''',
+            (copied['id'],target,saved['id'],copied['id'],target,saved['source_url']))
         if copied['status']=='queued' and saved['status'] not in {'queued','processing'}:
             conn.execute('update saves set status=%s,raw_signals=%s,cost=%s,error_reason=%s,resolved_at=%s where id=%s',
                 (saved['status'],Jsonb(saved['raw_signals']),Jsonb(saved['cost']),saved['error_reason'],saved['resolved_at'],copied['id']))
             conn.execute('update jobs set status=%s where save_id=%s',(saved['status'],copied['id']))
-        for item in conn.execute('select * from entries where save_id=%s and user_id=%s',(saved['id'],source)).fetchall():
+        for item in conn.execute('select * from entries where save_id=%s and user_id=%s and deleted_at is null',(saved['id'],source)).fetchall():
             row=conn.execute("""insert into entries(user_id,save_id,place_id,note,content_type,title,summary,attributes,
                 confidence,needs_review,review_reason,verified_at,candidate,candidate_key,venue_kind,venue_kind_source,organization_city,image_choice)
                 values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) on conflict(user_id,save_id,candidate_key)
@@ -542,27 +604,26 @@ def merge_library(conn,source,target):
                 venue_kind_source=case when entries.venue_kind_source='user' or excluded.venue_kind_source='user' then 'user' else 'provider' end returning *""",
                 (target,copied['id'],item['place_id'],item['note'],item['content_type'],item['title'],item['summary'],Jsonb(item['attributes']),
                  item['confidence'],item['needs_review'],item['review_reason'],item['verified_at'],Jsonb(item['candidate']),item['candidate_key'],item['venue_kind'],item['venue_kind_source'],item['organization_city'],item['image_choice'])).fetchone()
+            if row is None: continue  # A tombstoned target entry is never resurrected by a merge.
             place=conn.execute('select * from places where id=%s',(row['place_id'],)).fetchone() if row['place_id'] else None
             file_entry(conn,row,place)
-            for link in conn.execute('select folder_id from folder_items where entry_id=%s and user_id=%s',(item['id'],source)).fetchall():
+            for link in conn.execute('select folder_id from folder_items where entry_id=%s and user_id=%s and deleted_at is null',(item['id'],source)).fetchall():
                 if link['folder_id'] in folder_map:
-                    conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',
+                    conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict(folder_id,entry_id) do update set deleted_at=null',
                                  (folder_map[link['folder_id']],row['id'],target))
     conn.execute('update users set ui_preferences=(select ui_preferences from users where id=%s) || ui_preferences where id=%s',(source,target))
     conn.execute('update devices set user_id=%s where user_id=%s',(target,source))
     erase_owner(conn,source)
 
 @app.post('/auth/apple')
-def apple(body:Apple,user=Depends(require_user)):
-    raise HTTPException(503,'Apple sign-in is unavailable in this release. Your anonymous library remains available.')
-    import jwt
+def apple(body:Apple,authorization: str=Header(default=''),user=Depends(require_apple_actor)):
+    require_apple_sign_in_enabled()
+    from api.accounts import verify_apple,exchange_apple_code,authenticate,issue_session
     digest=hashlib.sha256(body.nonce.encode()).hexdigest()
-    try:
-        signing=jwt.PyJWKClient('https://appleid.apple.com/auth/keys',timeout=8).get_signing_key_from_jwt(body.identity_token)
-        claims=jwt.decode(body.identity_token,signing.key,algorithms=['RS256'],issuer='https://appleid.apple.com',
-            audience=settings().apple_bundle_id,options={'require':['exp','iat','iss','aud','sub','nonce']})
-        if not secrets.compare_digest(claims['nonce'],body.nonce): raise ValueError('Nonce mismatch')
-    except Exception as exc: raise HTTPException(401,'Apple sign-in could not be verified. Please retry.') from exc
+    claims=verify_apple(body.identity_token,body.nonce)
+    auth=authenticate(authorization[7:],allow_device_linked=True)
+    if not body.authorization_code: raise HTTPException(422,'Apple authorization code is required. Please update the app.')
+    encrypted=exchange_apple_code(body.authorization_code,claims['sub'],body.nonce)
     with connect() as conn:
         nonce=conn.execute("delete from events where user_id=%s and kind='apple_nonce' and detail->>'hash'=%s and created_at>now()-interval '10 minutes' returning id",(user,digest)).fetchone()
         if not nonce: raise HTTPException(401,'Sign-in expired. Please retry.')
@@ -570,12 +631,41 @@ def apple(body:Apple,user=Depends(require_user)):
         linked=conn.execute('select apple_user_id from users where id=%s for update',(user,)).fetchone()
         if linked['apple_user_id'] and linked['apple_user_id']!=claims['sub']:
             raise HTTPException(409,'This library is linked to another Apple account.')
-        existing=conn.execute('select id from users where apple_user_id=%s',(claims['sub'],)).fetchone()
+        existing=conn.execute('select id,deleted_at from users where apple_user_id=%s for update',(claims['sub'],)).fetchone()
+        if existing and existing['deleted_at']:raise HTTPException(409,'This account is pending permanent deletion.')
+        added=conn.execute('select count(*) as n from saves where user_id=%s and deleted_at is null',(user,)).fetchone()['n']
+        case='A'
         if existing and existing['id']!=user:
+            before=conn.execute('select count(*) as n from saves where user_id=%s and deleted_at is null',(existing['id'],)).fetchone()['n']
+            case='C' if added else 'B'
             merge_library(conn,user,existing['id']); user=existing['id']
+            added=conn.execute('select count(*) as n from saves where user_id=%s and deleted_at is null',(user,)).fetchone()['n']-before
         else:
+            if existing:case='reauth';added=0
             conn.execute('update users set apple_user_id=%s where id=%s',(claims['sub'],user))
-    return {'user_id':user,'apple_linked':True}
+        # Email comes only from verified claims; private relay is an ordinary address.
+        email=claims.get('email') if claims.get('email_verified') in (True,'true') else None
+        name=body.full_name if body.full_name and len(str(body.full_name))<=2000 else None
+        conn.execute('update users set email=coalesce(email,%s),full_name=coalesce(full_name,%s),apple_refresh_ciphertext=%s where id=%s',
+            (email,Jsonb(name) if name else None,encrypted,user))
+        session=issue_session(conn,user,auth['device_id'])
+    return {'user_id':user,'apple_linked':True,'merge_case':case,'added_saves':added,**session}
+
+@app.post('/auth/refresh')
+def refresh(body:Refresh):
+    from api.accounts import rotate
+    return rotate(body.refresh_token)
+
+@app.post('/auth/logout')
+def logout(body:Refresh):
+    from api.accounts import digest
+    with connect() as conn:
+        row=conn.execute('select family_id,device_id from account_sessions where refresh_hash=%s',(digest(body.refresh_token),)).fetchone()
+        if row:
+            conn.execute('select pg_advisory_xact_lock(hashtextextended(%s,0))',('session:'+str(row['family_id']),))
+            conn.execute('update account_sessions set revoked_at=now() where family_id=%s',(row['family_id'],))
+            conn.execute('update devices set revoked_at=now() where id=%s',(row['device_id'],))
+    return {'signed_out':True}
 
 @app.get('/items/{item_id}/details')
 def place_details(item_id:UUID,user=Depends(require_user)):

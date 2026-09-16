@@ -113,7 +113,12 @@ def exists(key: str) -> bool:
 
 
 def delete(key: str) -> None:
-    _backend().delete(key)
+    # Privacy deletion must not mistake a degraded local fallback for R2 success.
+    backend = _backend()
+    if settings().has_r2 and not isinstance(backend, R2Storage):
+        R2Storage().delete(key)
+    backend.delete(key)
+    if not isinstance(backend, LocalStorage): LocalStorage().delete(key)
 
 
 def _thumbnail(data: bytes, entry_id: str) -> tuple[str, bytes, str]:

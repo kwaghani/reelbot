@@ -395,9 +395,9 @@ def image_bytes(candidate,stats):
 def load_entries(user,ids):
     with connect() as conn:
         entries=conn.execute('''select e.*,s.source_url,coalesce(nullif(s.raw_signals->>'thumbnail_url',''),s.raw_signals->>'thumbnail') cover_url,
-            s.cover_imagery,p.google_place_id,(select count(*) from entries x where x.save_id=e.save_id) save_entry_count
-            from entries e join saves s on s.id=e.save_id left join places p on p.id=e.place_id
-            where e.user_id=%s and e.id=any(%s::uuid[])''',(user,[str(x) for x in ids])).fetchall()
+            s.cover_imagery,p.google_place_id,(select count(*) from entries x where x.save_id=e.save_id and x.deleted_at is null) save_entry_count
+            from entries e join saves s on s.id=e.save_id and s.deleted_at is null left join places p on p.id=e.place_id
+            where e.user_id=%s and e.deleted_at is null and e.id=any(%s::uuid[])''',(user,[str(x) for x in ids])).fetchall()
         places={str(p['id']):p for p in conn.execute('select * from places where id=any(%s::uuid[])',([str(e['place_id']) for e in entries if e['place_id']],)).fetchall()}
     return entries,places
 

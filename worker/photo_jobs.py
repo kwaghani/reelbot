@@ -19,7 +19,7 @@ def run_one():
             order by retry_at for update skip locked limit 1) returning *""").fetchone()
         if not job:return False
         place=conn.execute('select * from places where id=%s',(job['place_id'],)).fetchone()
-        kind=conn.execute("select venue_kind from entries where place_id=%s order by created_at limit 1",(job['place_id'],)).fetchone()
+        kind=conn.execute("select venue_kind from entries where deleted_at is null and place_id=%s order by created_at limit 1",(job['place_id'],)).fetchone()
     stats=metrics();error=None
     try:
         result=acquire(place,(kind or {}).get('venue_kind') or 'other',stats)

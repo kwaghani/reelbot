@@ -24,7 +24,7 @@ def search(user_id: str, query: str):
         try:
             vector = vector_literal(embed_query(query))
             vectors = conn.execute('''select id,1-(embedding <=> %s::vector) as score from entries
-                where user_id=%s and embedding is not null order by embedding <=> %s::vector limit 50''',
+                where user_id=%s and deleted_at is null and embedding is not null order by embedding <=> %s::vector limit 50''',
                 (vector,user_id,vector)).fetchall()
             for row in vectors:
                 if row['score'] >= 0.45:

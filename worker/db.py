@@ -4,6 +4,7 @@ import hashlib
 import logging
 from contextlib import contextmanager
 from threading import Lock
+from contextvars import ContextVar
 from config import ConfigurationError, psycopg_database_url, settings
 from psycopg_pool import ConnectionPool
 from psycopg.rows import dict_row
@@ -12,10 +13,22 @@ from worker.reel_urls import canonical_reel_url
 LOG = logging.getLogger('reelbot.db')
 _pool: ConnectionPool | None = None
 _pool_lock = Lock()
+_transaction_connection = ContextVar('reelbot_transaction_connection', default=None)
+
+@contextmanager
+def reuse_connection(conn):
+    token=_transaction_connection.set(conn)
+    try: yield conn
+    finally: _transaction_connection.reset(token)
 
 
+@contextmanager
 def connect():
     """Borrow a bounded, pre-pinged connection from this service's pool."""
+    existing=_transaction_connection.get()
+    if existing is not None:
+        yield existing
+        return
     global _pool
     if _pool is None:
         with _pool_lock:
@@ -26,7 +39,7 @@ def connect():
                 _pool = ConnectionPool(conninfo=psycopg_database_url(current.database_url), min_size=0,
                     max_size=current.pool_ceiling, max_idle=300, max_lifetime=1500,
                     kwargs={'row_factory': dict_row, 'connect_timeout': 8}, open=True)
-    return _pool.connection()
+    with _pool.connection() as conn: yield conn
 
 
 def check_pool_capacity():
@@ -34,7 +47,9 @@ def check_pool_capacity():
     current = settings()
     with connect() as conn:
         maximum = int(conn.execute('show max_connections').fetchone()['max_connections'])
-    planned = 14  # API (5 + 5) + worker (2 + 2); one process each.
+    # API ceiling 10; supervisor, active extraction child, indexer, photo worker
+    # and account cleanup each have a bounded ceiling of four connections.
+    planned = 30
     # Keep at least 30% plus administrative headroom available to Postgres.
     if planned > max(1, int(maximum * .70)):
         raise RuntimeError(f'Database connection ceiling unsafe: planned={planned}, max_connections={maximum}')
@@ -65,7 +80,9 @@ def enqueue(conn, user_id, url):
     lock=f'{user_id}:{platform}:{identifier}' if identifier else 'source:'+source_hash
     conn.execute('select pg_advisory_xact_lock(hashtextextended(%s,0))',(lock,))
     row=conn.execute('''select * from saves where user_id=%s and (source_hash=%s or
-        (platform=%s and platform_video_id=%s)) order by created_at limit 1''',(user_id,source_hash,platform,identifier)).fetchone()
+        (platform=%s and platform_video_id=%s) or id in
+        (select save_id from save_source_urls where user_id=%s and source_url=%s))
+        order by deleted_at nulls first,created_at limit 1''',(user_id,source_hash,platform,identifier,user_id,original)).fetchone()
     if not row:
         row=conn.execute('''insert into saves(user_id,source_url,source_hash,url_hash,platform,canonical_url,platform_video_id)
             values(%s,%s,%s,%s,%s,%s,%s) returning *''',
@@ -81,7 +98,7 @@ def fail_expired(conn):
     rows = conn.execute('''update saves set status='failed',error_reason='Processing timed out. You can retry.',
         retry_at=case when attempts<2 then now()+interval '15 seconds' else null end,
         attempts=greatest(attempts,1),updated_at=now(),resolved_at=now()
-        where status='processing' and started_at<=now()-(case when is_compilation or force_dense then interval '360 seconds' else interval '150 seconds' end) returning id''').fetchall()
+        where deleted_at is null and status='processing' and started_at<=now()-(case when is_compilation or force_dense then interval '360 seconds' else interval '150 seconds' end) returning id''').fetchall()
     for row in rows:
         conn.execute("update jobs set status='failed',error_reason='Processing timed out. You can retry.',updated_at=now() where save_id=%s",(row['id'],))
     return len(rows)
@@ -93,8 +110,8 @@ def claim(conn):
     row = conn.execute('''update saves set status='processing',
         started_at=now(),updated_at=now(),
         attempts=attempts+1,error_reason=null,retry_at=null,resolved_at=null where id=(
-        select id from saves where status='queued' or (status='failed' and attempts<2 and retry_at<=now())
-        or (status='fetch_blocked' and retry_at<=now())
+        select id from saves where deleted_at is null and (status='queued' or (status='failed' and attempts<2 and retry_at<=now())
+        or (status='fetch_blocked' and retry_at<=now()))
         order by created_at for update skip locked limit 1) returning *''').fetchone()
     if row:
         conn.execute("update jobs set status='processing',updated_at=now() where save_id=%s",(row['id'],))
@@ -104,30 +121,32 @@ def claim(conn):
 ITEMS_SQL = '''select e.*,e.title as name,coalesce(p.city,e.candidate->>'city_hint','') as city,
     p.image_source,p.image_acquired_at,p.image_failure_reason,p.image_diagnostics,p.name as place_name,p.formatted_address,p.lat,p.lng,p.primary_type,p.google_place_id,p.resolution_attribution,
     s.source_url,s.canonical_url,s.platform_video_id,s.status,
-    (select count(*) from entries sibling where sibling.save_id=e.save_id) as save_entry_count,
+    (select count(*) from entries sibling where sibling.save_id=e.save_id and sibling.deleted_at is null) as save_entry_count,
     coalesce(nullif(s.raw_signals->>'thumbnail_url',''),s.raw_signals->>'thumbnail') as thumbnail,
     coalesce((select jsonb_agg(jsonb_build_object('id',f.id,'name',f.name,'kind',f.kind,
         'parent_folder_id',f.parent_folder_id,'content_type',f.content_type,'facet_key',f.facet_key,'facet_value',f.facet_value))
       from folder_items fi join folders f on f.id=fi.folder_id
-      where fi.entry_id=e.id and fi.user_id=e.user_id),'[]') as folders
-    from entries e join saves s on s.id=e.save_id left join places p on p.id=e.place_id'''
+      where fi.entry_id=e.id and fi.user_id=e.user_id and fi.deleted_at is null and f.deleted_at is null),'[]') as folders
+    from entries e join saves s on s.id=e.save_id and s.deleted_at is null left join places p on p.id=e.place_id'''
 
 
-def items(conn,user_id):
-    rows=conn.execute(ITEMS_SQL+' where e.user_id=%s order by e.created_at desc,e.id',(user_id,)).fetchall()
+def items(conn,user_id,ids=None):
+    rows=conn.execute(ITEMS_SQL+' where e.user_id=%s and e.deleted_at is null'+(' and e.id=any(%s::uuid[])' if ids is not None else '')+' order by e.created_at desc,e.id',
+        (user_id,ids) if ids is not None else (user_id,)).fetchall()
     for row in rows: row.pop('embedding',None)
     return rows
 
 
 def prune_auto_folders(conn,owner):
-    conn.execute('''delete from folders f where f.user_id=%s and f.kind='auto_facet'
-        and not exists(select 1 from folder_items fi where fi.folder_id=f.id)''',(owner,))
-    conn.execute('''delete from folders f where f.user_id=%s and f.kind='auto_type'
-        and not exists(select 1 from folder_items fi where fi.folder_id=f.id)
-        and not exists(select 1 from folders c where c.parent_folder_id=f.id)''',(owner,))
+    conn.execute('''delete from folders f where f.user_id=%s and f.deleted_at is null and f.kind='auto_facet'
+        and not exists(select 1 from folder_items fi where fi.folder_id=f.id and fi.deleted_at is null)''',(owner,))
+    conn.execute('''delete from folders f where f.user_id=%s and f.deleted_at is null and f.kind='auto_type'
+        and not exists(select 1 from folder_items fi where fi.folder_id=f.id and fi.deleted_at is null)
+        and not exists(select 1 from folders c where c.parent_folder_id=f.id and c.deleted_at is null)''',(owner,))
 
 
 def file_entry(conn,row,place=None,data=None,*,organization=None):
+    if row is None or row.get('deleted_at'): return
     from worker.registry import registry
     data=data or registry(); spec=data[row['content_type']]
     owner,identifier=row['user_id'],row['id']
@@ -153,9 +172,9 @@ def file_entry(conn,row,place=None,data=None,*,organization=None):
         and fi.entry_id=%s and fi.user_id=%s and f.kind<>'custom' ''',(identifier,owner))
     parent=conn.execute('''insert into folders(user_id,name,kind,content_type,icon)
         values(%s,%s,'auto_type',%s,%s)
-        on conflict(user_id,kind,content_type,parent_folder_id,name) do update set icon=excluded.icon returning id''',
+        on conflict(user_id,kind,content_type,parent_folder_id,name) do update set icon=excluded.icon,deleted_at=null returning id''',
         (owner,spec.get('plural_label',spec['label']),row['content_type'],spec['icon'])).fetchone()['id']
-    conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',(parent,identifier,owner))
+    conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict(folder_id,entry_id) do update set deleted_at=null',(parent,identifier,owner))
     facet=spec.get('primary_facet')
     value=row.get('organization_city') if facet=='city' else row['attributes'].get(facet or 'topic')
     values=value if isinstance(value,list) else [value]
@@ -163,9 +182,9 @@ def file_entry(conn,row,place=None,data=None,*,organization=None):
         display=str(value).strip().replace('_',' ').title() if value else 'Unsorted'
         folder=conn.execute('''insert into folders(user_id,name,kind,content_type,facet_key,facet_value,parent_folder_id,icon)
             values(%s,%s,'auto_facet',%s,%s,%s,%s,%s)
-            on conflict(user_id,kind,content_type,parent_folder_id,name) do update set facet_value=excluded.facet_value returning id''',
+            on conflict(user_id,kind,content_type,parent_folder_id,name) do update set facet_value=excluded.facet_value,deleted_at=null returning id''',
             (owner,display[:100],row['content_type'],facet or 'topic',str(value) if value else None,parent,spec['icon'])).fetchone()['id']
-        conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict do nothing',(folder,identifier,owner))
+        conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s) on conflict(folder_id,entry_id) do update set deleted_at=null',(folder,identifier,owner))
     prune_auto_folders(conn,owner)
 
 
@@ -210,6 +229,7 @@ def store_candidate(conn,save,candidate,place,confidence,reason=None,*,entry_id=
         candidate=excluded.candidate,updated_at=now() returning *''',
         (entry_id,save['user_id'],save['id'],place['id'] if place else None,candidate['content_type'],candidate['title'],
          candidate['summary'],Jsonb(attrs),confidence,bool(review_reason),review_reason,Jsonb(candidate),key)).fetchone()
+    if row is None:return None  # A worker retry cannot resurrect a removed entry.
     effective_place=conn.execute('select * from places where id=%s',(row['place_id'],)).fetchone() if row['place_id'] else None
     file_entry(conn,row,effective_place,data)
     if effective_place:

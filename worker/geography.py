@@ -101,12 +101,12 @@ def migrate_folders(conn):
     from worker.db import file_entry
     before = conn.execute('select id,user_id,save_id,place_id,note from entries order by id').fetchall()
     custom_before = conn.execute("select fi.* from folder_items fi join folders f on f.id=fi.folder_id where f.kind='custom' order by fi.folder_id,fi.entry_id").fetchall()
-    old_folders = conn.execute("select * from folders where kind='auto_facet' and content_type='place' and facet_key='city'").fetchall()
+    old_folders = conn.execute("select * from folders where deleted_at is null and kind='auto_facet' and content_type='place' and facet_key='city'").fetchall()
     legacy = {}
     for folder in old_folders:
         for metro in settings()['metros']:
             if folder['name'].casefold() in {name.casefold() for name in metro['neighborhoods']}:
-                for row in conn.execute('select entry_id from folder_items where folder_id=%s and user_id=%s', (folder['id'], folder['user_id'])).fetchall():
+                for row in conn.execute('select entry_id from folder_items where deleted_at is null and folder_id=%s and user_id=%s', (folder['id'], folder['user_id'])).fetchall():
                     legacy[str(row['entry_id'])] = {'city': metro['city'], 'neighborhood': folder['name'], 'source': 'legacy_folder_migration'}
     for entry in conn.execute("select * from entries where content_type='place'").fetchall():
         place = conn.execute('select * from places where id=%s', (entry['place_id'],)).fetchone() if entry['place_id'] else None
@@ -120,6 +120,6 @@ def migrate_folders(conn):
     custom_after = conn.execute("select fi.* from folder_items fi join folders f on f.id=fi.folder_id where f.kind='custom' order by fi.folder_id,fi.entry_id").fetchall()
     if before != after or custom_before != custom_after:
         raise RuntimeError('Organization preservation check failed; transaction must roll back')
-    removed = sum(not conn.execute('select 1 from folders where id=%s', (f['id'],)).fetchone() for f in old_folders)
+    removed = sum(not conn.execute('select 1 from folders where id=%s and deleted_at is null', (f['id'],)).fetchone() for f in old_folders)
     return {'entries_before': len(before), 'entries_after': len(after), 'identities_owners_notes_pins_preserved': True,
             'custom_memberships_preserved': True, 'old_city_folders_removed': removed, 'legacy_neighborhood_entries': len(legacy)}

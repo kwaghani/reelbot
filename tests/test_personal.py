@@ -23,10 +23,13 @@ class PersonalTests(unittest.TestCase):
         with connect() as conn:
             conn.execute((ROOT/'db/schema.sql').read_text())
             sync_registry(conn)
+            conn.execute((ROOT/'db/migrations/20260914150000_accounts_sync.sql').read_text())
         cls.client=TestClient(app)
     def setUp(self):
+        feature_flags=patch.dict(os.environ, {'REELBOT_APPLE_SIGN_IN_ENABLED':'true'})
+        feature_flags.start();self.addCleanup(feature_flags.stop)
         with connect() as conn:
-            conn.execute('truncate natural_geocode_cache,source_url_cache,fetch_cache,fetch_rate_limits,city_bias_cache,events,jobs,folder_items,folders,entries,saves,devices,users,places cascade')
+            conn.execute('truncate account_deletions,natural_geocode_cache,source_url_cache,fetch_cache,fetch_rate_limits,city_bias_cache,events,jobs,folder_items,folders,entries,saves,devices,users,places cascade')
         self.a=self.register();self.b=self.register()
     def register(self):
         token=uuid4().hex+uuid4().hex
@@ -171,9 +174,8 @@ class PersonalTests(unittest.TestCase):
             conn.execute("update users set apple_user_id='existing-a' where id=%s",(self.a['user'],))
             conn.execute("update users set apple_user_id='existing-b' where id=%s",(self.b['user'],))
         nonce=self.client.get('/auth/apple/challenge',headers=self.a['headers']).json()['nonce']
-        with patch('jwt.PyJWKClient') as keys, patch('jwt.decode',return_value={'sub':'existing-b','nonce':nonce}):
-            keys.return_value.get_signing_key_from_jwt.return_value.key='test-key'
-            response=self.client.post('/auth/apple',headers=self.a['headers'],json={'identity_token':'x'*20,'nonce':nonce})
+        with patch('api.accounts.verify_apple',return_value={'sub':'existing-b','nonce':nonce}), patch('api.accounts.exchange_apple_code',return_value='encrypted'):
+            response=self.client.post('/auth/apple',headers=self.a['headers'],json={'identity_token':'x'*20,'nonce':nonce,'authorization_code':'code'})
         self.assertEqual(response.status_code,409,response.text)
         with connect() as conn:
             owner=conn.execute('select user_id from devices where token_hash=%s',(hashlib.sha256(self.a['headers']['Authorization'][7:].encode()).hexdigest(),)).fetchone()

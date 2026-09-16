@@ -35,7 +35,7 @@ def finish(save_id,status,metrics,error=None):
     from worker.ingestion_states import message
     from worker.fetch.http import settings
     with connect() as conn:
-        saved=conn.execute("select * from saves where id=%s and status='processing' for update",(save_id,)).fetchone()
+        saved=conn.execute("select * from saves where id=%s and deleted_at is null and status='processing' for update",(save_id,)).fetchone()
         if not saved:return
         blocked=saved['blocked_attempts']+(status=='fetch_blocked');delay=None
         if status=='fetch_blocked':
@@ -62,7 +62,7 @@ def process(save_id):
     from worker.registry import registry,registry_version,validate_candidates
     metrics=new_metrics();diagnostics={}; log_rss('job_start', save_id)
     try:
-        with connect() as conn:save=conn.execute('select * from saves where id=%s',(save_id,)).fetchone()
+        with connect() as conn:save=conn.execute('select * from saves where id=%s and deleted_at is null',(save_id,)).fetchone()
         if not save or save['status']!='processing':return
         # Accumulate retries honestly; this attempt's tier logs remain in raw_signals.
         metrics={**metrics,**save['cost']};metrics.pop('provider_error',None)
@@ -201,7 +201,7 @@ def maintain_embeddings():
     while True:
         try:
             with connect() as conn:
-                missing=conn.execute('select id,user_id,updated_at from entries where embedding is null order by created_at limit 8').fetchall()
+                missing=conn.execute('select id,user_id,updated_at from entries where deleted_at is null and embedding is null order by created_at limit 8').fetchall()
             for pending in missing:
                 with connect() as conn:
                     row=next((r for r in items(conn,pending['user_id']) if r['id']==pending['id']),None)
@@ -229,6 +229,7 @@ def main():
         process(sys.argv[2]); return
     photos=subprocess.Popen([sys.executable,'-m','worker.photo_jobs'],cwd=ROOT)
     indexer=subprocess.Popen([sys.executable,'-m','worker.worker','--index'],cwd=ROOT)
+    cleanup=subprocess.Popen([sys.executable,'-m','api.account_deletion'],cwd=ROOT)
     def stop(*_):
         raise SystemExit(0)
     signal.signal(signal.SIGTERM, stop)
@@ -237,6 +238,7 @@ def main():
     try:
         while True:
             try:
+                if cleanup.poll() is not None:cleanup=subprocess.Popen([sys.executable,'-m','api.account_deletion'],cwd=ROOT)
                 if time.monotonic() - last_queue_log >= 30:
                     LOG.info('worker_queue_depth depth=%s concurrency=1', queue_depth()); last_queue_log=time.monotonic()
                 if photos.poll() is not None:photos=subprocess.Popen([sys.executable,'-m','worker.photo_jobs'],cwd=ROOT)
@@ -247,6 +249,9 @@ def main():
                 LOG.exception('Worker unavailable; durable queue retained')
                 time.sleep(3)
     finally:
+        cleanup.terminate()
+        try:cleanup.wait(timeout=5)
+        except subprocess.TimeoutExpired:cleanup.kill();cleanup.wait()
         photos.terminate()
         try:photos.wait(timeout=5)
         except subprocess.TimeoutExpired:photos.kill();photos.wait()
