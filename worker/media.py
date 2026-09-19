@@ -163,7 +163,10 @@ def ytdlp_options(url: str, workdir: Path | None = None) -> dict[str, Any]:
             }
         )
     cookies_source = settings().cookie_file_path or ''
-    if cookies_source and is_instagram_url(url):
+    # Cookie jars are domain-scoped, so yt-dlp sends only the cookies matching
+    # this URL's host. Restricting the jar to Instagram left TikTok downloads
+    # with no credential path at all; the file itself decides what applies.
+    if cookies_source:
         browser = cookies_from_browser(cookies_source)
         if browser:
             opts["cookiesfrombrowser"] = browser
