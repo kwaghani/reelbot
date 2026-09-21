@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import threading
 from typing import Any
 
@@ -32,7 +33,15 @@ def embed_document(text: str) -> list[float]:
     return _embed(text)
 
 
+def query_embeddings_enabled() -> bool:
+    """Loading the model costs several hundred MB; the 512 MB API instance was
+    killed by the first semantic query. Callers fall back to lexical ranking."""
+    return os.environ.get("REELBOT_QUERY_EMBEDDINGS", "").strip().lower() in ("1", "true", "yes")
+
+
 def embed_query(text: str) -> list[float]:
+    if not query_embeddings_enabled():
+        raise RuntimeError("query embeddings are disabled in this process")
     if "bge-" in MODEL_NAME.lower():
         text = QUERY_INSTRUCTION + (text or "")
     return _embed(text)
