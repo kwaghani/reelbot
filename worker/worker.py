@@ -274,10 +274,12 @@ def main():
         operations.terminate()
         try:operations.wait(timeout=5)
         except subprocess.TimeoutExpired:operations.kill();operations.wait()
-        for process in retention:
-            process.terminate()
-            try:process.wait(timeout=5)
-            except subprocess.TimeoutExpired:process.kill();process.wait()
+        # Not named `process`: that would shadow process() for the whole of main()
+        # and every `--save` child would die with UnboundLocalError.
+        for job in retention:
+            job.terminate()
+            try:job.wait(timeout=5)
+            except subprocess.TimeoutExpired:job.kill();job.wait()
         cleanup.terminate()
         try:cleanup.wait(timeout=5)
         except subprocess.TimeoutExpired:cleanup.kill();cleanup.wait()
