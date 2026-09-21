@@ -26,7 +26,7 @@ class MigrationTests(unittest.TestCase):
         with psycopg.connect(url,row_factory=dict_row) as conn:
             row=conn.execute('select * from entries where id=%s',(item,)).fetchone()
             self.assertEqual((row['user_id'],row['save_id'],row['place_id'],row['note']),(owner,save,place,'Keep this note'))
-            self.assertEqual((row['content_type'],row['title'],row['attributes']['venue_kind']),('place','Old Cafe','cafe'))
+            self.assertEqual((row['content_type'],row['title'],row['attributes']['venue_kind']),('place','Saved place','cafe'))
             self.assertEqual(conn.execute('select count(*) as n from folder_items where folder_id=%s and entry_id=%s',(folder,item)).fetchone()['n'],1)
             self.assertEqual(conn.execute('select count(*) as n from folders where kind in (\'auto_type\',\'auto_facet\')').fetchone()['n'],2)
         self.assertTrue(run(url)['already_migrated'])
@@ -64,4 +64,4 @@ class MigrationTests(unittest.TestCase):
         self.assertTrue(run(url)['already_migrated'])
         with psycopg.connect(url) as conn:
             self.assertEqual(conn.execute('select count(distinct place_id) from entries where legacy_item_id=%s',(originals[1],)).fetchone()[0],1)
-            self.assertEqual(conn.execute('select payload->>\'place_name\' from orphaned_items').fetchone()[0],'Venue 2')
+            self.assertIsNone(conn.execute('select payload->>\'place_name\' from orphaned_items').fetchone()[0])

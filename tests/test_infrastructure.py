@@ -58,31 +58,36 @@ class HealthTests(unittest.TestCase):
 
 
 class BackupSafetyTests(unittest.TestCase):
-    def _upload(self, database_url, object_url, present=True):
-        # Execute the actual upload block used by the shell script with only
-        # its external storage and file inputs replaced.
-        script = (Path(__file__).resolve().parents[1] / 'scripts/backup.sh').read_text()
-        upload = script.split("<<'PY'", 1)[1].split('\nPY', 1)[0]
-        with patch.dict(os.environ, {'DATABASE_URL': database_url}, clear=True), \
-             patch.object(sys, 'argv', ['backup', 'backups/test.sql.gz', '/unused']), \
-             patch.object(Path, 'read_bytes', return_value=b'compressed fixture'), \
-             patch('worker.storage.put'), \
-             patch('worker.storage.get_url', return_value=object_url), \
-             patch('worker.storage.exists', return_value=present):
-            config.reset_for_tests()
-            try:
-                exec(compile(upload, 'backup-upload', 'exec'), {})
-            finally:
-                config.reset_for_tests()
+    def _upload(self, present=True):
+        from worker.retention_backup import main
+        from unittest.mock import Mock
+        backend=Mock();backend.exists.return_value=present
+        backend.client.get_paginator.return_value.paginate.return_value=[]
+        with patch('worker.retention_backup.R2Storage',return_value=backend), \
+             patch('worker.retention_backup.create'), \
+             patch.object(Path,'read_bytes',return_value=b'compressed fixture'):
+            main()
+        backend.put.assert_called_once()
+        backend.exists.assert_called_once()
 
     def test_remote_backup_rejects_local_fallback(self):
-        with self.assertRaisesRegex(RuntimeError, 'not persisted to R2'):
-            self._upload('postgres://user:pass@render-db/reelbot', 'file:///tmp/backup')
+        from worker.retention_backup import main
+        with patch.dict(os.environ, {}, clear=True), patch('worker.storage.LocalStorage') as local:
+            config.reset_for_tests()
+            try:
+                with self.assertRaisesRegex(RuntimeError,'R2 configuration is incomplete'): main()
+                local.assert_not_called()
+            finally: config.reset_for_tests()
 
     def test_remote_backup_requires_persisted_object(self):
-        with self.assertRaisesRegex(RuntimeError, 'not persisted to R2'):
-            self._upload('postgres://user:pass@render-db/reelbot', 'https://r2.example/backup', False)
-        self._upload('postgres://user:pass@render-db/reelbot', 'https://r2.example/backup')
+        with self.assertRaisesRegex(RuntimeError,'Backup verification failed'): self._upload(False)
+        self._upload(True)
 
-    def test_loopback_backup_preserves_local_round_trip(self):
-        self._upload('postgres://user:pass@127.0.0.1/reelbot_test', 'file:///tmp/backup')
+    def test_backup_requires_retention_schema_and_explicit_class_a_copy(self):
+        from worker import retention_backup
+        import inspect
+        source=inspect.getsource(retention_backup.create)
+        self.assertIn('20260915000000_google_retention',source)
+        self.assertIn("('lat','lng','coords_fetched_at')",source)
+        self.assertIn('pg_export_snapshot',source)
+        self.assertIn('--exclude-table-data=public.places',source)

@@ -54,7 +54,9 @@ class ContentTests(unittest.TestCase):
             self.assertEqual(sum(f['kind']=='auto_facet' for f in folders),2)
             self.assertTrue(all(f['parent_folder_id'] for f in folders if f['kind']=='auto_facet'))
         self.client.delete('/items/'+str(row['id']),headers=self.a['headers'])
-        with connect() as conn: self.assertEqual(conn.execute('select count(*) as n from folders').fetchone()['n'],0)
+        with connect() as conn:
+            self.assertEqual(conn.execute('select count(*) as n from folders where deleted_at is null').fetchone()['n'],0)
+            self.assertEqual(conn.execute('select count(*) as n from folders where deleted_at is not null').fetchone()['n'],3)
     def test_dismissal_persists_and_retry_cannot_restore_review(self):
         saved=self.save(self.a,'Dismiss')
         row=self.entry('recipe',{'cuisine':None},title='Unknown noodles',save=saved)

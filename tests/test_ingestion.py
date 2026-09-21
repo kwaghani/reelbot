@@ -83,8 +83,9 @@ class IngestionTests(unittest.TestCase):
                 conn.execute('update entries set note=%s where id=%s',(note,row['id']))
             winner,merged=bind_identity(conn,short,RESOLVED)
             self.assertTrue(merged);self.assertEqual(winner['id'],direct['id'])
-            self.assertEqual(conn.execute('select count(*) as n from saves').fetchone()['n'],1)
-            row=conn.execute('select note from entries').fetchone();self.assertIn('Try the tofu',row['note']);self.assertIn('Bring appetite',row['note'])
+            self.assertEqual(conn.execute('select count(*) as n from saves where deleted_at is null').fetchone()['n'],1)
+            self.assertEqual(conn.execute('select count(*) as n from saves where deleted_at is not null').fetchone()['n'],1)
+            row=conn.execute('select note from entries where deleted_at is null').fetchone();self.assertIn('Try the tofu',row['note']);self.assertIn('Bring appetite',row['note'])
             self.assertEqual(conn.execute('select count(*) as n from save_source_urls').fetchone()['n'],2)
             self.assertTrue(winner['source_url'].endswith('?tracking=original'))
 
@@ -194,7 +195,8 @@ class IngestionTests(unittest.TestCase):
         with connect() as conn:
             row=store_candidate(conn,saved,c,None,.8,'ambiguous_place')
             conn.execute('update entries set note=%s where id=%s',('Order coffee',row['id']))
-        selected=self.client.post('/items/'+str(row['id'])+'/choose-place',headers=self.a['headers'],json={'place_id':'offered-place'})
+        with patch('worker.places.display_details',return_value=option):
+            selected=self.client.post('/items/'+str(row['id'])+'/choose-place',headers=self.a['headers'],json={'place_id':'offered-place'})
         self.assertEqual(selected.status_code,200);self.assertFalse(selected.json()['needs_review']);self.assertEqual(selected.json()['note'],'Order coffee')
         with connect() as conn:
             place=conn.execute('select p.* from places p join entries e on e.place_id=p.id where e.id=%s',(row['id'],)).fetchone()

@@ -21,9 +21,13 @@ class PersonalTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         with connect() as conn:
-            conn.execute((ROOT/'db/schema.sql').read_text())
-            sync_registry(conn)
-            conn.execute((ROOT/'db/migrations/20260914150000_accounts_sync.sql').read_text())
+            ready=conn.execute("select to_regclass('public.retention_runs') as relation").fetchone()['relation']
+            if not ready:
+                conn.execute((ROOT/'db/schema.sql').read_text())
+                sync_registry(conn)
+                conn.execute((ROOT/'db/migrations/20260914150000_accounts_sync.sql').read_text())
+                from db.retention_migrate import run
+                run(conn)
         cls.client=TestClient(app)
     def setUp(self):
         feature_flags=patch.dict(os.environ, {'REELBOT_APPLE_SIGN_IN_ENABLED':'true'})
@@ -70,7 +74,7 @@ class PersonalTests(unittest.TestCase):
         self.assertEqual((calls,hits),(1,4))
         with connect() as conn:
             self.assertEqual(conn.execute('select count(*) as n from places').fetchone()['n'],1)
-            self.assertEqual(conn.execute("select count(*) as n from places where formatted_address='' or lat not between -90 and 90 or lng not between -180 and 180").fetchone()['n'],0)
+            self.assertEqual(conn.execute("select count(*) as n from places where extracted_name='' or coords_fetched_at is null or lat not between -90 and 90 or lng not between -180 and 180").fetchone()['n'],0)
     def test_ambiguous_candidate_retained_in_review(self):
         saved=self.save(self.a)
         def ambiguous(c,m):

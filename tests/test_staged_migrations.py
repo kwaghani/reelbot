@@ -8,7 +8,7 @@ from uuid import uuid4
 import psycopg
 from psycopg import sql
 from psycopg.rows import dict_row
-from db.staged_migrate import apply, ACCOUNT_EXPAND, ACCOUNT_VERSION
+from db.staged_migrate import apply, ACCOUNT_EXPAND, ACCOUNT_VERSION, RETENTION_VERSION
 from worker.registry import sync_registry
 
 
@@ -69,6 +69,35 @@ class StagedMigrationTests(unittest.TestCase):
         self.assertEqual(row['name'], 'Fixture name'); self.assertEqual(row['lat'], 1)
         self.assertIsNone(row['coords_fetched_at'])
         self.assertIsNone(self.conn.execute("select 1 from schema_migrations where id='20260915000000_google_retention'").fetchone())
+
+    def test_retention_activation_requires_expansion_and_only_records_the_marker(self):
+        apply(self.conn, 'accounts-expand'); apply(self.conn, 'accounts-activate')
+        with self.assertRaisesRegex(RuntimeError, 'expansion'):
+            apply(self.conn, 'retention-activate')
+        place = self.conn.execute("insert into places(google_place_id,name,city,formatted_address,lat,lng) values('fixture','Fixture name','Fixture city','Fixture address',1,2) returning id").fetchone()['id']
+        apply(self.conn, 'retention-expand')
+        before = self.conn.execute('select * from places where id=%s', (place,)).fetchone()
+        apply(self.conn, 'retention-activate')
+        after = self.conn.execute('select * from places where id=%s', (place,)).fetchone()
+        self.assertEqual(after, before)
+        self.assertIsNotNone(self.conn.execute('select 1 from schema_migrations where id=%s', (RETENTION_VERSION,)).fetchone())
+        self.assertTrue(apply(self.conn, 'retention-activate')['already_applied'])
+
+    def test_retention_activation_unblocks_the_new_runtime_schema_gate(self):
+        gate = (Path(__file__).resolve().parents[1] / 'deploy/render/check_schema.py').read_text()
+        self.assertIn(RETENTION_VERSION, gate)
+        apply(self.conn, 'accounts-expand'); apply(self.conn, 'accounts-activate')
+        apply(self.conn, 'retention-expand')
+        self.assertIsNone(self.conn.execute('select 1 from schema_migrations where id=%s', (RETENTION_VERSION,)).fetchone())
+        apply(self.conn, 'retention-activate')
+        self.assertIsNotNone(self.conn.execute('select 1 from schema_migrations where id=%s', (RETENTION_VERSION,)).fetchone())
+
+    def test_retention_activation_refuses_an_incomplete_expansion(self):
+        apply(self.conn, 'accounts-expand'); apply(self.conn, 'accounts-activate')
+        apply(self.conn, 'retention-expand')
+        self.conn.execute('alter table places drop column coords_fetched_at')
+        with self.assertRaisesRegex(RuntimeError, 'coords_fetched_at'):
+            apply(self.conn, 'retention-activate')
 
     def test_rehearsal_rollback_leaves_no_expansion(self):
         apply(self.conn, 'accounts-expand'); self.conn.rollback()

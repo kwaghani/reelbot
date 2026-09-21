@@ -200,7 +200,7 @@ def run_one():
 
 def maintain_embeddings():
     from worker.db import items,vector_literal
-    from worker.embed import embed_document
+    from worker.embed import embed_document,entry_document
     while True:
         try:
             with connect() as conn:
@@ -208,9 +208,9 @@ def maintain_embeddings():
             for pending in missing:
                 with connect() as conn:
                     row=next((r for r in items(conn,pending['user_id']) if r['id']==pending['id']),None)
+                    signals=conn.execute('select raw_signals from saves where id=%s',(row['save_id'],)).fetchone() if row else None
                 if row:
-                    text=' '.join([row['title'],row['summary'],json.dumps(row['attributes']),row.get('place_name') or '',row['city'],row['note'],' '.join(f['name'] for f in row['folders'])])
-                    vector=vector_literal(embed_document(text))
+                    vector=vector_literal(embed_document(entry_document(row,(signals or {}).get('raw_signals'))))
                     with connect() as conn:
                         conn.execute('update entries set embedding=%s::vector where id=%s and updated_at=%s',(vector,row['id'],pending['updated_at']))
             time.sleep(3)
@@ -242,6 +242,8 @@ def main():
     threading.Thread(target=pulse,daemon=True).start()
     operations=subprocess.Popen([sys.executable,'-m','worker.operations'],cwd=ROOT)
     photos=subprocess.Popen([sys.executable,'-m','worker.photo_jobs'],cwd=ROOT)
+    # Signed reel-cover URLs lapse in days; renew them hourly, ahead of expiry.
+    covers=subprocess.Popen([sys.executable,'-m','worker.cover_refresh','--watch'],cwd=ROOT)
     indexer=subprocess.Popen([sys.executable,'-m','worker.worker','--index'],cwd=ROOT)
     retention=[subprocess.Popen([sys.executable,'-m',module,flag],cwd=ROOT) for module,flag in [('worker.coordinate_sweep','--daily'),('worker.coordinate_refresh','--daily'),('worker.retention_monitor','--watch')]]
     cleanup=subprocess.Popen([sys.executable,'-m','api.account_deletion'],cwd=ROOT)
@@ -260,6 +262,7 @@ def main():
                 if time.monotonic() - last_queue_log >= 30:
                     LOG.info('worker_queue_depth depth=%s concurrency=1', queue_depth()); last_queue_log=time.monotonic()
                 if photos.poll() is not None:photos=subprocess.Popen([sys.executable,'-m','worker.photo_jobs'],cwd=ROOT)
+                if covers.poll() is not None:covers=subprocess.Popen([sys.executable,'-m','worker.cover_refresh','--watch'],cwd=ROOT)
                 if indexer.poll() is not None:
                     indexer=subprocess.Popen([sys.executable,'-m','worker.worker','--index'],cwd=ROOT)
                 if not run_one(): time.sleep(1)
@@ -278,9 +281,10 @@ def main():
         cleanup.terminate()
         try:cleanup.wait(timeout=5)
         except subprocess.TimeoutExpired:cleanup.kill();cleanup.wait()
-        photos.terminate()
-        try:photos.wait(timeout=5)
-        except subprocess.TimeoutExpired:photos.kill();photos.wait()
+        for child in (photos,covers):
+            child.terminate()
+            try:child.wait(timeout=5)
+            except subprocess.TimeoutExpired:child.kill();child.wait()
         indexer.terminate()
         try:
             indexer.wait(timeout=5)

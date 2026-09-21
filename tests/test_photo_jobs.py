@@ -38,6 +38,6 @@ class PhotoJobTests(unittest.TestCase):
   body={'jpeg':base64.b64encode(image.getvalue()).decode()}
   self.assertEqual(self.client.post(path,headers=self.b['headers'],json=body).status_code,404)
   self.assertEqual(self.client.post(path,headers=self.a['headers'],json=body).status_code,200)
-  self.assertTrue(self.client.get(path,headers=self.a['headers']).json()['uri'].startswith('data:image/jpeg'))
+  self.assertIsNone(self.client.get(path,headers=self.a['headers']).json()['uri'])
   self.assertIsNone(self.client.get('/items/'+str(b['id'])+'/map-thumbnail',headers=self.b['headers']).json()['uri'])
-  self.assertEqual(self.client.post(path,headers=self.a['headers'],json={'jpeg':'invalid'}).status_code,422)
+  self.assertFalse(self.client.post(path,headers=self.a['headers'],json={'jpeg':'invalid'}).json()['stored'])

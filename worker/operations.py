@@ -29,12 +29,13 @@ def snapshot(at=None):
         outcomes=conn.execute("select detail->>'status' status,count(*) n from events where kind='save_finished' and created_at>=%s-interval '1 hour' group by detail->>'status'",(at,)).fetchall()
         has_sweep=conn.execute("select to_regclass('public.retention_runs') relation").fetchone()['relation']
         sweep=conn.execute("select max(finished_at) at from retention_runs where job='sweep'").fetchone()['at'] if has_sweep else None
+        refresh=conn.execute("select max(finished_at) at from retention_runs where job='refresh'").fetchone()['at'] if has_sweep else None
         has_coords=conn.execute("select 1 from information_schema.columns where table_schema='public' and table_name='places' and column_name='coords_fetched_at'").fetchone()
         oldest=conn.execute('select min(coords_fetched_at) at from places').fetchone()['at'] if has_coords else None
     total=sum(row['n'] for row in outcomes); failed=sum(row['n'] for row in outcomes if row['status'] in FAILURES)
     return {'worker_heartbeat_age_seconds': max(0,(at-beat).total_seconds()) if beat else None,
             'queue_depth':queue['depth'],'oldest_queued_at':queue['oldest'],'last_job_completed_at':completed,
-            'oldest_coords_fetched_at':oldest,'last_sweep_at':sweep,'extractions_last_hour':total,'failures_last_hour':failed}
+            'oldest_coords_fetched_at':oldest,'last_sweep_at':sweep,'last_refresh_at':refresh,'extractions_last_hour':total,'failures_last_hour':failed}
 
 def evaluate(data, at=None):
     at=at or datetime.now(timezone.utc); alerts=[]

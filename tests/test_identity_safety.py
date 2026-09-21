@@ -99,7 +99,7 @@ class CategoryTests(unittest.TestCase):
             place=persist_google(conn,{'id':'array-only','displayName':{'text':'Food Place'},'formattedAddress':'New York',
                 'location':{'latitude':40.721,'longitude':-73.994},'types':['bar','fast_food_restaurant','restaurant']},
                 {'name':'Food Place','city_hint':'New York'})
-        self.assertEqual(place['primary_type'],'')
+        self.assertNotIn('primary_type',place)
         self.assertEqual(provider_kind(place)[0],'restaurant')
 
     def test_ten_exact_name_vetoes_rerank_surviving_food_place(self):
@@ -115,7 +115,7 @@ class CategoryTests(unittest.TestCase):
                     place,_,reason=resolve(conn,lookup,metrics,search=search)
                 self.assertIsNone(reason);self.assertEqual(place['google_place_id'],f['name']+'1')
                 self.assertEqual(metrics['category_vetoes'][0]['name_score'],1)
-                self.assertIn(f['wrong'],log.output[0])
+                self.assertIn('category_mismatch',log.output[0]);self.assertNotIn(f['wrong'],log.output[0])
 
     def test_exhausted_fanout_and_cached_poison_are_vetoed(self):
         lookup={'name':'Toast','city_hint':'New York','confidence':.95,'category_contexts':['food_context']}
@@ -131,7 +131,7 @@ class CategoryTests(unittest.TestCase):
         lookup['city_hint']='San Francisco'
         lookup['country_hint']='USA'
         with connect() as conn:
-            conn.execute("update places set primary_type='clothing_store' where id=%s",(row['place_id'],))
+            conn.execute("update places set venue_kind='shop' where id=%s",(row['place_id'],))
             place,_,reason=resolve(conn,lookup,new_metrics(),search=lambda c,m:[])
             self.assertIsNone(place);self.assertEqual(reason,'category_mismatch')
 
@@ -141,7 +141,7 @@ class CategoryTests(unittest.TestCase):
         with connect() as conn:
             conn.execute("update saves set raw_signals=%s where id=%s",(Jsonb({'caption':'Food review with @Toast #ToastPartner #ad'}),row['save_id']))
             conn.execute("update entries set venue_kind='bar',venue_kind_source='user',note='Keep this note' where id=%s",(row['id'],))
-            conn.execute("update places set primary_type='clothing_store' where id=%s",(row['place_id'],))
+            conn.execute("update places set venue_kind='shop' where id=%s",(row['place_id'],))
             result=repair(conn)
             changed=conn.execute('select * from entries where id=%s',(row['id'],)).fetchone()
             self.assertEqual(result['flagged'][0]['reason'],'sponsor_not_venue')

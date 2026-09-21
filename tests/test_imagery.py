@@ -21,7 +21,7 @@ class ImageryTests(unittest.TestCase):
         base.PersonalTests.setUp(self)
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.cache=patch.object(im,'cache_dir',return_value=__import__('pathlib').Path(self.tmp.name));self.cache.start();self.addCleanup(self.cache.stop)
-    def resolve(self, rows, **kw):return im.resolve_batch(self.a['user'],[r['id'] for r in rows],**kw)
+    def resolve(self, rows, **kw):return im.resolve_batch(self.a['user'],[r['id'] for r in rows],**{'gallery':True,'context':'detail',**kw})
     def test_five_entries_one_global_acquisition_and_no_google_content_persisted(self):
         rows=[self.venue(self.save(self.a,str(i)),self.a)[0] for i in range(5)]
         with patch.object(im,'google_candidates',return_value=[google()]) as metadata,patch.object(im,'google_bytes',return_value=photo()) as media:
@@ -42,7 +42,8 @@ class ImageryTests(unittest.TestCase):
         fetch.assert_not_called()
         for item in result['items'].values():self.assertEqual(item['selection']['cover_rejection'],'multi_entry_save');self.assertIsNone(item['selected'])
         self.assertEqual(self.client.patch('/items/'+str(a['id']),headers=self.a['headers'],json={'content_type':'recipe','attributes':{}}).status_code,200)
-        with patch.object(im,'acquire') as acq:self.assertEqual(self.resolve([a])['items'],{});acq.assert_not_called()
+        with patch.object(im,'acquire') as acq:
+            self.assertIn(str(a['id']),self.resolve([a])['items']);acq.assert_not_called()
     def test_cover_quality_boundaries_and_cached_ocr(self):
         row=self.venue(self.save(self.a),self.a)[0]
         with connect() as conn:conn.execute('update saves set raw_signals=%s where id=%s',(Jsonb({'thumbnail_url':'https://example.com/dish.jpg'}),row['save_id']))
@@ -89,6 +90,76 @@ class ImageryTests(unittest.TestCase):
         for url in ['file:///etc/passwd','http://127.0.0.1/a','http://169.254.169.254/latest','https://user:pass@example.com/a','http://localhost/a']:
             with self.assertRaises(ValueError):im.public_url(url)
 
+    def usable_cover(self):
+        raw=photo('blue');asset=im.store_thumb(raw)
+        return {'key':'cover','source':'cover','width':1200,'height':1500,'asset':asset,'content_hash':im.digest(raw),'thumbnail_bytes':len(raw),'attribution':{'label':'Creator'},'license':'Creator source'}
+
+    def test_card_cover_precedence_skips_all_venue_calls(self):
+        row=self.venue(self.save(self.a),self.a)[0];cover=self.usable_cover()
+        with patch.object(im,'cover_candidate',return_value=(cover,None)),patch.object(im,'acquire') as acquire:
+            value=self.resolve([row],gallery=False)['items'][str(row['id'])]
+        acquire.assert_not_called();self.assertEqual(value['selected']['source'],'cover')
+
+    def test_nonplace_linked_to_place_still_uses_only_cover(self):
+        row=self.venue(self.save(self.a),self.a)[0]
+        self.client.patch('/items/'+str(row['id']),headers=self.a['headers'],json={'content_type':'workout','attributes':{'muscle_group':['arms']}})
+        with patch.object(im,'cover_candidate',return_value=(self.usable_cover(),None)),patch.object(im,'acquire') as acquire:
+            value=self.resolve([row])['items'][str(row['id'])]
+        acquire.assert_not_called();self.assertEqual(value['selected']['source'],'cover')
+
+    def test_live_google_gallery_then_cover_and_failure_degrades(self):
+        row=self.venue(self.save(self.a),self.a)[0];cover=self.usable_cover()
+        with patch.object(im,'cover_candidate',return_value=(cover,None)),patch.object(im,'acquire',return_value=[google()]),patch.object(im,'google_bytes',return_value=photo()):
+            value=self.resolve([row],context='detail')['items'][str(row['id'])]
+            self.assertEqual([c['source'] for c in value['gallery']],['google','cover'])
+        with patch.object(im,'cover_candidate',return_value=(cover,None)),patch.object(im,'acquire',return_value=[google()]),patch.object(im,'google_bytes',side_effect=RuntimeError('unavailable')):
+            value=self.resolve([row],context='detail')['items'][str(row['id'])]
+            self.assertEqual(value['selected']['source'],'cover')
+
+    def test_text_heavy_cover_falls_through_to_venue_sources(self):
+        row=self.venue(self.save(self.a),self.a)[0]
+        commons={**self.usable_cover(),'source':'commons','key':'commons:1'}
+        with patch.object(im,'cover_candidate',return_value=(None,'cover_text_above_25_percent')),patch.object(im,'acquire',return_value=[commons]) as acquire:
+            value=self.resolve([row],gallery=False)['items'][str(row['id'])]
+        acquire.assert_called_once();self.assertEqual(value['selected']['source'],'commons')
+
+    def test_library_gallery_never_requests_google(self):
+        row=self.venue(self.save(self.a),self.a)[0]
+        with patch.object(im,'google_candidates') as google,patch.object(im,'site_candidate',return_value=[]),patch.object(im,'commons_candidates',return_value=[]):
+            self.resolve([row],context='library',gallery=True)
+        google.assert_not_called()
+
+    def test_gallery_thumbnails_have_bounded_distinct_keys_and_owner_cleanup(self):
+        row=self.venue(self.save(self.a),self.a)[0];cover=self.usable_cover()
+        site={**cover,'source':'site','key':'site:1','_bytes':photo('green')}
+        from worker.storage import _thumbnail
+        with patch.object(im,'cover_candidate',return_value=(cover,None)),patch.object(im,'acquire',return_value=[site]),patch('worker.storage._thumbnail',wraps=_thumbnail) as thumbnail:
+            value=self.resolve([row])['items'][str(row['id'])]
+        self.assertEqual([c['source'] for c in value['gallery']],['cover','site'])
+        self.assertEqual({call.args[1] for call in thumbnail.call_args_list},{str(row['id'])+'-cover',str(row['id'])+'-site'})
+        from api.account_deletion import request_deletion
+        request_deletion(self.a['user'])
+        with connect() as conn:keys=conn.execute('select object_keys from account_deletions where user_id=%s',(self.a['user'],)).fetchone()['object_keys']
+        for variant in ('','-cover','-site','-commons-0','-commons-1','-commons-2'):
+            for suffix in ('jpg','webp'):self.assertIn('thumbs/'+str(row['id'])+variant+'.'+suffix,keys)
+
+    def test_distinct_reel_covers_at_same_place_do_not_share_render_bytes(self):
+        rows=[self.venue(self.save(self.a,str(i)),self.a)[0] for i in range(2)]
+        blue=self.usable_cover();raw=photo('green')
+        green={**blue,'asset':im.store_thumb(raw),'content_hash':im.digest(raw)}
+        with patch.object(im,'cover_candidate',side_effect=[(blue,None),(green,None)]):
+            result=self.resolve(rows,gallery=False)
+        images=[result['items'][str(row['id'])]['gallery'][0]['uri'] for row in rows]
+        self.assertNotEqual(*images)
+
+    def test_multiple_commons_gallery_images_have_distinct_bounded_keys(self):
+        row=self.venue(self.save(self.a),self.a)[0];cover=self.usable_cover()
+        candidates=[{**cover,'source':'commons','key':'commons:'+str(i),'_bytes':photo(color)} for i,color in enumerate(['red','green','blue'])]
+        from worker.storage import _thumbnail
+        with patch.object(im,'cover_candidate',return_value=(None,'unavailable')),patch.object(im,'acquire',return_value=candidates),patch('worker.storage._thumbnail',wraps=_thumbnail) as thumbnail:
+            self.resolve([row])
+        self.assertEqual({call.args[1] for call in thumbnail.call_args_list},{str(row['id'])+'-commons-'+str(i) for i in range(3)})
+
     def test_commons_identity_license_and_thumbnail_are_kept_together(self):
         document={'query':{'pages':{'42':{'pageid':42,'title':'File:Example Museum Test City.jpg','imageinfo':[{'width':1800,'height':1200,'thumburl':'https://upload.wikimedia.org/example.jpg','descriptionurl':'https://commons.wikimedia.org/wiki/File:Example','extmetadata':{'ImageDescription':{'value':'Example Museum in Test City'},'Artist':{'value':'<a>Jane Photographer</a>'},'LicenseShortName':{'value':'CC BY-SA 4.0'},'LicenseUrl':{'value':'https://creativecommons.org/licenses/by-sa/4.0/'}}}]}}}}
         with patch.object(im,'fetch',side_effect=[(json.dumps(document).encode(),'https://commons.wikimedia.org'),(photo(),'https://upload.wikimedia.org/example.jpg')]):
@@ -99,7 +170,9 @@ class ImageryTests(unittest.TestCase):
     def test_site_is_proxy_only_and_resolution_masks_never_request_photos(self):
         with patch.object(im,'google_details',return_value={'websiteUri':'https://venue.example/'}),patch.object(im,'fetch',side_effect=[(b'<meta property="og:image" content="/food.jpg">','https://venue.example/'),(photo(),'https://venue.example/food.jpg')]):
             candidate=im.site_candidate({'id':'place'},im.metrics())[0]
-        self.assertNotIn('asset',candidate);self.assertEqual(candidate['attribution']['label'],'venue.example');self.assertIn('_bytes',candidate)
+        # websiteUri is Google content: neither it nor the derived image URL may persist.
+        persisted={k:v for k,v in candidate.items() if not k.startswith('_')}
+        self.assertNotIn('venue.example',json.dumps(persisted));self.assertIn('asset',candidate);self.assertIn('_bytes',candidate)
         from worker.places import FIELD_MASK
         self.assertNotIn('photos',FIELD_MASK)
 

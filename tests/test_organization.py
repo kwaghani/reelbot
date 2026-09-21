@@ -32,18 +32,18 @@ class OrganizationTests(unittest.TestCase):
             custom = conn.execute("insert into folders(user_id,name,kind) values(%s,'Weekend','custom') returning id", (self.a['user'],)).fetchone()['id']
         neighborhoods = ['Venice Beach', 'Silver Lake', 'Koreatown', 'Hollywood', 'Echo Park']
         for i in range(10):
-            entry, _ = self.venue(self.save(self.a, 'Geo' + str(i)), self.a, name='Venue ' + str(i))
+            entry, _ = self.venue(self.save(self.a, 'Geo' + str(i)), self.a, name='Venue ' + str(i),city='Los Angeles')
             with connect() as conn:
                 geo = {'city': 'Los Angeles', 'neighborhood': neighborhoods[i % 5], 'country': 'US', 'region': 'CA'}
-                conn.execute('update places set organization_geography=%s where id=%s', (Jsonb(geo), entry['place_id']))
+                conn.execute('update places set extracted_city=%s,extracted_neighborhood=%s where id=%s', (geo['city'],geo['neighborhood'],entry['place_id']))
                 conn.execute("update entries set note='Keep my note' where id=%s", (entry['id'],))
                 conn.execute('insert into folder_items(folder_id,entry_id,user_id) values(%s,%s,%s)', (custom, entry['id'], self.a['user']))
-                file_entry(conn, entry, organization={'city': neighborhoods[i % 5]})
+                file_entry(conn, entry, organization={'city':'Los Angeles','neighborhood':neighborhoods[i % 5]})
         with connect() as conn:
             result = migrate_folders(conn)
             self.assertEqual((result['entries_before'], result['entries_after']), (10, 10))
-            self.assertEqual(result['old_city_folders_removed'], 5)
-            folders = conn.execute("select name from folders where user_id=%s and kind='auto_facet'", (self.a['user'],)).fetchall()
+            self.assertEqual(result['old_city_folders_removed'], 0)
+            folders = conn.execute("select name from folders where user_id=%s and deleted_at is null and kind='auto_facet'", (self.a['user'],)).fetchall()
             self.assertEqual([f['name'] for f in folders], ['Los Angeles'])
             self.assertEqual(conn.execute('select count(*) as n from folder_items where folder_id=%s', (custom,)).fetchone()['n'], 10)
             self.assertEqual({e['attributes']['neighborhood'] for e in items(conn, self.a['user'])}, set(neighborhoods))
@@ -56,14 +56,14 @@ class OrganizationTests(unittest.TestCase):
         def provider(identifier):
             calls.append(identifier)
             return {'city': 'San Francisco', 'country': 'US', 'region': 'CA', 'neighborhood': 'Mission'}
-        self.assertEqual(enrich_owner(self.a['user'], provider, enabled=True)['provider_calls'], 2)
-        self.assertEqual(enrich_owner(self.a['user'], provider, enabled=True)['provider_calls'], 1)
+        self.assertEqual(enrich_owner(self.a['user'], provider, enabled=True)['provider_calls'], 0)
+        self.assertEqual(enrich_owner(self.a['user'], provider, enabled=True)['provider_calls'], 0)
         self.assertEqual(enrich_owner(self.a['user'], provider, enabled=True)['provider_calls'], 0)
         with connect() as conn:
-            untouched = conn.execute('select organization_checked_at from places where id=%s', (other['place_id'],)).fetchone()
-            self.assertIsNone(untouched['organization_checked_at'])
-            self.assertEqual(conn.execute('select sum(organization_calls) as n from places').fetchone()['n'], 3)
-        self.assertEqual(len(calls), 3)
+            untouched = conn.execute('select extracted_city from places where id=%s', (other['place_id'],)).fetchone()
+            self.assertEqual(untouched['extracted_city'],'San Francisco')
+            self.assertEqual(conn.execute('select sum(organization_calls) as n from places').fetchone()['n'], 0)
+        self.assertEqual(len(calls), 0)
 
     def test_thumbnail_uses_fetch_key_and_legacy_fallback(self):
         save = self.save(self.a)
@@ -78,12 +78,12 @@ class OrganizationTests(unittest.TestCase):
         entry, _ = self.venue(self.save(self.a), self.a)
         with connect() as conn: before = conn.execute('select place_id from entries where id=%s', (entry['id'],)).fetchone()
         def failing(_identifier): raise TimeoutError('provider unavailable')
-        self.assertEqual(enrich_owner(self.a['user'], failing, enabled=True)['provider_calls'], 1)
+        self.assertEqual(enrich_owner(self.a['user'], failing, enabled=True)['provider_calls'], 0)
         self.assertEqual(enrich_owner(self.a['user'], failing, enabled=True)['provider_calls'], 0)
         with connect() as conn: self.assertEqual(before, conn.execute('select place_id from entries where id=%s', (entry['id'],)).fetchone())
 
     def test_note_edit_retains_legacy_neighborhood_and_pin_change_resets_it(self):
-        entry, _ = self.venue(self.save(self.a, 'Old'), self.a)
+        entry, _ = self.venue(self.save(self.a, 'Old'), self.a,city='Los Angeles')
         other, _ = self.venue(self.save(self.a, 'New'), self.a, name='New venue')
         with connect() as conn:
             file_entry(conn, entry, organization={'city': 'Los Angeles', 'neighborhood': 'Venice Beach'})
@@ -96,7 +96,7 @@ class OrganizationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         with connect() as conn:
             row = conn.execute('select * from entries where id=%s', (entry['id'],)).fetchone()
-            self.assertEqual(row['organization_city'], '')
+            self.assertEqual(row['organization_city'], 'Los Angeles')
             self.assertNotIn('neighborhood', row['attributes'])
             self.assertEqual(row['note'], 'Keep this note')
 
@@ -117,7 +117,7 @@ class OrganizationTests(unittest.TestCase):
         response = self.client.patch('/items/' + str(entry['id']), headers=self.a['headers'], json={'content_type': 'recipe', 'attributes': {'cuisine': 'Thai'}})
         self.assertEqual(response.status_code, 200, response.text)
         with connect() as conn:
-            conn.execute('update places set organization_geography=%s where id=%s', (Jsonb({'city': 'Los Angeles', 'country': 'US', 'region': 'CA'}), entry['place_id']))
+            conn.execute("update places set extracted_city='Los Angeles' where id=%s", (entry['place_id'],))
             before = conn.execute('select updated_at from entries where id=%s', (entry['id'],)).fetchone()
         def provider(_): raise AssertionError('A linked recipe does not need place-folder metadata')
         result = enrich_owner(self.a['user'], provider, enabled=True)

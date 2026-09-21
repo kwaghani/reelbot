@@ -26,7 +26,7 @@ class VenueKindTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(self.client.patch('/items/' + str(entry['id']), headers=self.b['headers'], json={'venue_kind': 'shop'}).status_code, 404)
         with connect() as conn:
-            conn.execute("update places set primary_type='cafe' where id=%s", (entry['place_id'],))
+            conn.execute("update places set venue_kind='cafe' where id=%s", (entry['place_id'],))
             row = conn.execute('select * from entries where id=%s', (entry['id'],)).fetchone()
             file_entry(conn, row)
             backfill(conn)
@@ -39,20 +39,20 @@ class VenueKindTests(unittest.TestCase):
         calls=[]
         def fetch(identifier): calls.append(identifier); return 'future_provider_type'
         with connect() as conn:
-            conn.execute("update places set primary_type=''")
-            self.assertEqual(backfill(conn, fetch, enabled=True)['provider_calls'], 2)
-            self.assertEqual(backfill(conn, fetch, enabled=True)['provider_calls'], 1)
-            before=conn.execute('select * from venue_kind_unmapped order by primary_type').fetchall()
+            conn.execute("update places set venue_kind='other'")
             self.assertEqual(backfill(conn, fetch, enabled=True)['provider_calls'], 0)
-            self.assertEqual(before, conn.execute('select * from venue_kind_unmapped order by primary_type').fetchall())
-        self.assertEqual(len(calls), 3)
+            self.assertEqual(backfill(conn, fetch, enabled=True)['provider_calls'], 0)
+            before=conn.execute("select to_regclass('public.venue_kind_unmapped') as name").fetchone()['name'];self.assertIsNone(before)
+            self.assertEqual(backfill(conn, fetch, enabled=True)['provider_calls'], 0)
+            self.assertIsNone(conn.execute("select to_regclass('public.venue_kind_unmapped') as name").fetchone()['name'])
+        self.assertEqual(len(calls), 0)
 
     def test_failed_details_attempt_is_not_repeated(self):
         entry, _ = self.venue(self.save(self.a), self.a)
         def fail(_): raise TimeoutError('provider unavailable')
         with connect() as conn:
-            conn.execute("update places set primary_type='' where id=%s", (entry['place_id'],))
-            self.assertEqual(backfill(conn, fail, enabled=True)['provider_calls'], 1)
+            conn.execute("update places set venue_kind='other' where id=%s", (entry['place_id'],))
+            self.assertEqual(backfill(conn, fail, enabled=True)['provider_calls'], 0)
             self.assertEqual(backfill(conn, fail, enabled=True)['provider_calls'], 0)
             self.assertEqual(conn.execute('select place_id from entries where id=%s', (entry['id'],)).fetchone()['place_id'], entry['place_id'])
 
@@ -79,7 +79,7 @@ class VenueKindTests(unittest.TestCase):
         from psycopg.types.json import Jsonb
         entry, _ = self.venue(self.save(self.a), self.a)
         with connect() as conn:
-            conn.execute("update places set primary_type='bar' where id=%s", (entry['place_id'],))
+            conn.execute("update places set venue_kind='bar' where id=%s", (entry['place_id'],))
             conn.execute("update entries set candidate=%s,attributes=%s where id=%s", (
                 Jsonb({'compilation_context': {'venue_kind':'restaurant','source':'reel_shared_context','title':'7 Rooftop Restaurants'}}),
                 Jsonb({'venue_kind':'restaurant','rooftop':True}),entry['id']))

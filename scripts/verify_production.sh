@@ -23,6 +23,16 @@ assert deps.get('storage', {}).get('healthy') is True
 PY
 then pass readyz; else fail readyz 'database and storage must be healthy'; fi
 
+# Covers regress silently when signed platform URLs lapse; the server counts them.
+if [ -n "$ready" ] && python - "$ready" <<'PY'
+import json, sys
+imagery = json.loads(sys.argv[1]).get('imagery')
+assert imagery is not None, 'readyz has no imagery report'
+print('imagery', json.dumps(imagery))
+assert imagery['placeholder_with_available_cover'] == 0, 'entries with a usable cover render the placeholder'
+PY
+then pass imagery-placeholders; else fail imagery-placeholders 'an entry with an available image source renders the placeholder'; fi
+
 if [ -z "${REELBOT_VERIFY_TOKEN:-}" ]; then
   fail share 'set REELBOT_VERIFY_TOKEN to a disposable device bearer token before running verification'
 else

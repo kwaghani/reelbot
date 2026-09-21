@@ -1,0 +1,35 @@
+const test=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const {environment,entry,page}=require('./harness.cjs');
+const note={kind:'note',target:'e0',path:'/items/e0',method:'PATCH',body:{note:'My offline writing'}};
+async function fixture(){const env=environment();await env.seed({items:[entry()]});await env.load().queueOperation(note);return env;}
+test('I2: stale offline note retains both versions, conflict marker and timestamps across restart',async()=>{
+ const env=await fixture();try{env.request(async(p,m,b)=>m==='POST'?{results:[{id:b.mutations[0].id,status:'superseded',server_body:{note:'Other device'},server_version:'2026-09-15T01:00:00Z'}]}:page());await env.load().syncLibrary();const state=await env.restart().loadLibrary();assert.equal(state.items[0].note,note.body.note);assert.equal(state.items[0].has_conflict,true);assert.equal(state.outbox[0].conflict.server_body.note,'Other device');assert.ok(state.outbox[0].conflict.local_at);}finally{env.close();}
+});
+for(const failure of ['500','timeout','permanent','unconfirmed'])test('I2: '+failure+' retains writing and never treats an HTTP response alone as success',async()=>{
+ const env=await fixture();try{env.request(async(p,m,b)=>{if(m!=='POST')return page();if(failure==='unconfirmed')return{results:[{id:b.mutations[0].id}]};throw failure==='timeout'?Error('timeout'):new env.ApiError(failure,failure==='permanent'?422:500)});await env.load().syncLibrary();let state=await env.restart().loadLibrary();assert.equal(state.outbox.length,1);assert.equal(state.outbox[0].body.note,note.body.note);assert.equal(state.outbox[0].status,failure==='permanent'?'needs_attention':'retry');}finally{env.close();}
+});
+test('I2: retries back off, stop at five, and keep the exhausted mutation visible',async()=>{
+ const env=await fixture();try{env.request(async(p,m)=>{if(m==='POST')throw new env.ApiError('500',500);return page()});const lib=env.load();await lib.syncLibrary();const count=env.calls.filter(c=>c.method==='POST').length;await lib.syncLibrary();assert.equal(env.calls.filter(c=>c.method==='POST').length,count);for(let i=1;i<5;i++){env.advance(300001);await lib.syncLibrary();}assert.equal(env.raw().outbox[0].status,'needs_attention');assert.equal(env.raw().outbox[0].attempts,5);env.advance(300001);await lib.syncLibrary();assert.equal(env.raw().outbox[0].attempts,5);}finally{env.close();}
+});
+for(const choice of ['mine','theirs','merge'])test('I2: '+choice+' conflict resolution requires a matching acknowledgment and archives original writing',async()=>{
+ const env=await fixture();try{let version='superseded';env.request(async(p,m,b)=>m==='POST'?{results:[{id:b.mutations[0].id,status:version,server_body:{note:'Other device'},server_version:'2026-09-15T01:00:00Z'}]}:page());const lib=env.load();await lib.syncLibrary();version='applied';await lib.resolveConflict(env.raw().outbox[0].id,choice,{note:'Merged writing'});const state=env.raw();assert.equal(state.outbox.length,0);assert.equal(state.mutation_history.length,1);assert.equal(state.mutation_history[0].conflict.local_body.note,note.body.note);assert.equal(state.items[0].note,choice==='theirs'?'Other device':choice==='merge'?'Merged writing':note.body.note);}finally{env.close();}
+});
+test('I2: tombstone plus full sync reset preserves note, kind override, folder and membership recovery copy',async()=>{
+ const env=environment();try{const folder={id:'f',name:'My folder',kind:'custom',sort_order:0},e={...entry(),folders:[folder]};await env.seed({items:[e],folders:[folder]});const lib=env.load();await lib.queueOperation(note);await lib.queueOperation({kind:'assign',path:'/folders/assign',method:'POST',body:{item_ids:['e0'],destination_id:'f'}});env.request(async(p,m,b)=>m==='POST'?{results:[{id:b.mutations[0].id,status:'deleted'}]}:{...page([{entity:'entries',row_key:'e0',payload:{id:'e0',deleted_at:'now'}}]),reset:true});await lib.syncLibrary();const state=await env.restart().loadLibrary();assert.equal(state.outbox.length,2);assert.equal(state.items[0].note,note.body.note);assert.equal(state.items[0].venue_kind_source,'user');assert.equal(state.items[0].folders[0].name,'My folder');assert.equal(state.folders[0].name,'My folder');}finally{env.close();}
+});
+test('I2: edit during account transition is rejected before writing; killed SQLite write rolls back',async()=>{
+ const env=await fixture();try{const lib=env.load();await lib.withAccountTransition(async()=>{await assert.rejects(lib.queueOperation({...note,body:{note:'During sign-out'}}),/account change/)});env.full(true);await assert.rejects(lib.queueOperation({...note,body:{note:'Uncommitted'}}));env.full(false);assert.equal((await env.restart().loadLibrary()).outbox.length,1);}finally{env.close();}
+});
+test('I2: detail conflict UI provides all three actions; no discard operation remains',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../../app/src/SyncAttention.tsx'),'utf8');for(const label of ['Keep mine','Keep theirs','Merge manually','Save merged version','Other version','Your version'])assert.ok(source.includes(label));
+ assert.ok(!fs.readFileSync(path.join(__dirname,'../../app/src/library.ts'),'utf8').includes('state.outbox = state.outbox.filter'));
+});
+test('I2: unrelated success receipt cannot remove the current operation',async()=>{
+ const env=await fixture();try{env.request(async(p,m)=>m==='POST'?{results:[{id:'different-operation',status:'applied'}]}:page());await env.load().syncLibrary();assert.equal(env.raw().outbox.length,1);assert.equal(env.raw().outbox[0].body.note,note.body.note);assert.equal(env.raw().mutation_history,undefined);}finally{env.close();}
+});
+test('I2: failed manual merge keeps the new draft and the earlier conflict history',async()=>{
+ const env=await fixture();try{env.request(async(p,m,b)=>m==='POST'?{results:[{id:b.mutations[0].id,status:'superseded',server_body:{note:'Other device'},server_version:'2026-09-15T01:00:00Z'}]}:page());const lib=env.load();await lib.syncLibrary();await lib.resolveConflict(env.raw().outbox[0].id,'merge',{note:'My merged draft'});const pending=(await env.restart().loadLibrary()).outbox[0];assert.equal(pending.conflict.local_body.note,'My merged draft');assert.equal(pending.resolution_history[0].local_body.note,note.body.note);}finally{env.close();}
+});
+test('I2: server tombstone recovery retains custom membership on subsequent empty sync pages',async()=>{
+ const env=environment();try{const folder={id:'f',name:'Weekend',kind:'custom',sort_order:0};await env.seed({items:[{...entry(),folders:[folder]}],folders:[folder]});const lib=env.load();await lib.queueOperation(note);let first=true;env.request(async(p,m,b)=>{if(m==='POST')return{results:[{id:b.mutations[0].id,status:'deleted'}]};const response=first?{...page(),reset:true}:page();first=false;return response});await lib.syncLibrary();await lib.syncLibrary();const state=env.raw();assert.equal(state.items[0].folders[0].name,'Weekend');assert.equal(state.items[0].local_recovery,true);assert.equal(state.outbox[0].body.note,note.body.note);}finally{env.close();}
+});

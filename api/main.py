@@ -71,6 +71,7 @@ class ImageryRequest(Input):
     entry_ids: list[UUID] = Field(min_length=1,max_length=8)
     gallery: bool = False
     context: str = Field(default='library',pattern=r'^(library|map|detail)$')
+    refresh: bool = False  # re-validate covers after a client-side load failure
 class UIPreferences(Input):
     groupBy: str | None = None
     distanceUnits: str | None = None
@@ -121,6 +122,16 @@ class Review(Input):
     name: str = Field(min_length=1,max_length=200)
     city: str = Field(min_length=1,max_length=200)
     country: str | None = Field(default=None,max_length=200)
+class ChatTurn(Input):
+    role: str = Field(pattern=r'^(user|assistant)$')
+    text: str = Field(min_length=1,max_length=1500)
+    entry_ids: list[UUID] = Field(default_factory=list,max_length=8)
+class AskRequest(Input):
+    text: str = Field(min_length=1,max_length=500)
+    history: list[ChatTurn] = Field(default_factory=list,max_length=16)
+    timezone: str | None = Field(default=None,max_length=64)
+    lat: float | None = Field(default=None,ge=-90,le=90)
+    lng: float | None = Field(default=None,ge=-180,le=180)
 
 
 def require_user(authorization: str = Header(default='')):
@@ -186,15 +197,20 @@ def ready():
     operational = dict.fromkeys(('worker_heartbeat_age_seconds','queue_depth','oldest_coords_fetched_at','last_sweep_at'))
     try: operational = operational_snapshot()
     except Exception: LOG.error('readyz_operations_unavailable')
+    imagery=None
+    try:
+        from worker.cover_refresh import status as cover_status
+        imagery=cover_status()
+    except Exception: LOG.error('readyz_imagery_unavailable')
     heartbeat_age=operational.get('worker_heartbeat_age_seconds')
     healthy_worker=heartbeat_age is not None and heartbeat_age<600
     code = 200 if healthy_worker and all(result[name]['healthy'] for name in ('database', 'storage', 'queue')) else 503
-    return JSONResponse(jsonable_encoder({'status': 'ready' if code == 200 else 'degraded', 'dependencies': result,'operations':operational}), status_code=code)
+    return JSONResponse(jsonable_encoder({'status': 'ready' if code == 200 else 'degraded', 'dependencies': result,'operations':operational,'imagery':imagery}), status_code=code)
 
 @app.post('/imagery/resolve')
 def imagery(body:ImageryRequest,user=Depends(require_user)):
     from worker.imagery import resolve_batch
-    try: result=resolve_batch(user,body.entry_ids,gallery=body.gallery,context=body.context)
+    try: result=resolve_batch(user,body.entry_ids,gallery=body.gallery,context=body.context,refresh_covers=body.refresh)
     except PermissionError as exc: raise HTTPException(404,'An entry is not in your library.') from exc
     return JSONResponse(result,headers={'Cache-Control':'private, no-store','Pragma':'no-cache'})
 
@@ -215,7 +231,11 @@ def retry_image(entry_id:UUID,user=Depends(require_user)):
     with connect() as conn:
         entry=owned(conn,'entries',entry_id,user)
         if entry['place_id']:enqueue_photo(conn,entry['place_id'],force=True)
-        conn.execute("update saves set cover_imagery='{}' where id=%s and user_id=%s",(entry['save_id'],user))
+        # Re-validate on next resolve without discarding a cover that still renders;
+        # an expired signed URL is renewed by cover_candidate before it is fetched.
+        conn.execute("""update saves set cover_imagery=case when cover_imagery ? 'candidate'
+            then jsonb_set(cover_imagery,'{retry_at}',to_jsonb(now()::text)) else '{}'::jsonb end,
+            raw_signals=raw_signals-'thumbnail_retry_at' where id=%s and user_id=%s""",(entry['save_id'],user))
     return {'queued':bool(entry['place_id'])}
 
 @app.get('/items/{entry_id}/image/diagnostics')
@@ -253,6 +273,23 @@ def library(q:str=Query(default='',max_length=500),user=Depends(require_user)):
         from worker.search import search
         return {'items':search(str(user),q)}
     with connect() as conn: return {'items':items(conn,user)}
+
+@app.post('/ask')
+def ask(body:AskRequest,user=Depends(require_user)):
+    """Answer a question from this owner's saves only; cards come from /items rows."""
+    from worker.ask import answer_question
+    here=(body.lat,body.lng) if body.lat is not None and body.lng is not None else None
+    try:
+        result=answer_question(str(user),body.text,
+            history=[turn.model_dump(mode='json') for turn in body.history],
+            timezone_name=body.timezone,here=here)
+    except ValueError as exc: raise HTTPException(422,str(exc)) from exc
+    LOG.info('ask_cost user=%s usd=%s requests=%s cited=%s',user,result['cost']['usd'],
+             result['cost']['llm_requests'],len(result['entry_ids']))
+    return JSONResponse(jsonable_encoder({'answer':result['answer'],'entries':result['entries'],
+        'entry_ids':result['entry_ids'],'grounded':result['grounded'],'reason':result['reason'],
+        'parsed':result['parsed'],'cost':result['cost'],'diagnostics':result['diagnostics']}),
+        headers={'Cache-Control':'private, no-store','Pragma':'no-cache'})
 
 @app.get('/sync')
 def sync(background_tasks:BackgroundTasks,since:str|None=Query(default=None,max_length=1000),limit:int=Query(default=200,ge=1,le=200),authorization:str=Header(default=''),user=Depends(require_user)):

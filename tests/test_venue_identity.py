@@ -88,7 +88,7 @@ class VenueIdentityTests(unittest.TestCase):
         entry,_=self.venue(self.save(self.a),self.a)
         with connect() as c:
             c.execute("update entries set note='Keep me' where id=%s",(entry['id'],))
-            c.execute("update places set primary_type='locality' where id=%s",(entry['place_id'],))
+            c.execute("update places set extracted_name='Los Angeles' where id=%s",(entry['place_id'],))
             report=repair(c);row=c.execute('select * from entries where id=%s',(entry['id'],)).fetchone()
             self.assertEqual(report['flagged_count'],1);self.assertEqual(row['note'],'Keep me');self.assertIsNone(row['place_id']);self.assertTrue(row['needs_review'])
     def test_database_kind_schema_rejects_restaurant_fields_on_trail(self):
@@ -131,7 +131,7 @@ class VenueIdentityTests(unittest.TestCase):
             rows=web_candidates(candidate,new_metrics());self.assertEqual(rows[0]['lat'],34.21)
         match={'id':'falls','displayName':{'text':'Hidden Falls'},'formattedAddress':'100 Forest Road','location':{'latitude':34.21,'longitude':-118.02},'primaryType':'natural_feature'}
         with patch('worker.noncommercial.fetch',side_effect=[(results,''),(address,'')]),patch('worker.places.text_search',return_value=[match]) as search:
-            rows=web_candidates(candidate,new_metrics());self.assertEqual(rows[0]['provider'],'web');self.assertIn('100 Forest Road',search.call_args.args[0]['text_query'])
+            rows=web_candidates(candidate,new_metrics());self.assertEqual(rows,[]);search.assert_not_called()
         match['primaryType']='street_address'
         with patch('worker.noncommercial.fetch',side_effect=[(results,''),(address,'')]),patch('worker.places.text_search',return_value=[match]):
             self.assertEqual(web_candidates(candidate,new_metrics()),[])

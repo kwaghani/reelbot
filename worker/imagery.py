@@ -163,15 +163,28 @@ def cover_candidate(entry, stats):
     if not url: return None, 'missing_cover'
     saved = entry.get('cover_imagery') or {}
     same = saved.get('url_hash') == digest(url)
-    if same and saved.get('retry_at','') > stamp():
+    # A renewed signed URL is the same reel cover; keep the validated thumbnail.
+    if (same or saved.get('candidate')) and saved.get('retry_at','') > stamp():
         if saved.get('candidate'):
             candidate = saved['candidate']
             if cached_thumb(candidate['asset']) is not None:
                 stats['cover_cache_hits'] += 1; return dict(candidate), None
         elif saved.get('rejection'): return None, saved['rejection']
+    from worker import cover_refresh
+    # Signed platform URLs lapse within days. Renew before fetching rather than
+    # recording a dead link as a cover failure (the recurring placeholder bug).
+    if cover_refresh.expired(entry.get('cover_signals') or {'thumbnail_url':url}):
+        url = refreshed_cover(entry, stats) or url
     record = {'url_hash':digest(url),'checked_at':stamp(),'retry_at':(now()+timedelta(days=1)).isoformat()}
     try:
-        raw, _ = fetch(url); stats['cover_original_bytes'] += len(raw)
+        try:
+            raw, _ = fetch(url)
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code not in (403, 404, 410): raise
+            url = refreshed_cover(entry, stats)
+            if not url: raise
+            record['url_hash'] = digest(url); raw, _ = fetch(url)
+        stats['cover_original_bytes'] += len(raw)
         width,height = dimensions(raw)
         if min(width,height) < 400: raise ValueError('cover_below_400px')
         coverage = text_coverage(raw)
@@ -184,9 +197,28 @@ def cover_candidate(entry, stats):
     except Exception as exc:
         record['rejection'] = str(exc) if isinstance(exc,ValueError) else 'cover_unavailable_or_ocr_failed'
         candidate = None
+        previous = saved.get('candidate')
+        if not isinstance(exc,ValueError) and previous and cached_thumb(previous['asset']) is not None:
+            # A transient fetch failure must never discard a cover that still renders.
+            stats['cover_cache_hits'] += 1
+            record = {**saved, 'checked_at':stamp(), 'retry_at':(now()+timedelta(hours=1)).isoformat()}
+            candidate = dict(previous)
+        elif not isinstance(exc,ValueError):
+            record['retry_at'] = (now()+timedelta(hours=1)).isoformat()
     with connect() as conn:
         conn.execute('update saves set cover_imagery=%s where id=%s',(Jsonb(record),entry['save_id']))
     return candidate, record.get('rejection')
+
+
+def refreshed_cover(entry, stats):
+    """Renew one save's signed cover URL now; None when the platform gives none."""
+    from worker import cover_refresh
+    stats['cover_refreshes'] = stats.get('cover_refreshes', 0) + 1
+    result = cover_refresh.refresh_save(entry['save_id'], force=True)
+    if result['outcome'] != 'refreshed': return None
+    with connect() as conn:
+        row = conn.execute("select coalesce(nullif(raw_signals->>'thumbnail_url',''),raw_signals->>'thumbnail') url from saves where id=%s", (entry['save_id'],)).fetchone()
+    return row and row['url']
 
 
 class Metadata(HTMLParser):
@@ -251,10 +283,11 @@ def site_candidate(place, stats):
     if place.get('id'):
         from worker.storage import put
         put(f"photos/{place['id']}/site-{digest(raw)}.jpg", raw, 'image/jpeg')
-    # Venue-site thumbnails are returned only for this authenticated request.
-    return [{'key':'site:0','source':'site','width':width,'height':height,'url':image,'content_hash':digest(thumb),
-        'original_bytes':len(raw),'thumbnail_bytes':len(thumb),'_bytes':thumb,
-        'attribution':{'label':urlparse(canonical).hostname,'url':canonical},'license':'Venue website / rights unconfirmed'}]
+    # The website address came from Google (websiteUri), so neither it nor the
+    # image URL is persisted; only the venue's own image bytes are cached.
+    return [{'key':'site:0','source':'site','width':width,'height':height,'_url':image,'content_hash':digest(thumb),
+        'asset':store_thumb(thumb),'original_bytes':len(raw),'thumbnail_bytes':len(thumb),'_bytes':thumb,
+        'attribution':{'label':'Venue website'},'license':'Venue website / rights unconfirmed'}]
 
 
 def plain(value): return re.sub('<[^>]+>','',unescape(str(value or ''))).strip()
@@ -313,13 +346,11 @@ def venue_candidates(place,kind,stats,*,skip_google=False):
             stats['venue_cache_hits']+=1;return candidates
         if cached.get('negative'):
             stats['venue_cache_hits']+=1;return []
-        if candidates and candidates[0].get('source')=='site':
-            try:
-                candidate=dict(candidates[0]);raw,_=fetch(candidate['url']);thumb,_=thumbnail(raw)
-                candidate.update(_bytes=thumb,content_hash=digest(thumb),thumbnail_bytes=len(thumb))
-                stats['venue_cache_hits']+=1;return [candidate]
-            except Exception as exc:
-                stats['failures'].append('site_cache:'+failure(exc));trace(stats,'site','cached_image_failed',failure(exc))
+        if candidates and candidates[0].get('source')=='site' and candidates[0].get('asset'):
+            data=cached_thumb(candidates[0]['asset'])
+            if data is not None:
+                stats['venue_cache_hits']+=1;return [{**candidates[0],'_bytes':data}]
+            trace(stats,'site','cached_image_failed','asset_missing')
     result=[]
     sources=[('commons',lambda:commons_candidates(place,kind,stats)),('site',lambda:site_candidate(place,stats))]
     if not skip_google:sources.insert(0,('google',lambda:google_candidates(place,stats)))
@@ -396,7 +427,7 @@ def image_bytes(candidate,stats):
 def load_entries(user,ids):
     with connect() as conn:
         entries=conn.execute('''select e.*,s.source_url,coalesce(nullif(s.raw_signals->>'thumbnail_url',''),s.raw_signals->>'thumbnail') cover_url,
-            s.cover_imagery,p.google_place_id,(select count(*) from entries x where x.save_id=e.save_id and x.deleted_at is null) save_entry_count
+            s.cover_imagery,s.raw_signals cover_signals,p.google_place_id,(select count(*) from entries x where x.save_id=e.save_id and x.deleted_at is null) save_entry_count
             from entries e join saves s on s.id=e.save_id and s.deleted_at is null left join places p on p.id=e.place_id
             where e.user_id=%s and e.deleted_at is null and e.id=any(%s::uuid[])''',(user,[str(x) for x in ids])).fetchall()
         places={str(p['id']):place_values(p) for p in conn.execute('select * from places where id=any(%s::uuid[])',([str(e['place_id']) for e in entries if e['place_id']],)).fetchall()}
@@ -408,7 +439,8 @@ def resolve_batch(user,ids,*,gallery=False,context='library',refresh_covers=Fals
     if len(entries)!=len(set(map(str,ids))):raise PermissionError('An entry is not in your library')
     stats=metrics();shared={};results={};google_hashes={};rendered={}
     for entry in entries:
-        if refresh_covers:entry={**entry,'cover_imagery':{}}
+        # Re-validation keeps the previous candidate so a dead link cannot erase it.
+        if refresh_covers:entry={**entry,'cover_imagery':{**(entry.get('cover_imagery') or {}),'retry_at':''}}
         started=time.monotonic();entry_id=str(entry['id']);place=places.get(str(entry['place_id']))
         cover,rejection=cover_candidate(entry,stats)
         trace(stats,'cover','usable' if cover else 'rejected',rejection)
